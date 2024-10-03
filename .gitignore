@@ -1,0 +1,7 @@
+# IDE cache
+/.vscode
+/.vs
+
+# My personal development folder where i store some code to
+# compile and test - mila
+/test-code
