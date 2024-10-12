@@ -54,6 +54,6 @@ If you have some time and good knowledge, try to contribute! (it whould make me 
 
 # External links (broken rn)
 
-- [Abstract website](https://lumi2021.github.io/abstract/)
-- [Abstract documentation](https://lumi2021.github.io/abstract/docs/intro)
-- [Abstract development blogs](https://lumi2021.github.io/abstract/blog)
+- [Abstract website](https://abstractlang.github.io/abstract/)
+- [Abstract documentation](https://abstractlang.github.io/abstract/)
+- [Abstract development blogs](https://abstractlang.github.io/abstract/)
