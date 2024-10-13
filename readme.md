@@ -52,7 +52,7 @@ If you have some time and good knowledge, try to contribute! (it whould make me 
 [//]: # (||||)
 [//]: # (|:----------:|:----------:|:------|)
 
-# External links (broken rn)
+# External links
 
 - [Abstract website](https://abstractlang.github.io/abstract/)
 - [Abstract documentation](https://abstractlang.github.io/abstract/)
