@@ -1,5 +1,5 @@
-﻿using Abstract.Parser.Core.Language;
-using Abstract.Parser.Core.Sources;
+﻿using Abstract.Build.Core.Sources;
+using Abstract.Parser.Core.Language;
 
 namespace Abstract.CodeProcess;
 
@@ -87,10 +87,10 @@ public class Lexer
     };
 
     private Token Tokenize(string value, TokenType type, int start, int end)
-        => new() { type = type, value = value, start = start, end = end > 0 ? end : start + 1, scriptRef = currentSrc };
+        => new() { type = type, value = value, start = (uint)start, end = (uint)end, scriptRef = currentSrc };
 
     private Token Tokenize(char value, TokenType type, int start)
-        => Tokenize("" + value, type, start, -1);
+        => Tokenize("" + value, type, start, start+1);
 
     public Token[] Parse(Script source)
     {
@@ -99,7 +99,7 @@ public class Lexer
         var sourceCode = source.GetContent();
         List<Token> tokens = [];
 
-        for (var i = 0; i < sourceCode.Length; i++)
+        for (int i = 0; i < sourceCode.Length; i++)
         {
             char c = sourceCode[i];
             char c2 = sourceCode.Length > i + 1 ? sourceCode[i + 1] : '\0';
@@ -143,8 +143,10 @@ public class Lexer
             }
 
             // Check single characters
-            if (c == '\n')
+            if (c == '\n') {
+                if (tokens.Count > 0 && tokens[^1].type != TokenType.LineFeedChar)
                 tokens.Add(Tokenize("\\n", TokenType.LineFeedChar, i, -1));
+            }
             else if (c == '(')
                 tokens.Add(Tokenize(c, TokenType.LeftPerenthesisChar, i));
             else if (c == ')')
@@ -178,6 +180,8 @@ public class Lexer
 
             else if (c == '&')
                 tokens.Add(Tokenize(c, TokenType.AmpersandChar, i));
+            else if (c == '?')
+                tokens.Add(Tokenize(c, TokenType.QuestionChar, i));
             else if (c == '@')
                 tokens.Add(Tokenize(c, TokenType.AtSiginChar, i));
 

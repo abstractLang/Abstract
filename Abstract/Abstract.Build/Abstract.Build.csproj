@@ -7,12 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Exeptions\Internal\" />
-    <Folder Include="Exeptions\Build\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Abstract.Build.Core\Abstract.Build.Core.csproj" />
+    <ProjectReference Include="..\Abstract.CodeProcess\Abstract.Parser.csproj" />
+    <ProjectReference Include="..\Abstract.Parser.Core\Abstract.Parser.Core.csproj" />
+    <ProjectReference Include="..\Abstract.Resources\Abstract.Resources.csproj" />
   </ItemGroup>
 
 </Project>

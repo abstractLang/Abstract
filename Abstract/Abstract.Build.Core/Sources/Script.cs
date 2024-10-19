@@ -1,11 +1,9 @@
-﻿using System.IO;
+﻿namespace Abstract.Build.Core.Sources;
 
-namespace Abstract.Parser.Core.Sources;
-
-public abstract class Script
+public abstract class Script (string path)
 {
 
-    public readonly string? Directory;
+    public readonly string? Directory = path;
     public string Name => Path.GetFileName(Directory) ?? "";
 
     public long SizeInBytes => Directory == null ? new FileInfo(Directory!).Length : 0;

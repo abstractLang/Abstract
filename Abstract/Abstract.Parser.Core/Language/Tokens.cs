@@ -1,4 +1,4 @@
-﻿using Abstract.Parser.Core.Sources;
+﻿using Abstract.Build.Core.Sources;
 
 namespace Abstract.Parser.Core.Language;
 
@@ -7,12 +7,14 @@ public struct Token
     public string value;
     public TokenType type;
 
-    public int start;
-    public int end;
+    public uint start;
+    public uint end;
+
+    public readonly (uint start, uint length) Range => (start, end - start);
 
     public Script scriptRef;
 
-    public override readonly string ToString() => $"{value} ({type});";
+    public override readonly string ToString() => $"{value} ({type})";
     public readonly string ValueString()
         => type switch
         {
@@ -75,6 +77,7 @@ public enum TokenType : byte
     PercentChar,            // %
     EqualsChar,             // =
     AmpersandChar,          // &
+    QuestionChar,           // ?
 
     AtSiginChar,            // @
 

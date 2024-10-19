@@ -27,7 +27,7 @@ namespace Console {
         
     @public func void write(string content)
 
-    @public func void write(Std.Types.Array(?) content)
+    #@public func void write([]any content)
 
     @public func void log(i8 value)
     @public func void log(i16 value)
@@ -150,11 +150,11 @@ namespace Types {
         @ImplicitConvert @public func i64 parse_i64(string value)
         @ImplicitConvert @public func i128 parse_i128(string value)
 
-        @ImplicitConvert @public func u8 parse_i8(string value)
-        @ImplicitConvert @public func u16 parse_i16(string value)
-        @ImplicitConvert @public func u32 parse_i32(string value)
-        @ImplicitConvert @public func u64 parse_i64(string value)
-        @ImplicitConvert @public func u128 parse_i128(string value)
+        @ImplicitConvert @public func u8 parse_u8(string value)
+        @ImplicitConvert @public func u16 parse_u16(string value)
+        @ImplicitConvert @public func u32 parse_u32(string value)
+        @ImplicitConvert @public func u64 parse_u64(string value)
+        @ImplicitConvert @public func u128 parse_u128(string value)
     }
 
     @public @abstract @final struct Void {}
@@ -163,9 +163,9 @@ namespace Types {
     namespace Collections {
 
         @public @valueOnly @final struct Array(type ElementT) {
-            @IndexerGet @public func ElementT Get(i32 i) {}
-            @IndexerSet @public func void Set(i32 i, ElementT value) {}
-            @get("Length") @public func i32 GetLength {}
+            @IndexerGet @public func ElementT Get(i32 i)
+            @IndexerSet @public func void Set(i32 i, ElementT value)
+            @get("Length") @public func i32 GetLength()
         }
 
     }
