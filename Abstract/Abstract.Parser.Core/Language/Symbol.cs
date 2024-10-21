@@ -1,10 +1,14 @@
 ﻿using Abstract.Parser.Core.Language.AbstractSyntaxTree;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Abstract.Parser.Core.Language;
 
 public interface ISymbol
 {
-    public string ToString(string? format = null);
+    public string[] Tokens { get; }
+
+    public bool Equals(object? obj);
+    public string ToString();
     /* FORMAT:
     *  g - global
     *  l | default - local
@@ -13,35 +17,79 @@ public interface ISymbol
 
 public struct TempSymbol (IEnumerable<string> tokens) : ISymbol
 {
-    public readonly string[] tokens = [.. tokens];
+    private readonly string[] _tokens = [.. tokens];
+    public readonly string[] Tokens => [.. _tokens];
 
-    public bool IsCompound => tokens.Length > 0;
+    public bool IsCompound => _tokens.Length > 0;
 
-    public override string ToString() => ToString("l");
-    public readonly string ToString(string? format = null) => string.Join('.', tokens);
+
+    public static bool operator ==(TempSymbol a, ISymbol b) => a.Equals(b);
+    public static bool operator !=(TempSymbol a, ISymbol b) => !a.Equals(b);
+    public override bool Equals([NotNullWhen(true)] object? obj)
+    {
+        if (obj is ISymbol @symbol) return Enumerable.SequenceEqual(_tokens, symbol.Tokens);
+        else return false;
+    }
+    public override int GetHashCode() => base.GetHashCode();
+
+
+    public override string ToString() => ToString("l", null);
+
+    public string ToString(string? format = null) => ToString(format, null);
+    public string ToString(string? format, IFormatProvider? formatProvider) => string.Join('.', tokens);
 }
 
-public struct ReferenceSymbol(IEnumerable<string> tokens, MasterSymbol pointsTo) : ISymbol
+public struct ReferenceSymbol : ISymbol
 {
-    public readonly string[] tokens = [.. tokens];
-    public readonly MasterSymbol pointingTo = pointsTo;
+    private readonly string[] _tokens;
+    public readonly string[] Tokens => [.. _tokens];
+    public readonly MasterSymbol pointingTo;
 
-    public bool IsCompound => tokens.Length > 0;
+    public bool IsCompound => _tokens.Length > 0;
 
-    public override string ToString() => ToString("l");
-    public string ToString(string? format = null) => format switch {
-        "g" => pointingTo.ToString("g"),
-        _ => string.Join('.', tokens)
-    };
+    public ReferenceSymbol(IEnumerable<string> tokens, MasterSymbol pointsTo)
+    {
+        _tokens = [.. tokens];
+        pointingTo = pointsTo;
+    }
+    public ReferenceSymbol(ISymbol from, MasterSymbol pointsTo)
+    {
+        _tokens = from.Tokens;
+        pointingTo = pointsTo;
+    }
+
+    public static bool operator ==(ReferenceSymbol a, ISymbol b) => a.Equals(b);
+    public static bool operator !=(ReferenceSymbol a, ISymbol b) => !a.Equals(b);
+    public override bool Equals([NotNullWhen(true)] object? obj)
+    {
+        if (obj is ISymbol @symbol) return Enumerable.SequenceEqual(_tokens, symbol.Tokens);
+        else return false;
+    }
+    public override int GetHashCode() => base.GetHashCode();
+
+    public override string ToString() => pointingTo.ToString("g"); // string.Join('.', _tokens);
+
 }
 
 public class MasterSymbol(IEnumerable<string> tokens, IReferenceable pointsTo) : ISymbol
 {
-    public readonly string[] tokens = [.. tokens];
+    private readonly string[] _tokens = [.. tokens];
+    public string[] Tokens => [.. _tokens];
     public readonly IReferenceable pointsTo = pointsTo;
 
-    public bool IsCompound => tokens.Length > 0;
+    public bool IsCompound => _tokens.Length > 0;
 
-    public override string ToString() => ToString("l");
-    public string ToString(string? format = null) => string.Join('.', tokens);
+
+    public static bool operator ==(MasterSymbol a, ISymbol b) => a.Equals(b);
+    public static bool operator !=(MasterSymbol a, ISymbol b) => !a.Equals(b);
+    public override bool Equals([NotNullWhen(true)] object? obj)
+    {
+        if (obj is ISymbol @symbol) return Enumerable.SequenceEqual(_tokens, symbol.Tokens);
+        else return false;
+    }
+    public override int GetHashCode() => base.GetHashCode();
+
+
+    public string ToString(string? format = null) => ToString(format, null);
+    public string ToString(string? format, IFormatProvider? formatProvider) => string.Join('.', tokens);
 }

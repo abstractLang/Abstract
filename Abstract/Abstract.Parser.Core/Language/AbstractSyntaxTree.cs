@@ -1,5 +1,6 @@
 ﻿using Abstract.Build.Core.Sources;
 using System.Collections;
+using System.Globalization;
 using System.Numerics;
 using System.Text;
 
@@ -7,9 +8,21 @@ namespace Abstract.Parser.Core.Language.AbstractSyntaxTree;
 
 public abstract class SyntaxNode
 {
+    public (uint start, uint end) Range = (0, 0);
+
     public virtual Script SourceScript => Parent?.SourceScript ?? null!;
     public SyntaxNode? Parent { get; set; }
+    public List<AttributeNode> Attributes { get; set; } = [];
 
+    public bool HasAttribute(string name) => Attributes.Any(e => e.Symbol.ToString() == name);
+    public AttributeNode GetAttribute(string name) => Attributes.First(e => e.Symbol.ToString() == name);
+    public bool TryGetAttribute(string name, out AttributeNode attribute)
+    {
+        attribute = Attributes.FirstOrDefault(e => e.Symbol.ToString() == name)!;
+        return attribute != null;
+    }
+
+    public string AttributesToString() => string.Join(" ", Attributes) + '\n';
     public override string ToString() => $"{GetType().Name}SyntaxNode";
 }
 public abstract class ScopeNode<T> : SyntaxNode, IEnumerable<T> where T : SyntaxNode
@@ -31,6 +44,8 @@ public abstract class ScopeNode<T> : SyntaxNode, IEnumerable<T> where T : Syntax
         }
     }
 
+    public void RemoveChild(T node) => children.Remove(node);
+
     public IEnumerator<T> GetEnumerator() => children.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -44,7 +59,10 @@ public abstract class ScopeNode<T> : SyntaxNode, IEnumerable<T> where T : Syntax
 
         foreach (var i in children)
         {
-            var l = i.ToString().Replace("\r\n", "\n").Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            var l = (i.AttributesToString() + i.ToString())
+                .Replace("\r\n", "\n")
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
             foreach (var j in l) str.AppendLine($"\t{j}");
         }
 
@@ -69,7 +87,20 @@ public class ProgramRoot(string programName) : ScopeNode<ScriptRoot>, IReference
     public TypeNode ReturnType { get => null!; set { } }
     public new IReferenceable? Parent { get => null!; set { } }
 
-    public ReferenceSymbol GetGlobalSymbol() => new(Symbol.tokens, Symbol);
+    public readonly Guid ProgramId = Guid.NewGuid();
+
+    public ReferenceSymbol GetGlobalSymbol() => new(Symbol.Tokens, Symbol);
+    public override string ToString()
+    {
+        var str = new StringBuilder();
+
+        str.AppendLine($"Program: {Symbol}");
+        str.AppendLine($"GUID: {ProgramId}");
+
+        str.Append(base.ToString());
+
+        return str.ToString();
+    }
 }
 public class ScriptRoot(Script src) : ScopeNode<SyntaxNode>, IReferenceable
 {
@@ -93,7 +124,7 @@ public class NamespaceNode : ScopeNode<SyntaxNode>, IReferenceable
     public TypeNode ReturnType { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
 
-    public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().tokens ?? [], ..Symbol.tokens], Symbol);
+    public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().Tokens ?? [], ..Symbol.Tokens], Symbol);
     public override string ToString() => $"namespace {Symbol} {base.ToString()}";
 }
 public class FunctionNode : ScopeNode<SyntaxNode>, IReferenceable
@@ -104,8 +135,8 @@ public class FunctionNode : ScopeNode<SyntaxNode>, IReferenceable
     public TypeNode ReturnType { get; set; } = null!;
 
 
-    public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().tokens ?? [], .. Symbol.tokens], Symbol);
-    public override string ToString() => $"func {Symbol} {base.ToString()}";
+    public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().Tokens ?? [], .. Symbol.Tokens], Symbol);
+    public override string ToString() => $"func {ReturnType} {Symbol} {Parameters} {base.ToString()}";
 }
 public class StructureNode : ScopeNode<SyntaxNode>, IReferenceable
 {
@@ -115,8 +146,8 @@ public class StructureNode : ScopeNode<SyntaxNode>, IReferenceable
     public TypeNode ReturnType { get; set; } = null!;
     public TypeNode? ExtendsType { get; set; } = null;
 
-    public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().tokens ?? [], .. Symbol.tokens], Symbol);
-    public override string ToString() => $"struct {Symbol}"
+    public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().Tokens ?? [], .. Symbol.Tokens], Symbol);
+    public override string ToString() => $"struct {Symbol} "
         + (ExtendsType != null ? $"extends {ExtendsType}" : "") + $"{base.ToString()}";
 }
 
@@ -125,7 +156,7 @@ public class AttributeNode : SyntaxNode
     public ISymbol Symbol { get; set; } = null!;
     public ArgumentCollectionNode Arguments { get; set; } = null!;
 
-    public override string ToString() => $"@{Symbol}()";
+    public override string ToString() => $"@{Symbol}{Arguments}";
 }
 
 // Data
@@ -139,7 +170,7 @@ public class VariableDeclarationNode(bool constant) : SyntaxNode, IReferenceable
 
     public ExpressionNode? Value { get; set; } = null;
 
-    public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().tokens ?? [], .. Symbol.tokens], Symbol);
+    public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().Tokens ?? [], .. Symbol.Tokens], Symbol);
     public override string ToString() => (!constant ? "let " : "const ") + $"{ReturnType} {Symbol}"
         + (Value != null ? $" = {Value}" : "");
 }
@@ -147,7 +178,7 @@ public class VariableDeclarationNode(bool constant) : SyntaxNode, IReferenceable
 // Some controll collections (nothing to do with abstract's collections)
 public class ParameterCollectionNode : ScopeNode<ParameterNode>
 {
-    public override string ToString() => $"({string.Join(", ", children)})";
+        public override string ToString() => $"({string.Join(", ", children)})";
 }
 public class ArgumentCollectionNode : ScopeNode<ExpressionNode>
 {
@@ -160,7 +191,9 @@ public class ParameterNode : SyntaxNode, IReferenceable
     public MasterSymbol Symbol { get; set; } = null!;
     public TypeNode ReturnType { get; set; } = null!;
 
-    public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().tokens ?? [], .. Symbol.tokens], Symbol);
+    public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().Tokens ?? [], .. Symbol.Tokens], Symbol);
+
+    public override string ToString() => $"{ReturnType} {Symbol}";
 }
 
 public abstract class StatementNode : SyntaxNode
@@ -169,6 +202,8 @@ public abstract class StatementNode : SyntaxNode
 }
 public abstract class ExpressionNode : StatementNode
 {
+
+    public ISymbol ExpressionType { get; set; }
 
 }
 
@@ -201,16 +236,10 @@ public abstract class ValueCollectionNode<T> : ValueExpressionNode, IEnumerable<
 
 // Type nodes
 public abstract class TypeNode : SyntaxNode { }
-public class PrimitiveTypeNode(string value) : TypeNode
-{
-    public string Value { get; private set; } = value;
 
-    public override string ToString() => $"{Value}";
-}
 public class ReferenceTypeNode(ISymbol symbol) : TypeNode
 {
     public ISymbol symbol = symbol;
-
     public override string ToString() => $"{symbol}";
 }
 public class GenericTypeNode : TypeNode { }
@@ -274,7 +303,7 @@ public class NumericLiteralNode(BigInteger value) : ValueExpressionNode
 public class FloatingLiteralNode(double value) : ValueExpressionNode
 {
     public double value = value;
-    public override string ToString() => $"{value:f}";
+    public override string ToString() => value.ToString(CultureInfo.InvariantCulture);
 }
 public class StringLiteralValueNode(string value) : ValueExpressionNode
 {

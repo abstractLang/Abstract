@@ -9,59 +9,23 @@
 
 ###
 
-namespace Console {
-    @public func void write(i8 value)
-    @public func void write(i16 value)
-    @public func void write(i32 value)
-    @public func void write(i64 value)
-    @public func void write(i128 value)
-
-    @public func void write(u8 value)
-    @public func void write(u16 value)
-    @public func void write(u32 value)
-    @public func void write(u64 value)
-    @public func void write(u128 value)
-
-    # @public func void write(f32 value)
-    # @public func void write(f64 value)
-        
-    @public func void write(string content)
-
-    #@public func void write([]any content)
-
-    @public func void log(i8 value)
-    @public func void log(i16 value)
-    @public func void log(i32 value)
-    @public func void log(i64 value)
-    @public func void log(i128 value)
-
-    @public func void log(u8 value)
-    @public func void log(u16 value)
-    @public func void log(u32 value)
-    @public func void log(u64 value)
-    @public func void log(u128 value)
-
-    # @public func void log(f32 value)
-    # @public func void log(f64 value)
-
-    @public func void log(string content)
-        
-    @public func string read()
-}
-
+@defineGlobal("Types")
 namespace Types {
 
-    @public @abstract struct Type {}
-    @public @abstract struct AnyType {}
+    @defineGlobal("type") @public @abstract struct Type {}
+    @defineGlobal("anytype") @public @abstract struct AnyType {}
 
     @public @abstract struct Integer {
+
         @overrideOperator("==")
         @public @static func bool equals(Integer a, Integer b)
         @overrideOperator("!=")
         @public @static func bool unequals(Integer a, Integer b)
+
     }
 
-    @public @valueOnly @final struct SignedInteger8 extends Integer {
+    @defineGlobal("i8") @public @valueOnly @final struct SignedInteger8 extends Integer {
+
         @public @static const i8 minValue
         @public @static const i8 maxValue
 
@@ -69,34 +33,42 @@ namespace Types {
         @ImplicitConvert @public @static func i32 cast_i32(i8 value)
         @ImplicitConvert @public @static func i64 cast_i64(i8 value)
         @ImplicitConvert @public @static func i128 cast_i128(i8 value)
+
     }
-    @public @valueOnly @final struct SignedInteger16 extends Integer {
+    @defineGlobal("i16") @public @valueOnly @final struct SignedInteger16 extends Integer {
+
         @public @static const i16 minValue
         @public @static const i16 maxValue
 
         @ImplicitConvert @public @static func i32 cast_i32(i16 value)
         @ImplicitConvert @public @static func i64 cast_i64(i16 value)
         @ImplicitConvert @public @static func i128 cast_i128(i16 value)
+
     }
-    @public @valueOnly @final struct SignedInteger32 extends Integer {
+    @defineGlobal("i32") @public @valueOnly @final struct SignedInteger32 extends Integer {
+
         @public @static const i32 minValue
         @public @static const i32 maxValue
 
         @ImplicitConvert @public @static func i64 cast_i64(i32 value)
         @ImplicitConvert @public @static func i128 cast_i128(i32 value)
+
     }
-    @public @valueOnly @final struct SignedInteger64 extends Integer {
+    @defineGlobal("i64") @public @valueOnly @final struct SignedInteger64 extends Integer {
         @public @static const i64 minValue
         @public @static const i64 maxValue
 
         @ImplicitConvert @public @static func i128 cast_i128(i64 value)
     }
-    @public @valueOnly @final struct SignedInteger128 extends Integer {
+    @defineGlobal("i128") @public @valueOnly @final struct SignedInteger128 extends Integer {
+
         @public @static const i128 minValue
         @public @static const i128 maxValue
-    }
 
-    @public @valueOnly @final struct UnsignedInteger8 extends Integer {
+    }
+    
+    @defineGlobal(["u8", "byte"]) @public @valueOnly @final struct UnsignedInteger8 extends Integer {
+
         @public @static const u8 minValue
         @public @static const u8 maxValue
 
@@ -108,42 +80,52 @@ namespace Types {
         @ImplicitConvert @public @static func i32 cast_i32(u8 value)
         @ImplicitConvert @public @static func i64 cast_i64(u8 value)
         @ImplicitConvert @public @static func i128 cast_i128(u8 value)
+
     }
-    @public @valueOnly @final struct UnsignedInteger16 extends Integer {
+    @defineGlobal("u16") @public @valueOnly @final struct UnsignedInteger16 extends Integer {
+
         @public @static const u16 minValue
         @public @static const u16 maxValue
 
         @ImplicitConvert @public @static func u32 cast_u32(u16 value)
         @ImplicitConvert @public @static func u64 cast_u64(u16 value)
         @ImplicitConvert @public @static func u128 cast_u128(u16 value)
-        @ImplicitConvert @public @static func i32 cast_u32(u16 value)
-        @ImplicitConvert @public @static func i64 cast_u64(u16 value)
-        @ImplicitConvert @public @static func i128 cast_u128(u16 value)
+        @ImplicitConvert @public @static func i32 cast_i32(u16 value)
+        @ImplicitConvert @public @static func i64 cast_i64(u16 value)
+        @ImplicitConvert @public @static func i128 cast_i128(u16 value)
+
     }
-    @public @valueOnly @final struct UnsignedInteger32 extends Integer {
+    @defineGlobal("u32") @public @valueOnly @final struct UnsignedInteger32 extends Integer {
+
         @public @static const u32 minValue
         @public @static const u32 maxValue
 
         @ImplicitConvert @public @static func u64 cast_u64(u32 value)
         @ImplicitConvert @public @static func u128 cast_u128(u32 value)
-        @ImplicitConvert @public @static func i64 cast_u64(u32 value)
-        @ImplicitConvert @public @static func i128 cast_u128(u32 value)
+        @ImplicitConvert @public @static func i64 cast_i64(u32 value)
+        @ImplicitConvert @public @static func i128 cast_i128(u32 value)
+
     }
-    @public @valueOnly @final struct UnsignedInteger64 extends Integer {
+    @defineGlobal("u64") @public @valueOnly @final struct UnsignedInteger64 extends Integer {
+
         @public @static const u64 minValue
         @public @static const u64 maxValue
 
         @ImplicitConvert @public @static func u128 cast_u128(u64 value)
         @ImplicitConvert @public @static func i128 cast_i128(u64 value)
+
     }
-    @public @valueOnly @final struct UnsignedInteger128 extends Integer {
+    @defineGlobal("u128") @public @valueOnly @final struct UnsignedInteger128 extends Integer {
+
         @public @static const u128 minValue
         @public @static const u128 maxValue
+
     }
 
-    @public @valueOnly @final struct Boolean {}
+    @defineGlobal("bool") @public @valueOnly @final struct Boolean {}
 
-    @public @valueOnly @final struct String {
+    @defineGlobal("string") @public @valueOnly @final struct String {
+
         @ImplicitConvert @public func i8 parse_i8(string value)
         @ImplicitConvert @public func i16 parse_i16(string value)
         @ImplicitConvert @public func i32 parse_i32(string value)
@@ -155,10 +137,11 @@ namespace Types {
         @ImplicitConvert @public func u32 parse_u32(string value)
         @ImplicitConvert @public func u64 parse_u64(string value)
         @ImplicitConvert @public func u128 parse_u128(string value)
+        
     }
 
-    @public @abstract @final struct Void {}
-    @public @abstract @final struct NoReturn {}
+    @defineGlobal("void") @public @abstract @final struct Void {}
+    @defineGlobal("noreturn") @public @abstract @final struct NoReturn {}
 
     namespace Collections {
 
@@ -170,11 +153,4 @@ namespace Types {
 
     }
 
-}
-
-namespace Memory {
-}
-
-namespace Process {
-    @public func noreturn ExitProcess(i32 statusCode)
 }

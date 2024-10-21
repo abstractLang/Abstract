@@ -4,6 +4,7 @@ using Abstract.Build.Core.Sources;
 using Abstract.Parser.Core.Exeptions.Syntax;
 using Abstract.Parser.Core.Language;
 using Abstract.Parser.Core.Language.AbstractSyntaxTree;
+using System.Globalization;
 using System.Numerics;
 
 namespace Abstract.Parser;
@@ -40,11 +41,11 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 /* ignore */ throw new UnexpectedTokenException(token, $"Unexpected end of line (\\n)");
 
             case TokenType.NamespaceKeyword:
-                Eat();
                 var namespaceNode = new NamespaceNode();
+                namespaceNode.Range.start = Eat().start;
 
                 var symbol = ParseSymbol();
-                namespaceNode.Symbol = new(symbol.tokens, namespaceNode);
+                namespaceNode.Symbol = new(symbol.Tokens, namespaceNode);
 
                 namespaceNode.AppendChildren(ParseScope());
 
@@ -52,11 +53,11 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 break;
 
             case TokenType.AtSiginChar:
-                Eat();
                 var attributeNode = new AttributeNode();
+                attributeNode.Range.start = Eat().start;
 
                 attributeNode.Symbol = ParseSymbol();
-                if (Bite().type == TokenType.LeftPerenthesisChar)
+                if (NextIs(TokenType.LeftPerenthesisChar))
                     attributeNode.Arguments = ParseArgs();
 
                 TryEat(TokenType.LineFeedChar);
@@ -66,11 +67,11 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 break;
 
             case TokenType.FuncKeyword:
-                Eat();
                 var func = new FunctionNode();
+                func.Range.start = Eat().start;
 
                 func.ReturnType = ParseType();
-                func.Symbol = new(ParseSymbol(true).tokens, func);
+                func.Symbol = new(ParseSymbol(true).Tokens, func);
 
                 func.Parameters = ParseParams();
 
@@ -81,10 +82,10 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 break;
 
             case TokenType.StructKeyword:
-                Eat();
                 var struc = new StructureNode();
+                struc.Range.start = Eat().start;
 
-                struc.Symbol = new(ParseSymbol().tokens, struc);
+                struc.Symbol = new(ParseSymbol().Tokens, struc);
 
                 if (Bite().type == TokenType.LeftPerenthesisChar)
                     struc.GenericParameters = ParseParams();
@@ -98,12 +99,12 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
 
             case TokenType.LetKeyword or
             TokenType.ConstKeyword:
-                bool isConst = Eat().type == TokenType.ConstKeyword;
-
+                bool isConst = Bite().type == TokenType.ConstKeyword;
                 var variable = new VariableDeclarationNode(isConst);
+                variable.Range.start = Eat().start;
 
                 variable.ReturnType = ParseType();
-                variable.Symbol = new(ParseSymbol().tokens, variable);
+                variable.Symbol = new(ParseSymbol().Tokens, variable);
 
                 if (TryEat(TokenType.EqualsChar))
                     variable.Value = ParseExpression();
@@ -127,14 +128,14 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
         {
             List<SyntaxNode> result = [];
 
-            Diet(TokenType.LeftBracketChar, (t) => new UnexpectedTokenException(t, $"Scope Expected!"));
+            var start = Diet(TokenType.LeftBracketChar, (t) => new UnexpectedTokenException(t, $"Scope Expected!"));
             TryEat(TokenType.LineFeedChar);
             while (!IsEOF() && !NextIs(TokenType.RightBracketChar))
             {
                 try { result.Add(ProcessToken()); }
                 catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
             }
-            Diet(TokenType.RightBracketChar, (t) => new UnexpectedTokenException(t, $"}} Expected to close the scope!"));
+            var end = Diet(TokenType.RightBracketChar, (t) => new UnexpectedTokenException(t, $"}} Expected to close the scope!"));
 
             return [.. result];
         }
@@ -156,7 +157,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                     var paramItem = new ParameterNode();
 
                     paramItem.ReturnType = ParseType();
-                    paramItem.Symbol = new MasterSymbol(ParseSymbol().tokens, paramItem);
+                    paramItem.Symbol = new MasterSymbol(ParseSymbol().Tokens, paramItem);
 
                     _params.AppendChild(paramItem);
                 }
@@ -280,7 +281,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
         {
             TokenType.StringLiteral => new StringLiteralValueNode(Eat().value),
             TokenType.IntegerNumberLiteral => new NumericLiteralNode(BigInteger.Parse(Eat().value)),
-            TokenType.FloatingNumberLiteral => new FloatingLiteralNode(double.Parse(Eat().value)),
+            TokenType.FloatingNumberLiteral => new FloatingLiteralNode(double.Parse(Eat().value, CultureInfo.InvariantCulture)),
 
             TokenType.TrueKeyword => new BooleanLiteralValueNode(true),
             TokenType.FalseKeyword => new BooleanLiteralValueNode(false),
@@ -325,7 +326,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
     private TypeNode ParseType()
     {
         if (NextIs(TokenType.TypeKeyword))
-            return new PrimitiveTypeNode(Eat().value);
+            return new ReferenceTypeNode(new TempSymbol([Eat().value]));
 
         else if (NextIs(TokenType.Identifier))
             return new ReferenceTypeNode(ParseSymbol());
@@ -360,7 +361,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
     }
     private void EndStatement()
     {
-        Diet(TokenType.LineFeedChar);
+        Diet([TokenType.LineFeedChar, TokenType.EOFChar]);
         while (TryEat(TokenType.LineFeedChar));
     }
 }

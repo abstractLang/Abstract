@@ -8,6 +8,8 @@ public class BuildOptions
     private string? _target = null;
     public string? Target => _target;
 
+    public string ProgramName = null!;
+
     private bool _isElfExecutable = false;
     public bool IsElfExecutable => _isElfExecutable;
 

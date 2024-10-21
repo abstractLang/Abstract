@@ -27,7 +27,7 @@ public static class Builder
         // generating script objects...
         foreach (var i in buildOps.InputedFilesPath) scripts.Add(new UserScript(i));
         // appending dependences
-        scripts.Add(new BuildinLibrary("Std"));
+        // scripts.Add(new BuildinLibrary("Std"));
 
         // TODO optimize memory on this pipeline
 
@@ -42,16 +42,16 @@ public static class Builder
 
             var abs = parser.Parse(script, tokens);
             scriptsABS.Add(abs);
-
-            //var filePath = Path.Join(buildOps.OutputDirectory, script.Name + ".tree.txt");
-            //File.WriteAllText(filePath, string.Join('\n', abs.ToString()));
         }
 
         lexer = null;
         parser = null;
 
         var evaluator = new Evaluator(errorHandler);
-        evaluator.Evaluate([.. scriptsABS]);
+        var program = evaluator.Evaluate(buildOps.ProgramName, [.. scriptsABS]);
+
+        var filePath = Path.Join(buildOps.OutputDirectory, "program.txt");
+        File.WriteAllText(filePath, string.Join('\n', program.ToString()));
 
         if (errorHandler.ErrorCount > 0) errorHandler.Dump();
 

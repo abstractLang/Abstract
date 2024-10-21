@@ -10,9 +10,20 @@ public class Program
         LoadExternalResources();
 
 #if DEBUG
-        return ProcessCommand(["run", "-t", "none",
-            "../../../../../test-code/main.a",
-            "-o","../../../../../test-code/bin/main.asm"]);
+        return ProcessCommand([
+            "compile", "Std",
+
+            "-t", "elf",
+            //"-nostd",
+
+            "Libs/Std/Console.ah",
+            "Libs/Std/Types.ah",
+            "Libs/Std/Memory.ah",
+            "Libs/Std/Process.ah",
+            //"Libs/Std/Math.a",
+
+            "-o","../../../../../test-code/bin/Std.elf"
+           ]);
 #else
         return ProcessCommand(args);
 #endif
@@ -59,7 +70,9 @@ public class Program
         BuildOptions buildOps = new();
         if (execute) buildOps.SetElfAsExecuteable();
 
-        for (var i = 0; i < args.Length; i++)
+        buildOps.ProgramName = args[0];
+
+        for (var i = 1; i < args.Length; i++)
         {
             if (args[i] == "-o") // output flag
             {

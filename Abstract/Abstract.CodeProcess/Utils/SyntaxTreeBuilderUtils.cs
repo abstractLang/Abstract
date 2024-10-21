@@ -14,7 +14,7 @@ public partial class SyntaxTreeBuilder
     private Token Eat() => tkns.Dequeue();
     private bool TryEat(TokenType type)
     {
-        if (tkns.Peek().type == type)
+        if (tkns.Count > 0 && tkns.Peek().type == type)
         {
             tkns.Dequeue();
             return true;
@@ -23,7 +23,7 @@ public partial class SyntaxTreeBuilder
     }
     private bool TryEat(TokenType type, out Token tkn)
     {
-        if (tkns.Peek().type == type)
+        if (tkns.Count > 0 && tkns.Peek().type == type)
         {
             tkn = tkns.Dequeue();
             return true;
@@ -41,6 +41,16 @@ public partial class SyntaxTreeBuilder
         }
         return tkn;
     }
+    private Token Diet(TokenType[] types, Callback? err = null)
+    {
+        var tkn = tkns.Dequeue();
+        if (!types.Contains(tkn.type))
+        {
+            throw err?.Invoke(tkn) ??
+            new UnexpectedTokenException(tkn, $"Unexpected token \"{tkn.value}\" of type {tkn.type} (expecting {string.Join(", ", types)})");
+        }
+        return tkn;
+    }
     private void Reject(TokenType type, Callback? err = null)
     {
         var tkn = Bite();
@@ -53,6 +63,6 @@ public partial class SyntaxTreeBuilder
     private Token Bite() => tkns.Peek();
     private bool NextIs(params TokenType[] type) => type.Contains(tkns.Peek().type);
 
-    private bool IsEOF() => tkns.Peek().type == TokenType.EOFChar;
+    private bool IsEOF() => tkns.Count <= 0 || tkns.Peek().type == TokenType.EOFChar;
     private bool IsEndOfStatement() => tkns.Peek().type == TokenType.EOFChar || tkns.Peek().type == TokenType.LineFeedChar;
 }

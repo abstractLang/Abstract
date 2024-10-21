@@ -1,0 +1,74 @@
+###
+
+    ABSTRACT STANDARD LIBRARY SCRIPT
+
+###
+
+namespace Math {
+
+    @public const i64 PI = 3.1415
+    @public const i64 E = 2.71828
+
+    const i8 MAX_ITERATIONS = 15
+
+    @public func f64 sin(f64 rad) {
+        # CORDIC algorithim implementation
+        # references: https://en.wikipedia.org/wiki/CORDIC
+
+    }
+
+    @public func f64 sqrt(f64 value) {
+        # Newton-Raphson method algorithim implementation
+
+        const f64 tolerance = 0.001
+        let f64 x = value / 2
+
+        while abs(x * x - value) > tolerance => x = 0.5 * (x + value / x)
+
+        return x
+
+    }
+
+    @public func f64 abs(f64 value) {
+
+        if (value > 0)
+            return value
+        else 
+            return -value
+
+    }
+
+    @public func f64 atan(f64 value) {
+
+        # Taylor Series implementation
+    
+        let i64 res = 0.0
+        
+        for i8 i in MAX_ITERATIONS => {
+        
+            let i8 sign
+
+            if (n % 2 == 0) => sign = 1
+            else sign = -1
+
+            res += sign * term / (2 * n + 1)
+            term *= x ** 2
+        
+        }
+
+        return res
+
+    }
+
+    @public func f64 atan2(f64 x, f64 y) {
+    
+        if (x > 0) => return atan(y / x)
+        elif (x < 0 and y >= 0) => return atan(y / x) + PI
+        else if (x < 0 and y < 0) => return atan(y / x) - PI
+        else if (x == 0 and y > 0) => return PI / 2
+        else if (x == 0 and y < 0) => return -(PI / 2)
+        else => return 0
+
+    }
+
+}
