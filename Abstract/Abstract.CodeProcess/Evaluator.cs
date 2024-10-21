@@ -206,8 +206,10 @@ public partial class Evaluator (ErrorHandler err)
         if (typeNode is ReferenceTypeNode @reference)
         {
             var t = SearchForSymbol(reference.symbol, parent);
-            //reference.symbol = new ReferenceSymbol(reference.symbol, t);
+            reference.symbol = new ReferenceSymbol(reference.symbol, t);
         }
+        // TODO process other kinds of type nodes like generics, arrays or
+        // references here
         else throw new NotImplementedException();
     }
 

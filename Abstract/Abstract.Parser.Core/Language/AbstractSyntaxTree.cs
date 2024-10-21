@@ -148,7 +148,7 @@ public class StructureNode : ScopeNode<SyntaxNode>, IReferenceable
 
     public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().Tokens ?? [], .. Symbol.Tokens], Symbol);
     public override string ToString() => $"struct {Symbol} "
-        + (ExtendsType != null ? $"extends {ExtendsType}" : "") + $"{base.ToString()}";
+        + (ExtendsType != null ? $"extends {ExtendsType}" : "") + $" {base.ToString()}";
 }
 
 public class AttributeNode : SyntaxNode

@@ -67,7 +67,7 @@ public struct ReferenceSymbol : ISymbol
     }
     public override int GetHashCode() => base.GetHashCode();
 
-    public override string ToString() => pointingTo.ToString("g"); // string.Join('.', _tokens);
+    public override string ToString() => pointingTo?.ToString() ?? string.Join('.', _tokens);
 
 }
 
@@ -90,6 +90,5 @@ public class MasterSymbol(IEnumerable<string> tokens, IReferenceable pointsTo) :
     public override int GetHashCode() => base.GetHashCode();
 
 
-    public string ToString(string? format = null) => ToString(format, null);
-    public string ToString(string? format, IFormatProvider? formatProvider) => string.Join('.', tokens);
+    public override string ToString() => string.Join('.', tokens);
 }
