@@ -31,9 +31,9 @@ namespace Math {
 
     @public func f64 abs(f64 value) {
 
-        if (value > 0)
+        if (value > 0) =>
             return value
-        else 
+        else =>
             return -value
 
     }
@@ -42,14 +42,14 @@ namespace Math {
 
         # Taylor Series implementation
     
-        let i64 res = 0.0
+        let f64 res = 0.0
         
-        for i8 i in MAX_ITERATIONS => {
+        for i in MAX_ITERATIONS => {
         
             let i8 sign
 
             if (n % 2 == 0) => sign = 1
-            else sign = -1
+            else => sign = -1
 
             res += sign * term / (2 * n + 1)
             term *= x ** 2
@@ -64,9 +64,9 @@ namespace Math {
     
         if (x > 0) => return atan(y / x)
         elif (x < 0 and y >= 0) => return atan(y / x) + PI
-        else if (x < 0 and y < 0) => return atan(y / x) - PI
-        else if (x == 0 and y > 0) => return PI / 2
-        else if (x == 0 and y < 0) => return -(PI / 2)
+        elif (x < 0 and y < 0) => return atan(y / x) - PI
+        elif (x == 0 and y > 0) => return PI / 2
+        elif (x == 0 and y < 0) => return -(PI / 2)
         else => return 0
 
     }

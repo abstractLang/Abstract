@@ -122,6 +122,9 @@ namespace Types {
 
     }
 
+    @defineGlobal(["f32", "float"]) @public @valueOnly @final struct Single {}
+    @defineGlobal(["f64", "double"]) @public @valueOnly @final struct Double {}
+
     @defineGlobal("bool") @public @valueOnly @final struct Boolean {}
 
     @defineGlobal("string") @public @valueOnly @final struct String {

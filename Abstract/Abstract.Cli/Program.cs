@@ -20,7 +20,7 @@ public class Program
             "Libs/Std/Types.ah",
             "Libs/Std/Memory.ah",
             "Libs/Std/Process.ah",
-            //"Libs/Std/Math.a",
+            "Libs/Std/Math.a",
 
             "-o","../../../../../test-code/bin/Std.elf"
            ]);

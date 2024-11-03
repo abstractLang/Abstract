@@ -88,6 +88,9 @@ public enum TokenType : byte
     LessEqualsOperator,     // <=
     GreatEqualsOperator,    // >=
 
+    AndOperator,            // and
+    OrOperator,             // or
+
     PowerOperator,          // **
 
     AddAssigin,             // +=

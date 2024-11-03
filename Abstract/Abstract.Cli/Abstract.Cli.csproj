@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Abstract.Binutils.Abs\Abstract.Binutils.Abs.csproj" />
     <ProjectReference Include="..\Abstract.Build\Abstract.Build.csproj" />
   </ItemGroup>
 

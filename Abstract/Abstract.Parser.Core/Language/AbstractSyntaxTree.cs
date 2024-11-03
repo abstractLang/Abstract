@@ -151,6 +151,10 @@ public class StructureNode : ScopeNode<SyntaxNode>, IReferenceable
         + (ExtendsType != null ? $"extends {ExtendsType}" : "") + $" {base.ToString()}";
 }
 
+public class CodeBlockNode : ScopeNode<StatementNode>
+{
+}
+
 public class AttributeNode : SyntaxNode
 {
     public ISymbol Symbol { get; set; } = null!;
@@ -159,8 +163,13 @@ public class AttributeNode : SyntaxNode
     public override string ToString() => $"@{Symbol}{Arguments}";
 }
 
+public abstract class StatementNode : SyntaxNode
+{
+
+}
+
 // Data
-public class VariableDeclarationNode(bool constant) : SyntaxNode, IReferenceable
+public class VariableDeclarationNode(bool constant) : StatementNode, IReferenceable
 {
     public new IReferenceable? Parent { get => base.Parent as IReferenceable; set => base.Parent = (SyntaxNode)value!; }
 
@@ -196,15 +205,9 @@ public class ParameterNode : SyntaxNode, IReferenceable
     public override string ToString() => $"{ReturnType} {Symbol}";
 }
 
-public abstract class StatementNode : SyntaxNode
-{
-
-}
 public abstract class ExpressionNode : StatementNode
 {
-
-    public ISymbol ExpressionType { get; set; }
-
+    public ISymbol ExpressionType { get; set; } = null!;
 }
 
 public abstract class ValueExpressionNode : ExpressionNode
@@ -258,10 +261,60 @@ public class ReferenceType(TypeNode baseType) : TypeModifier(baseType)
     public override string ToString() => $"*{baseType}";
 }
 
-// Operation expressions
-public class AssiginmentExpressionNode : ExpressionNode
+// General statements
+public class WhileStatementNode : ExpressionNode
 {
+    public ExpressionNode condition = null!;
+    public SyntaxNode statement = null!;
 
+    public override string ToString() => $"while {condition} => {statement}";
+}
+
+public class ForStatementNode : StatementNode
+{
+    public ValueExpressionNode Symbol { get; set; } = null!;
+    public RangeLiteralValueNode ConditionRange { get; set; } = null!;
+    public SyntaxNode statement = null!;
+
+    public override string ToString() => $"for {Symbol} in {ConditionRange} => {statement}";
+}
+
+public class IfStatementNode : ExpressionNode
+{
+    public ExpressionNode condition = null!;
+    public SyntaxNode statement = null!;
+
+    public override string ToString() => $"if {condition} => {statement}";
+}
+public class ElifStatementNode : ExpressionNode
+{
+    public ExpressionNode condition = null!;
+    public SyntaxNode statement = null!;
+
+    public override string ToString() => $"elif {condition} => {statement}";
+}
+public class ElseStatementNode : ExpressionNode
+{
+    public SyntaxNode statement = null!;
+
+    public override string ToString() => $"else => {statement}";
+}
+
+public class ReturnStatementNode : StatementNode
+{
+    public ExpressionNode? expression = null;
+
+    public override string ToString() => "return" + (expression != null ? $" {expression}" : "");
+}
+
+// Operation expressions
+public class AssignmentExpressionNode(ExpressionNode l, string op, ExpressionNode r) : ExpressionNode
+{
+    public ExpressionNode Left { get; private set; } = l;
+    public ExpressionNode Right { get; private set; } = r;
+    public string Operator { get; private set; } = op;
+
+    public override string ToString() => $"{Left} {Operator} {Right}";
 }
 
 public class BinaryOperationExpressionNode(ExpressionNode l, string op, ExpressionNode r) : ExpressionNode
@@ -272,6 +325,14 @@ public class BinaryOperationExpressionNode(ExpressionNode l, string op, Expressi
 
     public override string ToString() => $"{Left} {Op} "
         + (Right is BinaryOperationExpressionNode ? $"({Right})" : $"{Right}");
+}
+
+public class UnaryOperationExpressionNode(string op, ExpressionNode ex) : ExpressionNode
+{
+    public ExpressionNode Expression { get; private set; } = ex;
+    public string Op { get; private set; } = op;
+
+    public override string ToString() => $"{Op}{Expression}";
 }
 
 // Collections
@@ -314,4 +375,12 @@ public class BooleanLiteralValueNode(bool value) : ValueExpressionNode
 {
     public bool value = value;
     public override string ToString() => $"{value}";
+}
+public class RangeLiteralValueNode : ValueExpressionNode
+{
+    public ValueExpressionNode? start = null;
+    public ValueExpressionNode? end = null;
+    public ValueExpressionNode? step = null;
+
+    public override string ToString() => $"{start}..{end}" + (step != null ? $" by {step}" : "");
 }

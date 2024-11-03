@@ -64,6 +64,10 @@ public class Lexer
         { "true", TokenType.TrueKeyword },
         { "false", TokenType.FalseKeyword },
 
+        // operators
+        { "and", TokenType.AndOperator },
+        { "or", TokenType.OrOperator },
+
         // types
         { "void", TokenType.TypeKeyword },
         { "noreturn", TokenType.TypeKeyword },

@@ -1,6 +1,7 @@
 ﻿using Abstract.Build;
 using Abstract.Build.Core.Exceptions;
 using Abstract.Build.Core.Sources;
+using Abstract.Parser.Core.Exeptions.Evaluation;
 using Abstract.Parser.Core.Exeptions.Syntax;
 using Abstract.Parser.Core.Language;
 using Abstract.Parser.Core.Language.AbstractSyntaxTree;
@@ -47,7 +48,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 var symbol = ParseSymbol();
                 namespaceNode.Symbol = new(symbol.Tokens, namespaceNode);
 
-                namespaceNode.AppendChildren(ParseScope());
+                namespaceNode.AppendChildren(ParseScope<SyntaxNode>());
 
                 res = namespaceNode;
                 break;
@@ -76,7 +77,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 func.Parameters = ParseParams();
 
                 if (NextIs(TokenType.LeftBracketChar))
-                    func.AppendChildren(ParseScope());
+                    func.AppendChildren(ParseScope<StatementNode>());
 
                 res = func;
                 break;
@@ -93,7 +94,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 if (TryEat(TokenType.ExtendsKeyword))
                     struc.ExtendsType = ParseType();
 
-                struc.AppendChildren(ParseScope());
+                struc.AppendChildren(ParseScope<SyntaxNode>());
                 res = struc;
                 break;
 
@@ -113,8 +114,10 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 break;
 
             default:
-                res = ParseExpression();
-                isStatementEnd = true;
+                res = ParseStatement();
+                // i suppose it's expected that the ParseStatement
+                // call can handle the line feed
+                isStatementEnd = NextIs(TokenType.LineFeedChar);
                 break;
         }
 
@@ -122,17 +125,21 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
         return res;
     }
 
-    private SyntaxNode[] ParseScope()
+    private T[] ParseScope<T>()
     {
         try
         {
-            List<SyntaxNode> result = [];
+            List<T> result = [];
 
             var start = Diet(TokenType.LeftBracketChar, (t) => new UnexpectedTokenException(t, $"Scope Expected!"));
             TryEat(TokenType.LineFeedChar);
             while (!IsEOF() && !NextIs(TokenType.RightBracketChar))
             {
-                try { result.Add(ProcessToken()); }
+                try {
+                    var res = ProcessToken();
+                    if (res is T @t) result.Add(t);
+                    else throw new InvalidScoppingException(res);
+                }
                 catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
             }
             var end = Diet(TokenType.RightBracketChar, (t) => new UnexpectedTokenException(t, $"}} Expected to close the scope!"));
@@ -192,6 +199,126 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
         return args;
     }
 
+    private StatementNode ParseStatement()
+    {
+        switch (Bite().type)
+        {
+            case TokenType.WhileKeyword:
+                var node = new WhileStatementNode();
+                node.Range.start = Eat().start;
+
+                node.condition = ParseExpression();
+                Diet(TokenType.RightArrowOperator, (t) =>
+                new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
+
+                if (NextIs(TokenType.LeftBracketChar))
+                {
+                    var scope = new CodeBlockNode();
+                    scope.AppendChildren(ParseScope<StatementNode>());
+                    node.statement = scope;
+                }
+                else node.statement = ParseStatement();
+
+                return node;
+
+            case TokenType.ForKeyword:
+                // It uses the range exprecision.
+                // I really don't know why, i still
+                // need to see this syntax
+
+                var forNode = new ForStatementNode();
+                forNode.Range.start = Eat().start;
+
+                forNode.Symbol = ParseValueFromIdentifier();
+                Diet(TokenType.InKeyword, (t) =>
+                new UnexpectedTokenException(t, $"Expected in keyword in in for statement, found {t}"));
+
+                var range = new RangeLiteralValueNode();
+
+                range.end = ParseValue();
+                if (TryEat(TokenType.RangeOperator))
+                {
+                    range.start = range.end;
+                    range.end = null;
+                    // FIXME
+                }
+
+                forNode.ConditionRange = range;
+
+                Diet(TokenType.RightArrowOperator, (t) =>
+                new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
+
+                if (NextIs(TokenType.LeftBracketChar))
+                {
+                    var scope = new CodeBlockNode();
+                    scope.AppendChildren(ParseScope<StatementNode>());
+                    forNode.statement = scope;
+                }
+                else forNode.statement = ParseStatement();
+
+                return forNode;
+
+            case TokenType.ReturnKeyword:
+                var returnNode = new ReturnStatementNode();
+                returnNode.Range.start = Eat().start;
+
+                if (!NextIs(TokenType.EOFChar))
+                    returnNode.expression = ParseExpression();
+
+                return returnNode;
+
+            case TokenType.IfKeyword:
+                var ifNode = new IfStatementNode();
+                ifNode.Range.start = Eat().start;
+
+                ifNode.condition = ParseExpression();
+                Diet(TokenType.RightArrowOperator, (t) =>
+                new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
+                if (NextIs(TokenType.LeftBracketChar))
+                {
+                    var scope = new CodeBlockNode();
+                    scope.AppendChildren(ParseScope<StatementNode>());
+                    ifNode.statement = scope;
+                }
+                else ifNode.statement = ParseStatement();
+
+                return ifNode;
+            case TokenType.ElifKeyword:
+                var elifNode = new ElifStatementNode();
+                elifNode.Range.start = Eat().start;
+
+                elifNode.condition = ParseExpression();
+                Diet(TokenType.RightArrowOperator, (t) =>
+                new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
+                if (NextIs(TokenType.LeftBracketChar))
+                {
+                    var scope = new CodeBlockNode();
+                    scope.AppendChildren(ParseScope<StatementNode>());
+                    elifNode.statement = scope;
+                }
+                else elifNode.statement = ParseStatement();
+
+                return elifNode;
+            case TokenType.ElseKeyword:
+                var elseNode = new ElseStatementNode();
+                elseNode.Range.start = Eat().start;
+
+                Diet(TokenType.RightArrowOperator, (t) =>
+                new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
+                if (NextIs(TokenType.LeftBracketChar))
+                {
+                    var scope = new CodeBlockNode();
+                    scope.AppendChildren(ParseScope<StatementNode>());
+                    elseNode.statement = scope;
+                }
+                else elseNode.statement = ParseStatement();
+
+                return elseNode;
+
+            default:
+                return ParseExpression();
+        }
+    }
     private ExpressionNode ParseExpression()
     {
         return ParseAssignmentExpression();
@@ -201,8 +328,12 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
     {
         ExpressionNode baseExp = ParseBooleanExpression();
 
-        //while (EatWithCondition(TokenType.EqualsChar))
-        //    baseExp = new AssignmentExpression(baseExp, ParseExpression());
+        while (NextIs(
+            TokenType.EqualsChar,
+            TokenType.AddAssigin, TokenType.SubAssigin,
+            TokenType.MulAssigin, TokenType.DivAssigin, TokenType.RestAssigin
+        ))
+            baseExp = new AssignmentExpressionNode(baseExp, Eat().value, ParseExpression());
 
         return baseExp;
     }
@@ -211,12 +342,13 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
     {
         ExpressionNode baseExp = ParseAdditiveExpression();
 
-        //while (CurrentIs(
-        //    TokenType.EqualOperator, TokenType.UnEqualOperator,
-        //    TokenType.LeftAngleChar, TokenType.RightAngleChar,
-        //    TokenType.LessEqualsOperator, TokenType.GreatEqualsOperator
-        //))
-        //    baseExp = new BinaryExpression(Eat().value, baseExp, ParseBooleanExpression());
+        while (NextIs(
+            TokenType.EqualOperator, TokenType.UnEqualOperator,
+            TokenType.LeftAngleChar, TokenType.RightAngleChar,
+            TokenType.LessEqualsOperator, TokenType.GreatEqualsOperator,
+            TokenType.AndOperator, TokenType.OrOperator
+        ))
+            baseExp = new BinaryOperationExpressionNode(baseExp, Eat().value, ParseBooleanExpression());
 
         return baseExp;
     }
@@ -235,7 +367,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
     {
         ExpressionNode baseExp = ParseUnaryExpression();
 
-        while (NextIs(TokenType.StarChar, TokenType.SlashChar, TokenType.PercentChar))
+        while (NextIs(TokenType.StarChar, TokenType.SlashChar, TokenType.PercentChar, TokenType.PowerOperator))
             baseExp = new BinaryOperationExpressionNode(baseExp, Eat().value, ParseMultiplicativeExpression());
 
         return baseExp;
@@ -243,13 +375,13 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
 
     private ExpressionNode ParseUnaryExpression()
     {
-        //if (CurrentIs(TokenType.MinusChar, TokenType.CrossChar))
-        //{
-        //    string unaryOp = Eat().value;
-        //    return new UnaryExpression(unaryOp, ParseTypeCasting());
+        if (NextIs(TokenType.MinusChar, TokenType.CrossChar))
+        {
+            string unaryOp = Eat().value;
+            return new UnaryOperationExpressionNode(unaryOp, ParseExpression());
         
-        //}
-        //else
+        }
+        else
             return ParseTypeCasting();
     }
 
