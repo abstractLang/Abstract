@@ -9,7 +9,6 @@
 
 ###
 
-@defineGlobal("Types")
 namespace Types {
 
     @defineGlobal("type") @public @abstract struct Type {}

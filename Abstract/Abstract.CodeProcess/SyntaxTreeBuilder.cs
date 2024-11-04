@@ -340,15 +340,25 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
 
     private ExpressionNode ParseBooleanExpression()
     {
+        ExpressionNode baseExp = ParseComparisonExpression();
+
+        while (NextIs(TokenType.AndOperator, TokenType.OrOperator))
+            baseExp = new BinaryOperationExpressionNode(baseExp, Eat().value, ParseBooleanExpression());
+
+        return baseExp;
+    }
+
+
+    private ExpressionNode ParseComparisonExpression()
+    {
         ExpressionNode baseExp = ParseAdditiveExpression();
 
         while (NextIs(
             TokenType.EqualOperator, TokenType.UnEqualOperator,
             TokenType.LeftAngleChar, TokenType.RightAngleChar,
-            TokenType.LessEqualsOperator, TokenType.GreatEqualsOperator,
-            TokenType.AndOperator, TokenType.OrOperator
+            TokenType.LessEqualsOperator, TokenType.GreatEqualsOperator
         ))
-            baseExp = new BinaryOperationExpressionNode(baseExp, Eat().value, ParseBooleanExpression());
+            baseExp = new BinaryOperationExpressionNode(baseExp, Eat().value, ParseComparisonExpression());
 
         return baseExp;
     }

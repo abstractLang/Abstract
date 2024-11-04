@@ -316,17 +316,14 @@ public class AssignmentExpressionNode(ExpressionNode l, string op, ExpressionNod
 
     public override string ToString() => $"{Left} {Operator} {Right}";
 }
-
 public class BinaryOperationExpressionNode(ExpressionNode l, string op, ExpressionNode r) : ExpressionNode
 {
     public ExpressionNode Left { get; private set; } = l;
     public ExpressionNode Right { get; private set; } = r;
     public string Op { get; private set; } = op;
 
-    public override string ToString() => $"{Left} {Op} "
-        + (Right is BinaryOperationExpressionNode ? $"({Right})" : $"{Right}");
+    public override string ToString() => $"({Left} {Op} {Right})";
 }
-
 public class UnaryOperationExpressionNode(string op, ExpressionNode ex) : ExpressionNode
 {
     public ExpressionNode Expression { get; private set; } = ex;

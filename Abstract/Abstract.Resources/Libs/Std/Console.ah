@@ -28,7 +28,7 @@ namespace Console {
         
     @public func void write(string content)
 
-    #@public func void write([]any content)
+    @public func void write([]anytype content)
 
     @public func void log(i8 value)
     @public func void log(i16 value)
