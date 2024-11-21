@@ -208,8 +208,17 @@ public partial class Evaluator (ErrorHandler err)
             var t = SearchForSymbol(reference.symbol, parent);
             reference.symbol = new ReferenceSymbol(reference.symbol, t);
         }
+
         // TODO process other kinds of type nodes like generics, arrays or
         // references here
+        else if (typeNode is ArrayType @array)
+        {
+            // arrays are just a syntax sugar for
+            // St.Types.Collections.Array(T)
+            // so it can just throw back a
+            // generic processed node
+        }
+
         else throw new NotImplementedException();
     }
 
