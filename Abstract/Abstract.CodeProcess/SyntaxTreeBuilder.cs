@@ -5,6 +5,7 @@ using Abstract.Parser.Core.Exeptions.Evaluation;
 using Abstract.Parser.Core.Exeptions.Syntax;
 using Abstract.Parser.Core.Language;
 using Abstract.Parser.Core.Language.AbstractSyntaxTree;
+using Abstract.Parser.Core.Language.AbstractSyntaxTree.CodeInstructions;
 using System.Globalization;
 using System.Numerics;
 
@@ -13,11 +14,13 @@ namespace Abstract.Parser;
 public partial class SyntaxTreeBuilder (ErrorHandler err)
 {
     private readonly ErrorHandler err = err;
+    private Script currentScript = null!;
 
     public ScriptRoot Parse(Script script, Token[] tokens)
     {
         var root = new ScriptRoot(script);
         tkns = new(tokens);
+        currentScript = script;
 
         while (!IsEOF())
         {
@@ -25,6 +28,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
             catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
         }
 
+        currentScript = null!;
         tkns = null!;
         return root;
     }
@@ -77,7 +81,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 func.Parameters = ParseParams();
 
                 if (NextIs(TokenType.LeftBracketChar))
-                    func.AppendChildren(ParseScope<StatementNode>());
+                    func.AppendChildren(ParseScope<InstructionalNode>());
 
                 res = func;
                 break;
@@ -101,7 +105,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
             case TokenType.LetKeyword or
             TokenType.ConstKeyword:
                 bool isConst = Bite().type == TokenType.ConstKeyword;
-                var variable = new VariableDeclarationNode(isConst);
+                var variable = new TopLevelVariableDeclarationNode(isConst);
                 variable.Range.start = Eat().start;
 
                 variable.ReturnType = ParseType();
@@ -114,8 +118,8 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 break;
 
             default:
-                res = ParseStatement();
-                // i suppose it's expected that the ParseStatement
+                res = ParseInstruction();
+                // i suppose it's expected that the ParseInstruction
                 // call can handle the line feed
                 isStatementEnd = NextIs(TokenType.LineFeedChar);
                 break;
@@ -138,7 +142,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 try {
                     var res = ProcessToken();
                     if (res is T @t) result.Add(t);
-                    else throw new InvalidScoppingException(res);
+                    else throw new InvalidScoppingException(res, currentScript);
                 }
                 catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
             }
@@ -148,6 +152,29 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
         }
         catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
         return [];
+    }
+    private CodeBlockNode ParseCodeBlock()
+    {
+        List<InstructionalNode> result = [];
+
+            var start = Diet(TokenType.LeftBracketChar, (t) => new UnexpectedTokenException(t, $"Scope Expected!"));
+            TryEat(TokenType.LineFeedChar);
+            while (!IsEOF() && !NextIs(TokenType.RightBracketChar))
+            {
+                try {
+                    var res = ProcessToken();
+                    if (res is InstructionalNode @inst) result.Add(inst);
+                    else throw new InvalidScoppingException(res, currentScript);
+                }
+                catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
+            }
+            var end = Diet(TokenType.RightBracketChar, (t) => new UnexpectedTokenException(t, $"}} Expected to close the scope!"));
+
+            var codeblock = new CodeBlockNode();
+            codeblock.Range = new(start.start, end.end);
+            codeblock.AppendChildren([.. result]);
+
+            return codeblock;
     }
 
     private ParameterCollectionNode ParseParams()
@@ -199,7 +226,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
         return args;
     }
 
-    private StatementNode ParseStatement()
+    private InstructionalNode ParseInstruction()
     {
         switch (Bite().type)
         {
@@ -210,14 +237,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 node.condition = ParseExpression();
                 Diet(TokenType.RightArrowOperator, (t) =>
                 new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
-
-                if (NextIs(TokenType.LeftBracketChar))
-                {
-                    var scope = new CodeBlockNode();
-                    scope.AppendChildren(ParseScope<StatementNode>());
-                    node.statement = scope;
-                }
-                else node.statement = ParseStatement();
+                node.statement = ParseInstruction();
 
                 return node;
 
@@ -247,19 +267,12 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
 
                 Diet(TokenType.RightArrowOperator, (t) =>
                 new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
-
-                if (NextIs(TokenType.LeftBracketChar))
-                {
-                    var scope = new CodeBlockNode();
-                    scope.AppendChildren(ParseScope<StatementNode>());
-                    forNode.statement = scope;
-                }
-                else forNode.statement = ParseStatement();
+                forNode.statement = ParseInstruction();
 
                 return forNode;
 
             case TokenType.ReturnKeyword:
-                var returnNode = new ReturnStatementNode();
+                var returnNode = new ReturnInstructionNode();
                 returnNode.Range.start = Eat().start;
 
                 if (!NextIs(TokenType.EOFChar))
@@ -274,13 +287,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 ifNode.condition = ParseExpression();
                 Diet(TokenType.RightArrowOperator, (t) =>
                 new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
-                if (NextIs(TokenType.LeftBracketChar))
-                {
-                    var scope = new CodeBlockNode();
-                    scope.AppendChildren(ParseScope<StatementNode>());
-                    ifNode.statement = scope;
-                }
-                else ifNode.statement = ParseStatement();
+                ifNode.statement = ParseInstruction();
 
                 return ifNode;
             case TokenType.ElifKeyword:
@@ -290,13 +297,7 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 elifNode.condition = ParseExpression();
                 Diet(TokenType.RightArrowOperator, (t) =>
                 new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
-                if (NextIs(TokenType.LeftBracketChar))
-                {
-                    var scope = new CodeBlockNode();
-                    scope.AppendChildren(ParseScope<StatementNode>());
-                    elifNode.statement = scope;
-                }
-                else elifNode.statement = ParseStatement();
+                elifNode.statement = ParseInstruction();
 
                 return elifNode;
             case TokenType.ElseKeyword:
@@ -306,15 +307,22 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 Diet(TokenType.RightArrowOperator, (t) =>
                 new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
                 if (NextIs(TokenType.LeftBracketChar))
-                {
-                    var scope = new CodeBlockNode();
-                    scope.AppendChildren(ParseScope<StatementNode>());
-                    elseNode.statement = scope;
-                }
-                else elseNode.statement = ParseStatement();
+                elseNode.statement = ParseInstruction();
 
                 return elseNode;
+        
+            case TokenType.LeftBracketChar:
+                return ParseCodeBlock();
 
+            default:
+                return ParseStatement();
+        }
+    }
+
+    private StatementNode ParseStatement()
+    {
+        switch (Bite().type)
+        {
             default:
                 return ParseExpression();
         }

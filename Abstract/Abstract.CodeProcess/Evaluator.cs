@@ -15,10 +15,8 @@ public partial class Evaluator (ErrorHandler err)
         ProgramRoot program = new ProgramRoot(programName);
         program.AppendChildren(ast);
 
-        foreach (var scripts in ast)
-        {
-            RecursiveSearch(scripts);
-        }
+        foreach (var script in ast) RecursiveSearch(script);
+
 
         // The first scan process some built-in attributes
         // related to members visibility and protection
@@ -42,7 +40,7 @@ public partial class Evaluator (ErrorHandler err)
         return program;
     }
 
-    private void RecursiveSearch(ScopeNode<SyntaxNode> parent)
+    private void RecursiveSearch(ControlScopeNode<SyntaxNode> parent)
     {
         List<AttributeNode> attributesOnHold = [];
         foreach (var i in parent.ToList())
@@ -61,41 +59,33 @@ public partial class Evaluator (ErrorHandler err)
                     attributesOnHold.Clear();
                 }
 
-                if (parent is FunctionNode)
+                if (i is NamespaceNode @namespaceNode)
                 {
-                    if (i is not StatementNode && i is not VariableDeclarationNode)
-                        throw new InvalidScoppingException(i);
+                    _globalNamespaces.Add(namespaceNode.GetGlobalSymbol(), namespaceNode);
+                    RecursiveSearch(namespaceNode);
                 }
-                else
+                else if (i is FunctionNode @functionNode)
                 {
-                    if (i is NamespaceNode @namespaceNode)
-                    {
-                        _globalNamespaces.Add(namespaceNode.GetGlobalSymbol(), namespaceNode);
-                        RecursiveSearch(namespaceNode);
-                    }
-                    else if (i is FunctionNode @functionNode)
-                    {
-                        // functions have overloads!
-                        // it need to be added in a list
-                        // inside the respective identifier.
+                    // functions have overloads!
+                    // it need to be added in a list
+                    // inside the respective identifier.
 
-                        var identifier = functionNode.GetGlobalSymbol();
+                    var identifier = functionNode.GetGlobalSymbol();
 
-                        if (_globalFunctions.TryGetValue(identifier, out var a)) a.Add(functionNode);
-                        else _globalFunctions.Add(identifier, [functionNode]);
-                    }
-                    else if (i is StructureNode @structNode)
-                    {
-                        _globalStructures.Add(structNode.GetGlobalSymbol(), structNode);
-                        RecursiveSearch(structNode);
-                    }
-                    else if (i is VariableDeclarationNode @variableNode)
-                    {
-                        _globalVariables.Add(variableNode.GetGlobalSymbol(), variableNode);
-                    }
-
-                    else throw new InvalidScoppingException(i);
+                    if (_globalFunctions.TryGetValue(identifier, out var a)) a.Add(functionNode);
+                    else _globalFunctions.Add(identifier, [functionNode]);
                 }
+                else if (i is StructureNode @structNode)
+                {
+                    _globalStructures.Add(structNode.GetGlobalSymbol(), structNode);
+                    RecursiveSearch(structNode);
+                }
+                else if (i is TopLevelVariableDeclarationNode @variableNode)
+                {
+                    _globalVariables.Add(variableNode.GetGlobalSymbol(), variableNode);
+                }
+
+                else throw new InvalidScoppingException(i);
             }
             catch (CompilerException ex) { err.RegisterError(null!, ex); }
         }
@@ -208,8 +198,17 @@ public partial class Evaluator (ErrorHandler err)
             var t = SearchForSymbol(reference.symbol, parent);
             reference.symbol = new ReferenceSymbol(reference.symbol, t);
         }
+
         // TODO process other kinds of type nodes like generics, arrays or
         // references here
+        else if (typeNode is ArrayType @array)
+        {
+            // arrays are just a syntax sugar for
+            // St.Types.Collections.Array(T)
+            // so it can just throw back a
+            // generic processed node
+        }
+
         else throw new NotImplementedException();
     }
 
@@ -228,7 +227,7 @@ public partial class Evaluator (ErrorHandler err)
 
         do
         {
-            if (onNode is ScopeNode<SyntaxNode> @scope)
+            if (onNode is ControlScopeNode<SyntaxNode> @scope)
             {
                 var res = scope.FirstOrDefault(e => e is StructureNode @struc && struc.Symbol == reference);
                 if (res != null) return res as StructureNode;
