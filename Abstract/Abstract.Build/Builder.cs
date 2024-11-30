@@ -15,7 +15,8 @@ public static class Builder
     {
         var errorHandler = new ErrorHandler();
 
-        ValidadeBuildOptions(buildOps, errorHandler);
+        int err = ValidadeBuildOptions(buildOps, errorHandler);
+        if (err != 0) return err;
 
         // Creating the out folder...
         if (!Directory.Exists(buildOps.OutputDirectory))
@@ -60,18 +61,15 @@ public static class Builder
 
     private static int ValidadeBuildOptions(BuildOptions buildOps, ErrorHandler err)
     {
-        List<string> errors = [];
-
         foreach (var i in buildOps.InputedFilesPath)
         {
             try { if (!File.Exists(i)) throw new ScriptNotFoundException(i); }
             catch (ScriptNotFoundException ex) { err.RegisterError(null!, ex); }
         }
 
-        if (errors.Count > 0)
+        if (err.ErrorCount > 0)
         {
-            Console.WriteLine($"/!\\ {errors.Count} errors:");
-            foreach (var i in errors) Console.WriteLine($"\t{i}");
+            err.Dump();
             return 1;
         }
         else return 0;

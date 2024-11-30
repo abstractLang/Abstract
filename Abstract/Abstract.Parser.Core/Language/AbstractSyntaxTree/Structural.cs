@@ -1,4 +1,5 @@
 ﻿using Abstract.Build.Core.Sources;
+using System.Collections;
 using System.Text;
 
 namespace Abstract.Parser.Core.Language.AbstractSyntaxTree;
@@ -7,7 +8,7 @@ namespace Abstract.Parser.Core.Language.AbstractSyntaxTree;
 /// Represents a instance of a compilated program
 /// </summary>
 /// <param name="programName"> The name of the progrma being compilated </param>
-public class ProgramRoot(string programName) : ControlScopeNode<ControlNode>, IReferenceable
+public class ProgramRoot(string programName) : ControlScopeNode<SyntaxNode>, IReferenceable
 {
     public MasterSymbol Symbol { get; set; } = new([programName], null!);
     public TypeNode ReturnType { get => null!; set { } }
@@ -32,7 +33,7 @@ public class ProgramRoot(string programName) : ControlScopeNode<ControlNode>, IR
 /// Represents a instance of a script included on the compilation
 /// </summary>
 /// <param name="src"> The script reference </param>
-public class ScriptRoot(Script src) : ControlScopeNode<ControlNode>, IReferenceable
+public class ScriptRoot(Script src) : ControlScopeNode<SyntaxNode>, IReferenceable
 {
     private Script _sourceScript = src;
 
@@ -50,7 +51,7 @@ public class ScriptRoot(Script src) : ControlScopeNode<ControlNode>, IReferencea
 /// <summary>
 /// Represents a level of scoped itens, with a identification name
 /// </summary>
-public class NamespaceNode : ControlScopeNode<ControlNode>, IReferenceable
+public class NamespaceNode : ControlScopeNode<SyntaxNode>, IReferenceable
 {
     public new IReferenceable? Parent { get => base.Parent as IReferenceable; set => base.Parent = (SyntaxNode)value!; }
     public MasterSymbol Symbol { get; set; } = null!;
@@ -77,7 +78,7 @@ public class FunctionNode : ControlScopeNode<InstructionalNode>, IReferenceable
 /// <summary>
 /// Represents the declaration and implementation of a data structure
 /// </summary>
-public class StructureNode : ControlScopeNode<ControlNode>, IReferenceable
+public class StructureNode : ControlScopeNode<SyntaxNode>, IReferenceable
 {
     public new IReferenceable? Parent { get => base.Parent as IReferenceable; set => base.Parent = (SyntaxNode)value!; }
     public MasterSymbol Symbol { get; set; } = null!;
@@ -104,6 +105,29 @@ public class AttributeNode : SyntaxNode
 /// <summary>
 /// Represents a collection of sequencial instructions
 /// </summary>
-public class CodeBlockNode : InstructionalNode
+public class CodeBlockNode : InstructionalNode, IEnumerable<InstructionalNode>
 {
+
+    protected readonly List<InstructionalNode> children = [];
+    public InstructionalNode[] Children => [.. children];
+
+    public void AppendChild(InstructionalNode node)
+    {
+        children.Add(node);
+        node.Parent = this;
+    }
+    public void AppendChildren(params InstructionalNode[] nodes)
+    {
+        foreach (var i in nodes)
+        {
+            children.Add(i);
+            i.Parent = this;
+        }
+    }
+
+    public void RemoveChild(InstructionalNode node) => children.Remove(node);
+
+    public IEnumerator<InstructionalNode> GetEnumerator() => children.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
 }

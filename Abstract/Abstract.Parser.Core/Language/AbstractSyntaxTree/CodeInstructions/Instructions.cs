@@ -1,7 +1,7 @@
 ﻿namespace Abstract.Parser.Core.Language.AbstractSyntaxTree.CodeInstructions;
 
 // General statements
-public class WhileStatementNode : StatementNode
+public class WhileStatementNode : InstructionalNode
 {
     public ExpressionNode condition = null!;
     public SyntaxNode statement = null!;
@@ -9,7 +9,7 @@ public class WhileStatementNode : StatementNode
     public override string ToString() => $"while {condition} => {statement}";
 }
 
-public class ForStatementNode : StatementNode
+public class ForStatementNode : InstructionalNode
 {
     public ValueExpressionNode Symbol { get; set; } = null!;
     public RangeLiteralValueNode ConditionRange { get; set; } = null!;
@@ -47,7 +47,7 @@ public class ReturnInstructionNode : InstructionalNode
 }
 
 // Operation expressions
-public class AssignmentExpressionNode(ExpressionNode l, string op, ExpressionNode r) : InstructionalNode
+public class AssignmentExpressionNode(ExpressionNode l, string op, ExpressionNode r) : ExpressionNode
 {
     public ExpressionNode Left { get; private set; } = l;
     public ExpressionNode Right { get; private set; } = r;

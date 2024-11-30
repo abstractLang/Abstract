@@ -11,7 +11,7 @@ public partial class Evaluator
     private RefDict<NamespaceNode> _globalNamespaces = [];
     private RefDict<List<FunctionNode>> _globalFunctions = [];
     private RefDict<StructureNode> _globalStructures = [];
-    private RefDict<VariableDeclarationNode> _globalVariables = [];
+    private RefDict<TopLevelVariableDeclarationNode> _globalVariables = [];
 
     public class RefDict<T> : IDictionary<ISymbol, T>
     {

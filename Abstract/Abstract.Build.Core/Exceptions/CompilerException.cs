@@ -36,7 +36,7 @@ public abstract class CompilerException : BuildException
         Range = range;
         Script = script;
     }
-    public CompilerException(Script script, (uint start, uint length) range, string? message, Exception? innerException) : base(message, innerException)
+    public CompilerException(Script script, (uint start, uint length) range, string? message, Exception innerException) : base(message, innerException)
     {
         HaveLocation = true;
         Range = range;

@@ -16,11 +16,11 @@ public class Program
             "-t", "elf",
             //"-nostd",
 
-            "Libs/Std/Console.ah",
-            "Libs/Std/Types.ah",
-            "Libs/Std/Memory.ah",
-            "Libs/Std/Process.ah",
-            "Libs/Std/Math.a",
+            "bin/Debug/net8.0/Libs/Std/Console.ah",
+            "bin/Debug/net8.0/Libs/Std/Types.ah",
+            "bin/Debug/net8.0/Libs/Std/Memory.ah",
+            "bin/Debug/net8.0/Libs/Std/Process.ah",
+            "bin/Debug/net8.0/Libs/Std/Math.a",
 
             "-o","../../../../../test-code/bin/Std.elf"
            ]);
