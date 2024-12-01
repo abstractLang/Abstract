@@ -12,7 +12,12 @@ public class ReferenceTypeNode(ISymbol symbol) : TypeNode
 /// <summary>
 /// A reference to a defined type that asks for parameters
 /// </summary>
-public class GenericTypeNode : TypeNode { }
+public class GenericTypeNode(ISymbol symbol) : TypeNode
+{
+    public readonly ISymbol symbol = symbol;
+
+    public override string ToString() => $"{symbol}:G";
+}
 
 /// <summary>
 /// The base type of all type modifiers.

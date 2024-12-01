@@ -87,8 +87,9 @@ public class StructureNode : ControlScopeNode<SyntaxNode>, IReferenceable
     public TypeNode? ExtendsType { get; set; } = null;
 
     public ReferenceSymbol GetGlobalSymbol() => new((string[])[.. Parent?.GetGlobalSymbol().Tokens ?? [], .. Symbol.Tokens], Symbol);
-    public override string ToString() => $"struct {Symbol} "
-        + (ExtendsType != null ? $"extends {ExtendsType}" : "") + $" {base.ToString()}";
+    public override string ToString() => $"struct {Symbol}"
+        + (GenericParameters != null ? $"{GenericParameters}" : "")
+        + (ExtendsType != null ? $" extends {ExtendsType}" : "") + $" {base.ToString()}";
 }
 
 /// <summary>

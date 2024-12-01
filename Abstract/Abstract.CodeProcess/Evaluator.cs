@@ -1,4 +1,5 @@
-﻿using Abstract.Build;
+﻿using System.Numerics;
+using Abstract.Build;
 using Abstract.Build.Core.Exceptions;
 using Abstract.Parser.Core.Exeptions.Evaluation;
 using Abstract.Parser.Core.Language;
@@ -90,6 +91,7 @@ public partial class Evaluator (ErrorHandler err)
             catch (CompilerException ex) { err.RegisterError(null!, ex); }
         }
     }
+
 
     private void FirstScan()
     {
@@ -189,7 +191,108 @@ public partial class Evaluator (ErrorHandler err)
     private void ThirdScan()
     {
         // TODO :3
+
+        foreach (var i in _globalFunctions)
+        {
+            foreach (var func in i.Value)
+            {
+
+                foreach (var j in func.Children)
+                    RecursiveSearchTypeVerify(j);
+
+            }
+        }
     }
+
+
+    private void RecursiveSearchTypeVerify(InstructionalNode typeNode)
+    {
+
+        
+
+    }
+
+    private MasterSymbol VerifyExpressionNodeTypeSymbol(ExpressionNode node)
+    {
+
+        if (node is BinaryOperationExpressionNode @binaryOp)
+        {
+
+        }
+
+        if (node is MethodCallNode @funcCall)
+        {
+            return ((ReferenceSymbol)funcCall.Symbol).pointingTo;
+        }
+
+        else if (node is IdentifierNode @identifier)
+        {
+            return null!;
+        }
+
+        else if (node is NumericLiteralNode @numericLit)
+        {
+            int intLevel = 8;
+
+            var a = BigInteger.Abs(numericLit.value);
+            var b = BigInteger.Pow(2, intLevel);
+            while(intLevel <= 128 && a < b)
+            {
+                intLevel *= 2;
+                b = BigInteger.Pow(2, intLevel);
+            }
+
+            bool s = numericLit.value.Sign == -1;
+
+            if (s) intLevel *= 2;
+
+            if (intLevel > 128) throw new NotImplementedException();
+
+            var tn = s ? ("SignedInteger" + intLevel) : ("UnignedInteger" + intLevel);
+            return SearchForSymbol(new TempSymbol(["Std","Types", tn]), null!);
+        }
+        
+        else if (node is FloatingLiteralNode) return SearchForSymbol(new TempSymbol(["Std","Types", "Double"]), null!);
+        else if (node is BooleanLiteralValueNode) return SearchForSymbol(new TempSymbol(["Std","Types", "Boolean"]), null!);
+        else if (node is StringLiteralValueNode) return SearchForSymbol(new TempSymbol(["Std","Types", "String"]), null!);
+
+        throw new NotImplementedException();
+    }
+
+    private MasterSymbol GetCommonType(MasterSymbol a, MasterSymbol b)
+    {
+        if (a == b) return a;
+        // TODO checks implicit casts here
+
+        throw new NotImplementedException();
+    }
+
+    private bool CanBeAssignedTo(MasterSymbol a, MasterSymbol b)
+    {
+
+        if (a == b) return true;
+
+        if (a.pointsTo is StructureNode @strucA && b.pointsTo is StructureNode @strucB && Extends(strucA, strucB)) return true;
+        
+        // TODO verify if b is generic and test generic filters
+
+        return false;
+
+    }
+
+    private bool Extends(StructureNode a, StructureNode b)
+    {
+        var curr = a;
+        while(curr != null)
+        {
+
+            if (curr == b) return true;
+
+            curr = ((ReferenceSymbol)((ReferenceTypeNode)a.ExtendsType!)!.symbol)!.pointingTo.pointsTo as StructureNode;
+        }
+        return false;
+    }
+
 
     private void ProcessReferenceToTypeNode(TypeNode typeNode, SyntaxNode parent)
     {
@@ -206,7 +309,7 @@ public partial class Evaluator (ErrorHandler err)
             // arrays are just a syntax sugar for
             // St.Types.Collections.Array(T)
             // so it can just throw back a
-            // generic processed node
+            // generic type node
         }
 
         else throw new NotImplementedException();
@@ -214,10 +317,29 @@ public partial class Evaluator (ErrorHandler err)
 
     private MasterSymbol SearchForSymbol(ISymbol symbol, SyntaxNode onNode)
     {
-
         var type = SearchForStructure(symbol, onNode);
-        Console.WriteLine($"{symbol} -> {(type?.Symbol.ToString() ?? "null")}");
 
+        if (type == null) // search for generics
+        {
+            var currentParent = onNode;
+            while(currentParent.Parent != null) {
+                
+                if (currentParent is StructureNode @struc && struc.GenericParameters != null)
+                {
+                    var a = struc.GenericParameters.FirstOrDefault(e => e.Symbol == symbol);
+                    if (a != null) 
+                    {
+                        Console.WriteLine($"{symbol} -> {a.Symbol.ToString()}:G");
+                        return a.Symbol;
+                    }
+                }
+
+                currentParent = currentParent.Parent;
+            }
+
+        }
+
+        Console.WriteLine($"{symbol} -> {type?.Symbol.ToString() ?? "null"}");
         return type?.Symbol!;
     }
 

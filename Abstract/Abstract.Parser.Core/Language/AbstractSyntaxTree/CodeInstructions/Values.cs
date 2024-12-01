@@ -7,12 +7,6 @@ using System.Text;
 namespace Abstract.Parser.Core.Language.AbstractSyntaxTree;
 
 
-// Collections
-public class CollectionExpressionNode : ValueCollectionNode<ExpressionNode>
-{
-    public override string ToString() => $"[{string.Join(", ", children)}]";
-}
-
 // Dynamic Values
 public class MethodCallNode : ValueExpressionNode
 {

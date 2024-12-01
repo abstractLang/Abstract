@@ -25,7 +25,8 @@ namespace Math {
         const f64 tolerance = 0.001
         let f64 x = value / 2
 
-        while abs(x * x - value) > tolerance => x = 0.5 * (x + value / x)
+        while abs(x * x - value) > tolerance
+            => x = 0.5 * (x + value / x)
 
         return x
 
@@ -33,8 +34,8 @@ namespace Math {
 
     @public func f64 abs(f64 value) {
 
-        if (value > 0) => return value
-        else => return -value
+        if (value > 0) return value
+        else return -value
 
     }
 
@@ -48,8 +49,8 @@ namespace Math {
         
             let i8 sign
 
-            if (n % 2 == 0) => sign = 1
-            else => sign = -1
+            if (n % 2 == 0) sign = 1
+            else sign = -1
 
             res += sign * term / (2 * n + 1)
             term *= x ** 2
@@ -62,12 +63,12 @@ namespace Math {
 
     @public func f64 atan2(f64 x, f64 y) {
     
-        if (x > 0) => return atan(y / x)
-        elif (x < 0 and y >= 0) => return atan(y / x) + PI
-        elif (x < 0 and y < 0) => return atan(y / x) - PI
-        elif (x == 0 and y > 0) => return PI / 2
-        elif (x == 0 and y < 0) => return -(PI / 2)
-        else => return 0
+        if (x > 0) return atan(y / x)
+        elif (x < 0 and y >= 0) return atan(y / x) + PI
+        elif (x < 0 and y < 0) return atan(y / x) - PI
+        elif (x == 0 and y > 0) return PI / 2
+        elif (x == 0 and y < 0) return -(PI / 2)
+        else return 0
 
     }
 

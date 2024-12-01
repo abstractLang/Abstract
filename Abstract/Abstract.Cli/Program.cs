@@ -22,7 +22,7 @@ public class Program
             "bin/Debug/net8.0/Libs/Std/Process.ah",
             "bin/Debug/net8.0/Libs/Std/Math.a",
 
-            "-o","../../../../../test-code/bin/Std.elf"
+            "-o","../../test-code/bin/Std.elf"
            ]);
 #else
         return ProcessCommand(args);

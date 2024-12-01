@@ -285,8 +285,6 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 ifNode.Range.start = Eat().start;
 
                 ifNode.condition = ParseExpression();
-                Diet(TokenType.RightArrowOperator, (t) =>
-                new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
                 ifNode.statement = ParseInstruction();
 
                 return ifNode;
@@ -295,8 +293,6 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 elifNode.Range.start = Eat().start;
 
                 elifNode.condition = ParseExpression();
-                Diet(TokenType.RightArrowOperator, (t) =>
-                new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
                 elifNode.statement = ParseInstruction();
 
                 return elifNode;
@@ -304,9 +300,6 @@ public partial class SyntaxTreeBuilder (ErrorHandler err)
                 var elseNode = new ElseStatementNode();
                 elseNode.Range.start = Eat().start;
 
-                Diet(TokenType.RightArrowOperator, (t) =>
-                new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
-                if (NextIs(TokenType.LeftBracketChar))
                 elseNode.statement = ParseInstruction();
 
                 return elseNode;

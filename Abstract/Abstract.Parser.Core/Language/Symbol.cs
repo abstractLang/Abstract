@@ -9,10 +9,6 @@ public interface ISymbol
 
     public bool Equals(object? obj);
     public string ToString();
-    /* FORMAT:
-    *  g - global
-    *  l | default - local
-    */
 }
 
 public struct TempSymbol (IEnumerable<string> tokens) : ISymbol
