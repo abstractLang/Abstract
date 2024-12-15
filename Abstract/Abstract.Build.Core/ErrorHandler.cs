@@ -1,5 +1,6 @@
 ﻿using Abstract.Build.Core.Exceptions;
 using Abstract.Build.Core.Sources;
+using Abstract.Build.Exceptions;
 using System.Text;
 
 namespace Abstract.Build;
@@ -22,6 +23,7 @@ public class ErrorHandler
 
         ErrorCount++;
     }
+    public void RegisterError(SyntaxException ex) => RegisterError(ex.script, ex);
 
 
     public void Dump()
@@ -31,7 +33,9 @@ public class ErrorHandler
         s.AppendLine($"(/) {ErrorCount} errors:");
 
         foreach (var e in _generalErrors)
-            s.AppendLine(e.Message);
+        {
+            s.AppendLine($"- {e.Message} {e.StackTrace?.Split("\n", StringSplitOptions.RemoveEmptyEntries)[0]}");
+        }
 
         foreach (var e in _scriptErrors)
         {
@@ -43,8 +47,12 @@ public class ErrorHandler
                     var pos = GetLineAndCollumn(e.Key, comp.Range.start);
                     s.AppendLine($"\t - {i.Message} ({pos.line}:{pos.collumn});");
                 }
-                else
-                    s.AppendLine($"\t - {i.Message};");
+                else if (i is SyntaxException @syntax)
+                {
+                    var pos = GetLineAndCollumn(e.Key, syntax.range.start);
+                    s.AppendLine($"\t - {i.Message} ({pos.line}:{pos.collumn}); {i.StackTrace?.Split("\n", StringSplitOptions.RemoveEmptyEntries)[0]}");
+                }
+                else s.AppendLine($"\t - {i.Message};");
             }
         }
 

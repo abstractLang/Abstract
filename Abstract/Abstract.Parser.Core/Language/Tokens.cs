@@ -10,7 +10,8 @@ public struct Token
     public uint start;
     public uint end;
 
-    public readonly (uint start, uint length) Range => (start, end - start);
+    public readonly (uint start, uint end) Range => (start, end);
+    public readonly uint RangeLength => end - start;
 
     public Script scriptRef;
 
@@ -40,6 +41,11 @@ public enum TokenType : byte
     FuncKeyword,            // func
     StructKeyword,          // struct
     ExtendsKeyword,         // extends
+    PacketKeyword,          // packet
+
+    EnumKeyword,            // enum
+    SwitchKeyword,          // switch
+    MatchKeyword,           // match
 
     IfKeyword,              // if
     ElifKeyword,            // elif

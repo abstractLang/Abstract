@@ -1,510 +1,712 @@
-﻿using Abstract.Build;
+using Abstract.Build;
 using Abstract.Build.Core.Exceptions;
 using Abstract.Build.Core.Sources;
-using Abstract.Parser.Core.Exeptions.Evaluation;
-using Abstract.Parser.Core.Exeptions.Syntax;
+using Abstract.Build.Exceptions;
+using Abstract.Parser.Core.Exceptions.Syntax;
 using Abstract.Parser.Core.Language;
-using Abstract.Parser.Core.Language.AbstractSyntaxTree;
-using Abstract.Parser.Core.Language.AbstractSyntaxTree.CodeInstructions;
-using System.Globalization;
-using System.Numerics;
+using Abstract.Parser.Core.Language.SyntaxNodes.Base;
+using Abstract.Parser.Core.Language.SyntaxNodes.Control;
+using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
+using Abstract.Parser.Core.Language.SyntaxNodes.Expression.TypeModifiers;
+using Abstract.Parser.Core.Language.SyntaxNodes.Misc;
+using Abstract.Parser.Core.Language.SyntaxNodes.Statement;
+using Abstract.Parser.Core.Language.SyntaxNodes.Value;
 
 namespace Abstract.Parser;
 
-public partial class SyntaxTreeBuilder (ErrorHandler err)
+public class SyntaxTreeBuilder(ErrorHandler errHandler)
 {
-    private readonly ErrorHandler err = err;
-    private Script currentScript = null!;
 
-    public ScriptRoot Parse(Script script, Token[] tokens)
+    private ErrorHandler _errHandler = errHandler;
+    private Script _currentScript = null!;
+    private Queue<Token> _tokens = null!;
+
+
+    public ScriptReferenceNode ParseScriptTokens(Script src, Token[] tkns)
     {
-        var root = new ScriptRoot(script);
-        tkns = new(tokens);
-        currentScript = script;
+        _tokens = new(tkns);
+        _currentScript = src;
 
-        while (!IsEOF())
-        {
-            try { root.AppendChild(ProcessToken()); }
-            catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
-        }
+        var res = ParseScript(src);
 
-        currentScript = null!;
-        tkns = null!;
-        return root;
+        _tokens = null!;
+        _currentScript = null!;
+
+        return res;
     }
 
-    private SyntaxNode ProcessToken()
+    private ScriptReferenceNode ParseScript(Script src)
     {
-        var token = Bite();
 
-        SyntaxNode res = null!;
-        bool isStatementEnd = true;
+        var scriptRef = new ScriptReferenceNode(src);
 
-        switch (token.type)
+        while(!IsEOF())
         {
-            case TokenType.LineFeedChar: Eat();
-                /* ignore */ throw new UnexpectedTokenException(token, $"Unexpected end of line (\\n)");
+            try
+            {
+                scriptRef.AppendChild(ParseRoot());
+            }
+            catch (SyntaxException ex) { _errHandler.RegisterError(ex); }
+            catch (BuildException ex) { _errHandler.RegisterError(_currentScript, ex); }
+        }
 
+        return scriptRef;
+
+    }
+
+    private ControlNode ParseRoot()
+    {
+        ControlNode node;
+        
+        switch (Bite().type)
+        {
             case TokenType.NamespaceKeyword:
-                var namespaceNode = new NamespaceNode();
-                namespaceNode.Range.start = Eat().start;
+                try {
 
-                var symbol = ParseSymbol();
-                namespaceNode.Symbol = new(symbol.Tokens, namespaceNode);
+                node = new NamespaceNode();
+                node.AppendChild(EatAsNode()); // namespace
+                node.AppendChild(ParseIdentfier()); // <identifier.*>
+                TryEndLine();
+                node.AppendChild(ParseBlock((n) => n.AppendChild(ParseRoot()))); // {...}
 
-                namespaceNode.AppendChildren(ParseScope<SyntaxNode>());
-
-                res = namespaceNode;
-                break;
-
-            case TokenType.AtSiginChar:
-                var attributeNode = new AttributeNode();
-                attributeNode.Range.start = Eat().start;
-
-                attributeNode.Symbol = ParseSymbol();
-                if (NextIs(TokenType.LeftPerenthesisChar))
-                    attributeNode.Arguments = ParseArgs();
-
-                TryEat(TokenType.LineFeedChar);
-
-                res = attributeNode;
-                isStatementEnd = false;
-                break;
-
-            case TokenType.FuncKeyword:
-                var func = new FunctionNode();
-                func.Range.start = Eat().start;
-
-                func.ReturnType = ParseType();
-                func.Symbol = new(ParseSymbol(true).Tokens, func);
-
-                func.Parameters = ParseParams();
-
-                if (NextIs(TokenType.LeftBracketChar))
-                    func.AppendChildren(ParseScope<InstructionalNode>());
-
-                res = func;
+                } catch { DiscardLine(); throw; }
                 break;
 
             case TokenType.StructKeyword:
-                var struc = new StructureNode();
-                struc.Range.start = Eat().start;
+                try {
 
-                struc.Symbol = new(ParseSymbol().Tokens, struc);
+                node = new StructureDeclarationNode();
+                node.AppendChild(EatAsNode()); // struct
+                node.AppendChild(ParseSingleIdentfier()); // <identifier>
 
-                if (Bite().type == TokenType.LeftPerenthesisChar)
-                    struc.GenericParameters = ParseParams();
+                if (Taste(TokenType.LeftPerenthesisChar)) node.AppendChild(ParseParameterCollection()); // generic parameters
+                
+                bool useExtendsImplements = false;
+                var extendsImplements = new ExtendsImplementsNode();
+                
+                if (TryEatAsNode(TokenType.ExtendsKeyword, out var extends)) // extends
+                {
+                    extendsImplements.AppendChild(extends);
+                    extendsImplements.AppendChild(ParseIdentfier());
+                    useExtendsImplements = true;
+                }
 
-                if (TryEat(TokenType.ExtendsKeyword))
-                    struc.ExtendsType = ParseType();
+                if (useExtendsImplements) node.AppendChild(extendsImplements);
 
-                struc.AppendChildren(ParseScope<SyntaxNode>());
-                res = struc;
+                TryEndLine();
+                node.AppendChild(ParseBlock((n) => n.AppendChild(ParseRoot()))); // {...}
+            
+                } catch { DiscardLine(); throw; }
+                break;
+
+            case TokenType.FuncKeyword:
+                try {
+
+                node = new FunctionDeclarationNode();
+                node.AppendChild(EatAsNode()); // func
+                node.AppendChild(ParseType()); // <type>
+                node.AppendChild(ParseSingleIdentfier()); // <identifier>
+                node.AppendChild(ParseParameterCollection()); // (..., ...)
+                TryEndLine();
+                if (Taste(TokenType.LeftBracketChar))
+                    node.AppendChild(ParseBlock((n) => n.AppendChild(ParseFunctionBody()))); // {...}
+            
+                } catch { DiscardLine(); throw; }
+                break;
+
+            case TokenType.PacketKeyword:
+                try{
+
+                node = new PacketDeclarationNode();
+                node.AppendChild(EatAsNode()); // packet
+                node.AppendChild(ParseSingleIdentfier()); // <identifier>
+                TryEndLine();
+                node.AppendChild(ParseBlock((n) => n.AppendChild(ParsePacketBody()))); // {...}
+
+                } catch { DiscardLine(); throw; }
                 break;
 
             case TokenType.LetKeyword or
             TokenType.ConstKeyword:
-                bool isConst = Bite().type == TokenType.ConstKeyword;
-                var variable = new TopLevelVariableDeclarationNode(isConst);
-                variable.Range.start = Eat().start;
+                try{
 
-                variable.ReturnType = ParseType();
-                variable.Symbol = new(ParseSymbol().Tokens, variable);
+                node = new TopLevelVariableNode();
+                node.AppendChild(EatAsNode()); // let / const
+                node.AppendChild(ParseTypedIdentifier()); // <type> <identifier>
 
-                if (TryEat(TokenType.EqualsChar))
-                    variable.Value = ParseExpression();
-
-                res = variable;
-                break;
-
-            default:
-                res = ParseInstruction();
-                // i suppose it's expected that the ParseInstruction
-                // call can handle the line feed
-                isStatementEnd = NextIs(TokenType.LineFeedChar);
-                break;
-        }
-
-        if (isStatementEnd) EndStatement();
-        return res;
-    }
-
-    private T[] ParseScope<T>()
-    {
-        try
-        {
-            List<T> result = [];
-
-            var start = Diet(TokenType.LeftBracketChar, (t) => new UnexpectedTokenException(t, $"Scope Expected!"));
-            TryEat(TokenType.LineFeedChar);
-            while (!IsEOF() && !NextIs(TokenType.RightBracketChar))
-            {
-                try {
-                    var res = ProcessToken();
-                    if (res is T @t) result.Add(t);
-                    else throw new InvalidScoppingException(res, currentScript);
-                }
-                catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
-            }
-            var end = Diet(TokenType.RightBracketChar, (t) => new UnexpectedTokenException(t, $"}} Expected to close the scope!"));
-
-            return [.. result];
-        }
-        catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
-        return [];
-    }
-    private CodeBlockNode ParseCodeBlock()
-    {
-        List<InstructionalNode> result = [];
-
-            var start = Diet(TokenType.LeftBracketChar, (t) => new UnexpectedTokenException(t, $"Scope Expected!"));
-            TryEat(TokenType.LineFeedChar);
-            while (!IsEOF() && !NextIs(TokenType.RightBracketChar))
-            {
-                try {
-                    var res = ProcessToken();
-                    if (res is InstructionalNode @inst) result.Add(inst);
-                    else throw new InvalidScoppingException(res, currentScript);
-                }
-                catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
-            }
-            var end = Diet(TokenType.RightBracketChar, (t) => new UnexpectedTokenException(t, $"}} Expected to close the scope!"));
-
-            var codeblock = new CodeBlockNode();
-            codeblock.Range = new(start.start, end.end);
-            codeblock.AppendChildren([.. result]);
-
-            return codeblock;
-    }
-
-    private ParameterCollectionNode ParseParams()
-    {
-        var _params = new ParameterCollectionNode();
-
-        try
-        {
-            Diet(TokenType.LeftPerenthesisChar, (t) => new UnexpectedTokenException(t, $"Expected argument collection!"));
-            if (!NextIs(TokenType.RightParenthesisChar))
-            {
-                do
+                if (TryEatAsNode(TokenType.EqualsChar, out var equals)) // =
                 {
-                    var paramItem = new ParameterNode();
-
-                    paramItem.ReturnType = ParseType();
-                    paramItem.Symbol = new MasterSymbol(ParseSymbol().Tokens, paramItem);
-
-                    _params.AppendChild(paramItem);
+                    node.AppendChild(equals);
+                    node.AppendChild(ParseExpression()); // <value>
                 }
-                while (!IsEOF() && !NextIs(TokenType.RightParenthesisChar) && TryEat(TokenType.CommaChar));
-            }
-            Diet(TokenType.RightParenthesisChar, (t) => new UnexpectedTokenException(t, $"Expected closing parenthesis!"));
-        }
-        catch (CompilerException ex) { err.RegisterError(ex.Script, ex); }
+                
+                EndLine();
 
-        return _params;
-    }
-    private ArgumentCollectionNode ParseArgs()
-    {
-        var args = new ArgumentCollectionNode();
+                } catch { DiscardLine(); throw; }
+                break;
 
-        try
-        {
-            Diet(TokenType.LeftPerenthesisChar, (t) => new UnexpectedTokenException(t, $"Expected argument collection!"));
-            if (!NextIs(TokenType.RightParenthesisChar))
-            {
-                do { args.AppendChild(ParseExpression()); }
-                while (!IsEOF() && TryEat(TokenType.CommaChar));
-            }
-            Diet(TokenType.RightParenthesisChar, (t) => new UnexpectedTokenException(t, $"Expected closing parenthesis!"));
-        }
-        catch (CompilerException ex)
-        {
-            err.RegisterError(ex.Script, ex);
-            SkipStatement();
+            case TokenType.AtSiginChar:
+                try{
+
+                node = new AttributeNode();
+                node.AppendChild(EatAsNode());
+                node.AppendChild(ParseIdentfier());
+
+                if (Taste(TokenType.LeftPerenthesisChar))
+                    node.AppendChild(ParseArgumentCollection());
+
+                TryEndLine();
+
+                } catch { DiscardLine(); throw; }
+                break;
+
+            default: throw new UnexpectedTokenException(_currentScript, Eat());
         }
 
-        return args;
+        TryEndLine();
+        return node;
     }
 
-    private InstructionalNode ParseInstruction()
+    private SyntaxNode ParseFunctionBody()
     {
+        return ParseStatement(true);
+    }
+
+    private SyntaxNode ParseStatement(bool endLine = false)
+    {
+        SyntaxNode node;
+
         switch (Bite().type)
         {
-            case TokenType.WhileKeyword:
-                var node = new WhileStatementNode();
-                node.Range.start = Eat().start;
-
-                node.condition = ParseExpression();
-                Diet(TokenType.RightArrowOperator, (t) =>
-                new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
-                node.statement = ParseInstruction();
-
-                return node;
-
-            case TokenType.ForKeyword:
-                // It uses the range exprecision.
-                // I really don't know why, i still
-                // need to see this syntax
-
-                var forNode = new ForStatementNode();
-                forNode.Range.start = Eat().start;
-
-                forNode.Symbol = ParseValueFromIdentifier();
-                Diet(TokenType.InKeyword, (t) =>
-                new UnexpectedTokenException(t, $"Expected in keyword in in for statement, found {t}"));
-
-                var range = new RangeLiteralValueNode();
-
-                range.end = ParseValue();
-                if (TryEat(TokenType.RangeOperator))
-                {
-                    range.start = range.end;
-                    range.end = null;
-                    // FIXME
-                }
-
-                forNode.ConditionRange = range;
-
-                Diet(TokenType.RightArrowOperator, (t) =>
-                new UnexpectedTokenException(t, $"Expected right arow operator (=>), found {t}!"));
-                forNode.statement = ParseInstruction();
-
-                return forNode;
-
-            case TokenType.ReturnKeyword:
-                var returnNode = new ReturnInstructionNode();
-                returnNode.Range.start = Eat().start;
-
-                if (!NextIs(TokenType.EOFChar))
-                    returnNode.expression = ParseExpression();
-
-                return returnNode;
-
-            case TokenType.IfKeyword:
-                var ifNode = new IfStatementNode();
-                ifNode.Range.start = Eat().start;
-
-                ifNode.condition = ParseExpression();
-                ifNode.statement = ParseInstruction();
-
-                return ifNode;
-            case TokenType.ElifKeyword:
-                var elifNode = new ElifStatementNode();
-                elifNode.Range.start = Eat().start;
-
-                elifNode.condition = ParseExpression();
-                elifNode.statement = ParseInstruction();
-
-                return elifNode;
-            case TokenType.ElseKeyword:
-                var elseNode = new ElseStatementNode();
-                elseNode.Range.start = Eat().start;
-
-                elseNode.statement = ParseInstruction();
-
-                return elseNode;
-        
+            // Blocks
             case TokenType.LeftBracketChar:
-                return ParseCodeBlock();
+                try {
+                node = ParseBlock((b) => b.AppendChild(ParseFunctionBody()));
+                } catch { DiscardUntil(TokenType.RightBracketChar); throw; }
+                break;
+
+            // Conditionals
+            case TokenType.IfKeyword:
+                try {
+
+                node = new IfStatementNode();
+                node.AppendChild(EatAsNode());  // if
+                node.AppendChild(ParseExpression()); // <condition>
+                TryEndLine();
+                node.AppendChild(ParseStatement()); // <statement>
+
+                } catch { DiscardLine(); throw; }
+                break;
+            case TokenType.ElifKeyword:
+                try {
+
+                node = new ElifStatementNode();
+                node.AppendChild(EatAsNode()); // elif
+                node.AppendChild(ParseExpression()); // <condition>
+                TryEndLine();
+                node.AppendChild(ParseStatement()); // <statement>
+
+                } catch { DiscardLine(); throw; }
+                break;
+            case TokenType.ElseKeyword:
+                try {
+
+                node = new ElifStatementNode();
+                node.AppendChild(EatAsNode()); // else
+                TryEndLine();
+                node.AppendChild(ParseStatement()); // <statement>
+
+                } catch { DiscardLine(); throw; }
+                break;
+
+            // Loops
+            case TokenType.WhileKeyword:
+                try {
+
+                node = new WhileStatementNode();
+                node.AppendChild(EatAsNode()); // while
+                node.AppendChild(ParseExpression()); // <condition>
+                node.AppendChild(DietAsNode(TokenType.RightArrowOperator, (t)  // =>
+                    => throw new UnexpectedTokenException(_currentScript, t)));
+                node.AppendChild(ParseStatement()); // <statement>
+
+                } catch { DiscardLine(); throw; }
+                break;
+            case TokenType.ForKeyword:
+                try {
+
+                node = new ForStatementNode();
+                node.AppendChild(EatAsNode()); // for
+                node.AppendChild(ParseRangeExpression()); // <range>
+                node.AppendChild(DietAsNode(TokenType.RightArrowOperator, (t)  // =>
+                    => throw new UnexpectedTokenException(_currentScript, t)));
+                node.AppendChild(ParseStatement()); // <statement>
+
+                } catch { DiscardLine(); throw; }
+                break;
+
+            // Return
+            case TokenType.ReturnKeyword:
+                try {
+
+                node = new ReturnStatementNode();
+                node.AppendChild(EatAsNode()); // return
+                node.AppendChild(ParseExpression()); // <value>
+                
+                } catch { DiscardLine(); throw; }
+                break;
 
             default:
-                return ParseStatement();
+                node = ParseExpression(false);
+                break;
         }
+
+        if (endLine) EndLine();
+        return node;
     }
 
-    private StatementNode ParseStatement()
+    private ExpressionNode ParseExpression(bool canFallTrough = true)
     {
-        switch (Bite().type)
-        {
-            default:
-                return ParseExpression();
-        }
+        var node = ParseAssignmentExpression();
+
+        if (
+            !canFallTrough
+            && node is not AssignmentExpressionNode
+            && node is not LocalVariableNode
+        ) throw new InvalidOnFunctionRoot(_currentScript, node);
+
+        return node;
     }
-    private ExpressionNode ParseExpression()
-    {
-        return ParseAssignmentExpression();
-    }
+
+    #region Recursive expression parsing
 
     private ExpressionNode ParseAssignmentExpression()
     {
-        ExpressionNode baseExp = ParseBooleanExpression();
+        var node = ParseBooleanOperationExpression();
 
-        while (NextIs(
-            TokenType.EqualsChar,
-            TokenType.AddAssigin, TokenType.SubAssigin,
-            TokenType.MulAssigin, TokenType.DivAssigin, TokenType.RestAssigin
+        if(Taste(
+            TokenType.EqualsChar, // =
+            TokenType.AddAssigin, // +=
+            TokenType.SubAssigin, // -=
+            TokenType.MulAssigin, // *=
+            TokenType.DivAssigin, // /=
+            TokenType.RestAssigin // %=
         ))
-            baseExp = new AssignmentExpressionNode(baseExp, Eat().value, ParseExpression());
+        {
+            var n = new AssignmentExpressionNode();
+            n.AppendChild(node);
+            n.AppendChild(EatAsNode());
+            n.AppendChild(ParseAssignmentExpression());
+            node = n;
+        }
 
-        return baseExp;
+        return node;
     }
 
-    private ExpressionNode ParseBooleanExpression()
+    private ExpressionNode ParseBooleanOperationExpression()
     {
-        ExpressionNode baseExp = ParseComparisonExpression();
+        var node = ParseMultiplicativeExpression();
 
-        while (NextIs(TokenType.AndOperator, TokenType.OrOperator))
-            baseExp = new BinaryOperationExpressionNode(baseExp, Eat().value, ParseBooleanExpression());
+        if(Taste(
+            TokenType.EqualOperator,       // ==
+            TokenType.UnEqualOperator,     // !=
 
-        return baseExp;
-    }
+            TokenType.LeftAngleChar,       // <
+            TokenType.RightAngleChar,      // >
+            TokenType.LessEqualsOperator,  // <=
+            TokenType.GreatEqualsOperator, // >=
 
-
-    private ExpressionNode ParseComparisonExpression()
-    {
-        ExpressionNode baseExp = ParseAdditiveExpression();
-
-        while (NextIs(
-            TokenType.EqualOperator, TokenType.UnEqualOperator,
-            TokenType.LeftAngleChar, TokenType.RightAngleChar,
-            TokenType.LessEqualsOperator, TokenType.GreatEqualsOperator
+            TokenType.AndOperator,  // and
+            TokenType.OrOperator    // or
         ))
-            baseExp = new BinaryOperationExpressionNode(baseExp, Eat().value, ParseComparisonExpression());
+        {
+            var n = new BooleanOperationExpressionNode();
+            n.AppendChild(node);
+            n.AppendChild(EatAsNode());
+            n.AppendChild(ParseBooleanOperationExpression());
+            node = n;
+        }
 
-        return baseExp;
-    }
-
-    private ExpressionNode ParseAdditiveExpression()
-    {
-        ExpressionNode baseExp = ParseMultiplicativeExpression();
-
-        while (NextIs(TokenType.CrossChar, TokenType.MinusChar))
-            baseExp = new BinaryOperationExpressionNode(baseExp, Eat().value, ParseMultiplicativeExpression());
-
-        return baseExp;
+        return node;
     }
 
     private ExpressionNode ParseMultiplicativeExpression()
     {
-        ExpressionNode baseExp = ParseUnaryExpression();
+        var node = ParseAdditiveExpression();
 
-        while (NextIs(TokenType.StarChar, TokenType.SlashChar, TokenType.PercentChar, TokenType.PowerOperator))
-            baseExp = new BinaryOperationExpressionNode(baseExp, Eat().value, ParseMultiplicativeExpression());
+        if(Taste(
+            TokenType.StarChar,     // *
+            TokenType.SlashChar,    // /
+            TokenType.PercentChar,  // %
+            TokenType.PowerOperator // **
+        ))
+        {
+            var n = new BinaryExpressionNode();
+            n.AppendChild(node);
+            n.AppendChild(EatAsNode());
+            n.AppendChild(ParseMultiplicativeExpression());
+            node = n;
+        }
 
-        return baseExp;
+        return node;
+    }
+
+    private ExpressionNode ParseAdditiveExpression()
+    {
+        var node = ParseUnaryExpression();
+
+        if(Taste(
+            TokenType.CrossChar, // +
+            TokenType.MinusChar  // -
+        ))
+        {
+            var n = new BinaryExpressionNode();
+            n.AppendChild(node);
+            n.AppendChild(EatAsNode());
+            n.AppendChild(ParseAdditiveExpression());
+            node = n;
+        }
+
+        return node;
     }
 
     private ExpressionNode ParseUnaryExpression()
     {
-        if (NextIs(TokenType.MinusChar, TokenType.CrossChar))
+        ExpressionNode node;
+
+        if(Taste(
+            TokenType.CrossChar, // +
+            TokenType.MinusChar  // -
+        ))
         {
-            string unaryOp = Eat().value;
-            return new UnaryOperationExpressionNode(unaryOp, ParseExpression());
-        
+            node = new UnaryExpressionNode();
+            node.AppendChild(EatAsNode());
+            node.AppendChild(ParseValue());
         }
-        else
-            return ParseTypeCasting();
+        else node = ParseValue();
+
+        return node;
     }
 
-    private ExpressionNode ParseTypeCasting()
+    #endregion
+
+    private ExpressionNode ParseValue()
     {
-        ExpressionNode baseExp = VerifyForParenthesis();
+        ExpressionNode node;
 
-        //while (EatWithCondition(TokenType.AsKeyword))
-        //    return new TypeCastingExpression(ParseType(), baseExp);
-
-        return baseExp;
-    }
-
-    public ExpressionNode VerifyForParenthesis()
-    {
-        if (TryEat(TokenType.LeftPerenthesisChar))
+        switch (Bite().type)
         {
-            var exp = ParseExpression();
-            Diet(TokenType.RightParenthesisChar, (t) => new UnexpectedTokenException(t, "Expected closing parenthesis!"));
-            return exp;
+            // Identifiers & function calls
+            case TokenType.Identifier:
+                try {
+                
+                var identifier = ParseIdentfier();
+
+                if (Taste(TokenType.LeftPerenthesisChar))
+                {
+                    node = new FunctionCallExpressionNode();
+                    node.AppendChild(identifier);
+                    node.AppendChild(ParseArgumentCollection());
+                }
+                else node = identifier;
+
+                } catch { DiscardLine(); throw; }
+                break;
+
+            // To make things works right, local variables needs
+            // to be parsed here
+            case TokenType.LetKeyword or
+            TokenType.ConstKeyword:
+                try{
+
+                node = new LocalVariableNode();
+                node.AppendChild(EatAsNode()); // let / const
+                node.AppendChild(ParseTypedIdentifier()); // <type> <identifier>
+
+                } catch { DiscardLine(); throw; }
+                break;
+
+            // parenthesis enclosed expression
+            case TokenType.LeftPerenthesisChar:
+                try {
+
+                node = new ParenthesisExpressionNode();
+
+                node.AppendChild(DietAsNode(TokenType.LeftPerenthesisChar, (t) => throw new UnexpectedTokenException(_currentScript, t)));
+                node.AppendChild(ParseExpression());
+                node.AppendChild(DietAsNode(TokenType.RightParenthesisChar, (t) => throw new UnexpectedTokenException(_currentScript, t)));
+
+                } catch { DiscardUntil(TokenType.RightParenthesisChar); throw; }
+                break;
+
+            // Numbers
+            case TokenType.IntegerNumberLiteral:
+                node = new IntegerLiteralNode(Eat());
+                break;
+            case TokenType.FloatingNumberLiteral:
+                node = new FloatingLiteralNode(Eat());
+                break;
+            
+            // Booleans
+            case TokenType.TrueKeyword
+            or TokenType.FalseKeyword:
+                node = new BooleanLiteralNode(Eat());
+                break;
+            
+            // String
+            case TokenType.StringLiteral:
+                node = new StringLiteralNode(Eat());
+                break;
+
+            // collections (or type arrays)
+            case TokenType.LeftSquareBracketChar:
+                int index = 0;
+                while(!TasteMore(index++, TokenType.RightSquareBracketChar));
+
+                if (TasteMore(index,
+                TokenType.TypeKeyword,
+                TokenType.Identifier,
+                TokenType.StarChar
+                ))
+                    node = ParseType();
+
+                node = ParseGenericCollection();
+                break;
+            
+            // types
+            case TokenType.TypeKeyword
+            or TokenType.StarChar:
+                return ParseType();
+
+            default: throw new UnexpectedTokenException(_currentScript, Eat());
         }
-        else return ParseValue();
+
+        return node;
     }
 
-    public ValueExpressionNode ParseValue()
+    private GenericCollectionExpressionNode ParseGenericCollection()
     {
+        var collection = new GenericCollectionExpressionNode();
+        collection.AppendChild(DietAsNode(TokenType.LeftSquareBracketChar,
+        (e) => throw new UnexpectedTokenException(_currentScript, e)));
 
-        return Bite().type switch
-        {
-            TokenType.StringLiteral => new StringLiteralValueNode(Eat().value),
-            TokenType.IntegerNumberLiteral => new NumericLiteralNode(BigInteger.Parse(Eat().value)),
-            TokenType.FloatingNumberLiteral => new FloatingLiteralNode(double.Parse(Eat().value, CultureInfo.InvariantCulture)),
+        if (!Taste(TokenType.RightSquareBracketChar))
+        do collection.AppendChild(ParseExpression());
+        while(TryEat(TokenType.CommaChar, out _));
 
-            TokenType.TrueKeyword => new BooleanLiteralValueNode(true),
-            TokenType.FalseKeyword => new BooleanLiteralValueNode(false),
-
-            TokenType.Identifier => ParseValueFromIdentifier(),
-
-            TokenType.LeftSquareBracketChar => ParseCollection(),
-            _ => throw new UnexpectedTokenException(Bite(), $"Unexpected token {Eat()}"),
-        };
+        collection.AppendChild(DietAsNode(TokenType.RightSquareBracketChar,
+        (e) => throw new UnexpectedTokenException(_currentScript, e)));
+        return collection;
     }
-    public ValueExpressionNode ParseValueFromIdentifier()
-    {
-        var symbol = ParseSymbol();
 
-        if (NextIs(TokenType.LeftPerenthesisChar))
+    private RangeExpressionNode ParseRangeExpression()
+    {
+        var range = new RangeExpressionNode();
+
+        range.AppendChild(ParseIdentfier()); // <identifier>
+        range.AppendChild(DietAsNode(TokenType.InKeyword, (t) => throw new UnexpectedTokenException(_currentScript, t))); // in
+
+        range.AppendChild(ParseExpression());  // <value>
+
+        return range;
+    }
+
+
+    private SyntaxNode ParsePacketBody()
+    {
+        throw new UnexpectedTokenException(_currentScript, Eat());
+    }
+
+
+    private ParameterCollectionNode ParseParameterCollection()
+    {
+        var collection = new ParameterCollectionNode();
+        collection.AppendChild(DietAsNode(TokenType.LeftPerenthesisChar,
+            (t) => throw new UnexpectedTokenException(_currentScript, t)));
+        TryEndLine();
+
+        if (!IsEOF() && Bite().type != TokenType.RightParenthesisChar)
         {
-            return new MethodCallNode
+            do
             {
-                Symbol = symbol,
-                args = ParseArgs()
-            };
+                try { collection.AppendChild(ParseTypedIdentifier()); }
+                catch (SyntaxException ex) { _errHandler.RegisterError(ex); }
+            }
+            while(TryEat(TokenType.CommaChar, out _));
         }
-        else return new IdentifierNode(symbol);
+
+        collection.AppendChild(DietAsNode(TokenType.RightParenthesisChar,
+            (t) => throw new UnexpectedTokenException(_currentScript, t)));
+
+        return collection;
     }
-    public CollectionExpressionNode ParseCollection()
+    private ArgumentCollectionNode ParseArgumentCollection()
     {
-        var collection = new CollectionExpressionNode();
+        var collection = new ArgumentCollectionNode();
+        collection.AppendChild(DietAsNode(TokenType.LeftPerenthesisChar,
+            (t) => throw new UnexpectedTokenException(_currentScript, t)));
+        TryEndLine();
 
-        Diet(TokenType.LeftSquareBracketChar, (t) => new UnexpectedTokenToCollectionInitializationException(t));
-
-        if (!NextIs(TokenType.RightParenthesisChar))
+        if (!IsEOF() && Bite().type != TokenType.RightParenthesisChar)
         {
-            do { collection.AppendChild(ParseExpression()); }
-            while (!IsEOF() && TryEat(TokenType.CommaChar));
+            do
+            {
+                try { collection.AppendChild(ParseExpression()); }
+                catch (SyntaxException ex) { _errHandler.RegisterError(ex); }
+            }
+            while(TryEat(TokenType.CommaChar, out _));
         }
 
-        Diet(TokenType.RightSquareBracketChar, (t) => new UnexpectedTokenToCollectionClosingException(t));
+        collection.AppendChild(DietAsNode(TokenType.RightParenthesisChar,
+            (t) => throw new UnexpectedTokenException(_currentScript, t)));
 
         return collection;
     }
 
-    private TypeNode ParseType()
+
+    private TypeExpressionNode ParseType()
     {
-        if (NextIs(TokenType.TypeKeyword))
-            return new ReferenceTypeNode(new TempSymbol([Eat().value]));
+        var type = new TypeExpressionNode();
 
-        else if (NextIs(TokenType.Identifier))
-            return new ReferenceTypeNode(ParseSymbol());
-
-        else if (TryEat(TokenType.LeftSquareBracketChar))
+        if (Taste(TokenType.TypeKeyword))
+            type.AppendChild(new IdentifierNode(Eat()));
+        
+        else if(TryEatAsNode(TokenType.LeftSquareBracketChar, out var leftBrac))
         {
-            Diet(TokenType.RightSquareBracketChar, (t)
-                => new UnexpectedTokenException(t, "Expecting ] to close the array declaration!"));
+            var arrayMod = new ArrayTypeModifierNode();
 
-            return new ArrayType(ParseType());
+            arrayMod.AppendChild(leftBrac);
+            if (!Taste(TokenType.RightSquareBracketChar))
+            {
+                throw new NotImplementedException();
+            }
+            arrayMod.AppendChild(DietAsNode(TokenType.RightSquareBracketChar,
+            (t) => throw new UnexpectedTokenException(_currentScript, t)));
+
+            arrayMod.AppendChild(ParseType());
+            type.AppendChild(arrayMod);
         }
 
-        else throw new NotImplementedException(Eat().ToString());
+        else
+            type.AppendChild(ParseExpression());
+        
+        return type;
     }
-    private TempSymbol ParseSymbol(bool compound = true)
+    private TypedIdentifierNode ParseTypedIdentifier()
     {
-        List<string> symbols = [];
-
-        do symbols.Add(Diet(TokenType.Identifier, (t) => { return new InvalidIdentifierTokenException(t); }).value);
-        while (compound && TryEat(TokenType.DotChar));
-
-        Reject(TokenType.DotChar, (t) => new InvalidCompoundIdentifierException(t));
-
-        return new(symbols);
+        var ti = new TypedIdentifierNode();
+        ti.AppendChild(ParseType());
+        ti.AppendChild(ParseSingleIdentfier());
+        return ti;
     }
 
-
-    private void SkipStatement()
+    private IdentifierCollectionNode ParseIdentfier()
     {
-        while (!IsEndOfStatement()) Eat();
-        while (TryEat(TokenType.LineFeedChar));
+        var collection = new IdentifierCollectionNode();
+
+        collection.AppendChild(ParseSingleIdentfier());
+
+        while (TryEatAsNode(TokenType.DotChar, out _))
+        collection.AppendChild(new IdentifierNode(Eat()));
+
+        return collection;
     }
-    private void EndStatement()
+    private IdentifierNode ParseSingleIdentfier()
     {
-        Diet([TokenType.LineFeedChar, TokenType.EOFChar]);
-        while (TryEat(TokenType.LineFeedChar));
+        return new IdentifierNode(Diet(TokenType.Identifier, (e) => {}));
     }
+
+    private BlockNode ParseBlock(Action<BlockNode> processContent)
+    {
+        var block = new BlockNode();
+        block.AppendChild(DietAsNode(TokenType.LeftBracketChar,
+            (t) => throw new UnexpectedTokenException(_currentScript, t)));
+        TryEndLine();
+
+        while (!IsEOF() && !Taste(TokenType.RightBracketChar))
+        {
+            try { processContent(block); }
+            catch (SyntaxException ex) { _errHandler.RegisterError(ex); }
+        }
+
+        block.AppendChild(DietAsNode(TokenType.RightBracketChar,
+            (t) => throw new UnexpectedTokenException(_currentScript, t)));
+
+        return block;
+    }
+
+
+    #region Utilities
+    private Token Bite() => _tokens.Peek();
+    private bool Taste(TokenType t) => _tokens.Count > 0 ? _tokens.Peek().type == t : t == TokenType.EOFChar;
+    private bool Taste(params TokenType[] t)
+        => _tokens.Count > 0 ? t.Contains(_tokens.Peek().type) : t.Contains(TokenType.EOFChar);
+
+    private bool TasteMore(int index, TokenType t)
+    {
+        var qal = _tokens.ToArray();
+        return qal[index].type == t;
+    }
+    private bool TasteMore(int index, params TokenType[] t)
+    {
+        var qal = _tokens.ToArray();
+        return t.Contains(qal[index].type);
+    }
+
+    private Token Eat()
+    {
+        if (_tokens.Count > 0) return _tokens.Dequeue();
+        else return new() {type = TokenType.EOFChar, value = "\\EOF"};
+    }
+    private TokenNode EatAsNode() => new(Eat());
+
+    private bool TryEat(TokenType t, out Token tkn)
+    {
+        if (Bite().type == t)
+        {
+            tkn = Eat();
+            return true;
+        }
+        tkn = new() {type = TokenType.EOFChar, value = "\\EOF"};
+        return false;
+    }
+    private bool TryEatAsNode(TokenType t, out TokenNode node)
+    {
+        var r = TryEat(t, out var a);
+        node = r ? new (a) : null!;
+        return r;
+    }
+
+    private Token Diet(TokenType t, Action<Token>? errorCallback)
+    {
+        var c = Taste(t);
+        if (!c) errorCallback?.Invoke(Eat());
+        else return Eat();
+        return default;
+    }
+    private TokenNode DietAsNode(TokenType t, Action<Token>? errorCallback)
+    {
+        return new(Diet(t, errorCallback));
+    }
+
+    private bool IsEOF() => _tokens.Count == 0 || _tokens.Peek().type == TokenType.EOFChar;
+    private bool IsEndOfLine() => _tokens.Count == 0 || _tokens.Peek().type == TokenType.LineFeedChar;
+
+    private void TryEndLine() => TryEat(TokenType.LineFeedChar, out _);
+    private void EndLine()
+    {
+        if (IsEndOfLine()) Eat();
+        else throw new UnexpectedTokenException(_currentScript, Eat());
+    }
+    private void DiscardLine()
+    {
+        while (!IsEndOfLine()) Eat();
+        Eat();
+    }
+    private void DiscardUntil(TokenType t)
+    {
+        while (!TryEat(t, out _)) ;
+    }
+    #endregion
+
 }

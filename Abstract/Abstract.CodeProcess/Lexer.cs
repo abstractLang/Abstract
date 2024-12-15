@@ -44,7 +44,11 @@ public class Lexer
         { "func", TokenType.FuncKeyword },
         { "struct", TokenType.StructKeyword },
         { "extends", TokenType.ExtendsKeyword },
+        { "packet", TokenType.PacketKeyword },
+        { "enum", TokenType.EnumKeyword },
 
+        { "switch", TokenType.SwitchKeyword },
+        { "match", TokenType.MatchKeyword },
         { "if", TokenType.IfKeyword },
         { "elif", TokenType.ElifKeyword },
         { "else", TokenType.ElseKeyword },

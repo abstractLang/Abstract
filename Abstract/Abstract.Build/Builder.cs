@@ -2,7 +2,7 @@
 using Abstract.Build.Core.Sources;
 using Abstract.CodeProcess;
 using Abstract.Parser;
-using Abstract.Parser.Core.Language.AbstractSyntaxTree;
+using Abstract.Parser.Core.Language.SyntaxNodes.Control;
 
 namespace Abstract.Build;
 
@@ -13,6 +13,8 @@ public static class Builder
 
     private static int __Execute(BuildOptions buildOps)
     {
+        Console.WriteLine("Starting build process...");
+
         var errorHandler = new ErrorHandler();
 
         int err = ValidadeBuildOptions(buildOps, errorHandler);
@@ -32,7 +34,7 @@ public static class Builder
 
         // TODO optimize memory on this pipeline
 
-        List<ScriptRoot> scriptsABS = [];
+        ProgramNode program = new();
 
         var lexer = new Lexer();
         var parser = new SyntaxTreeBuilder(errorHandler);
@@ -40,19 +42,14 @@ public static class Builder
         foreach (var script in scripts)
         {
             var tokens = lexer.Parse(script);
-
-            var abs = parser.Parse(script, tokens);
-            scriptsABS.Add(abs);
+            program.AppendChild(parser.ParseScriptTokens(script, tokens));
         }
 
-        lexer = null;
-        parser = null;
+        var eval = new Evaluator(errorHandler);
+        eval.EvaluateProgram(program);
 
-        var evaluator = new Evaluator(errorHandler);
-        var program = evaluator.Evaluate(buildOps.ProgramName, [.. scriptsABS]);
-
-        var filePath = Path.Join(buildOps.OutputDirectory, "program.txt");
-        File.WriteAllText(filePath, string.Join('\n', program.ToString()));
+        File.WriteAllText($"{buildOps.OutputDirectory}/tree.txt", program.ToTree());
+        File.WriteAllText($"{buildOps.OutputDirectory}/program.txt", program.ToString());
 
         if (errorHandler.ErrorCount > 0) errorHandler.Dump();
 

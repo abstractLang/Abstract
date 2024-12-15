@@ -11,41 +11,11 @@
 
 namespace Console {
 
-    @public func void write(i8 value)
-    @public func void write(i16 value)
-    @public func void write(i32 value)
-    @public func void write(i64 value)
-    @public func void write(i128 value)
-
-    @public func void write(u8 value)
-    @public func void write(u16 value)
-    @public func void write(u32 value)
-    @public func void write(u64 value)
-    @public func void write(u128 value)
-
-    # @public func void write(f32 value)
-    # @public func void write(f64 value)
-        
-    @public func void write(string content)
-
+    @public func void write(anytype content)
     @public func void write([]anytype content)
 
-    @public func void log(i8 value)
-    @public func void log(i16 value)
-    @public func void log(i32 value)
-    @public func void log(i64 value)
-    @public func void log(i128 value)
-
-    @public func void log(u8 value)
-    @public func void log(u16 value)
-    @public func void log(u32 value)
-    @public func void log(u64 value)
-    @public func void log(u128 value)
-
-    # @public func void log(f32 value)
-    # @public func void log(f64 value)
-
-    @public func void log(string content)
+    @public func void writeln(anytype content)
+    @public func void writeln([]anytype content)
         
     @public func string read()
 

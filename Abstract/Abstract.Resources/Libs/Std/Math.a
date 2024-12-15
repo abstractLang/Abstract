@@ -6,8 +6,8 @@
 
 namespace Math {
 
-    @public const i64 PI = 3.1415
-    @public const i64 E = 2.71828
+    @public const f64 PI = 3.1415
+    @public const f64 E = 2.71828
 
     const i8 MAX_ITERATIONS = 15
 
@@ -15,7 +15,7 @@ namespace Math {
         # CORDIC algorithim implementation
         # references: https://en.wikipedia.org/wiki/CORDIC
 
-        #const f64 a = 10 * 20 + 40 * 7 / 3 ** 8
+        const f64 a = 10 * 20 + 40 * 7 / 3 ** 8
 
     }
 
@@ -25,7 +25,7 @@ namespace Math {
         const f64 tolerance = 0.001
         let f64 x = value / 2
 
-        while abs(x * x - value) > tolerance
+        while abs(x ** 2 - value) > tolerance
             => x = 0.5 * (x + value / x)
 
         return x
