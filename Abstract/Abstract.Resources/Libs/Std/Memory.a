@@ -1,0 +1,17 @@
+###
+
+    ABSTRACT STANDARD LIBRARY SCRIPT
+
+###
+
+namespace Memory {
+
+    #@public func void fill(uptr pointer, uptr size, u8 data)
+    #@public func void copy(uptr from, uptr to, uptr size)
+
+    #@public func *T allocate(type T)
+    #@public func *[]T allocate(type T, uptr count)
+
+    #@public func void free(type T, *T data)
+
+}

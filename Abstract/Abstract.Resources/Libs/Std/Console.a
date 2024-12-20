@@ -1,0 +1,17 @@
+###
+
+    ABSTRACT STANDARD LIBRARY SCRIPT
+
+###
+
+namespace Console {
+
+    @public func void write(anytype content)
+    @public func void write([]anytype content)
+
+    @public func void writeln(anytype content)
+    @public func void writeln([]anytype content)
+        
+    @public func string read()
+
+}

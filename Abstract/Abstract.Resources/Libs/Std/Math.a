@@ -9,67 +9,24 @@ namespace Math {
     @public const f64 PI = 3.1415
     @public const f64 E = 2.71828
 
-    const i8 MAX_ITERATIONS = 15
+    @public func T sin(type T, T rad)
+    @public func T cos(type T, T rad)
+    @public func T tan(type T, T rad)
 
-    @public func f64 sin(f64 rad) {
-        # CORDIC algorithim implementation
-        # references: https://en.wikipedia.org/wiki/CORDIC
+    @public func T atan(type T, T x)
+    @public func T atan2(type T, T x, T y)
 
-        const f64 a = 10 * 20 + 40 * 7 / 3 ** 8
+    @public func T sqrt(type T, T value)
 
-    }
+    @public func T abs(type T, T value)
+    @public func T ceil(type T, T value)
+    @public func T floor(type T, T value)
+    @public func T round(type T, T value)
+    @public func T truncate(type T, T value)
 
-    @public func f64 sqrt(f64 value) {
-        # Newton-Raphson method algorithim implementation
+    @public func T deg2rad(type T, T deg)
+    @public func T rad2deg(type T, T rad)
 
-        const f64 tolerance = 0.001
-        let f64 x = value / 2
-
-        while abs(x ** 2 - value) > tolerance
-            => x = 0.5 * (x + value / x)
-
-        return x
-
-    }
-
-    @public func f64 abs(f64 value) {
-
-        if (value > 0) return value
-        else return -value
-
-    }
-
-    @public func f64 atan(f64 value) {
-
-        # Taylor Series implementation
-    
-        let f64 res = 0.0
-        
-        for i in MAX_ITERATIONS => {
-        
-            let i8 sign
-
-            if (n % 2 == 0) sign = 1
-            else sign = -1
-
-            res += sign * term / (2 * n + 1)
-            term *= x ** 2
-        
-        }
-
-        return res
-
-    }
-
-    @public func f64 atan2(f64 x, f64 y) {
-    
-        if (x > 0) return atan(y / x)
-        elif (x < 0 and y >= 0) return atan(y / x) + PI
-        elif (x < 0 and y < 0) return atan(y / x) - PI
-        elif (x == 0 and y > 0) return PI / 2
-        elif (x == 0 and y < 0) return -(PI / 2)
-        else return 0
-
-    }
+    @public func T log(type T, T val, T base)
 
 }

@@ -42,8 +42,8 @@ public enum TokenType : byte
     StructKeyword,          // struct
     ExtendsKeyword,         // extends
     PacketKeyword,          // packet
-
     EnumKeyword,            // enum
+
     SwitchKeyword,          // switch
     MatchKeyword,           // match
 

@@ -1,0 +1,90 @@
+###
+
+    ABSTRACT STANDARD LIBRARY SCRIPT
+
+###
+
+namespace System {
+
+    @public @comptime const Archtecture arch
+    @public @comptime const HostSystem os
+
+    namespace OS {
+        namespace Windows {
+            namespace Kernel32 {}
+            namespace User32 {}
+            namespace Commdlg32 {}
+            namespace Commctl32 {}
+            namespace Shlwapi32 {}
+            namespace Netapi32 {}
+        }
+        namespace Linux {
+            ###
+            namespace SysCalls {
+
+                @public func uptr sysExit(uptr status)
+                @public func uptr sysFork()
+                @public func uptr sysRead()
+                @public func uptr sysWrite()
+                @public func uptr sysOpen()
+                @public func uptr sysClose()
+                @public func uptr sysWaitPId()
+                @public func uptr sysLink()
+                @public func uptr sysUnlink()
+                @public func uptr sysExecve()
+                @public func uptr sysChDir()
+                @public func uptr sysTime()
+                @public func uptr sysMkNod()
+                @public func uptr sysChMod()
+                @public func uptr sysLChOwn()
+                @public func uptr sysStat()
+                @public func uptr sysLSeek()
+                @public func uptr sysGetPId()
+                @public func uptr sysMount()
+                @public func uptr sysMount()
+                @public func uptr sysOldmount()
+                @public func uptr sysSetUId()
+                @public func uptr sysGetUId()
+                @public func uptr sysSTime()
+                @public func uptr sysPTrace()
+                @public func uptr sysAlarm()
+                
+            }
+            ###
+        }
+        namespace UEFI {}
+    }
+
+    namespace x86 {
+
+    }
+
+    namespace x86_64 {
+
+    }
+
+    namespace AArch64 {
+
+    }
+
+    namespace RISK_V {
+
+    }
+
+
+    @public enum Archtecture {
+        x86,
+        x86_64,
+        aarch64,
+        risc_v
+    }
+
+    @public enum HostSystem {
+        windows,
+        linux,
+
+        uefi,
+        bios
+    }
+
+}

@@ -16,12 +16,15 @@ public class Program
             "-t", "elf",
             //"-nostd",
 
-            "Libs/Std/Console.ah",
-            "Libs/Std/Types.ah",
-            "Libs/Std/Memory.ah",
-            "Libs/Std/Process.ah",
+            "Libs/Std/Compilation.a",
+            "Libs/Std/Console.a",
             "Libs/Std/Math.a",
-
+            "Libs/Std/Memory.a",
+            "Libs/Std/Meta.a",
+            "Libs/Std/Process.a",
+            "Libs/Std/System.a",
+            "Libs/Std/Types.a",
+            
             //"../../../../../test-code/main.a",
 
             "-o","../../../../../test-code/bin/Std.elf"

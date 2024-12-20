@@ -35,6 +35,7 @@ public static class Builder
         // TODO optimize memory on this pipeline
 
         ProgramNode program = new();
+        program.outDirectory = buildOps.OutputDirectory;
 
         var lexer = new Lexer();
         var parser = new SyntaxTreeBuilder(errorHandler);

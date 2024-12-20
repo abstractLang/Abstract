@@ -1,0 +1,15 @@
+###
+
+    ABSTRACT STANDARD LIBRARY SCRIPT
+
+###
+
+namespace Compilation {
+
+    @public const Std.System.Archtecture targetArch
+    @public let uptr currentLine
+    @public let uptr currentColumn
+    @public let string currentSource
+    @public let string functionName
+    
+}

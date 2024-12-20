@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35027.167
@@ -22,6 +22,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Abstract.Binutils.Abs", "Abstract.Binutils.Abs\Abstract.Binutils.Abs.csproj", "{382CE949-FF51-462B-BE74-9AB5DFD59B9C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Binutils", "Binutils", "{FDFF6877-DF6D-49CC-9678-C807E9C9A4B8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Evaluator", "Evaluator", "{37356593-5EE8-41BD-B9CF-49A6B9FDE8CC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -62,6 +64,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{37356593-5EE8-41BD-B9CF-49A6B9FDE8CC} = {B14A8944-BFA1-4DED-8879-5AF457BEF683}
 		{B14A8944-BFA1-4DED-8879-5AF457BEF683} = {270B5526-5571-4E81-A433-E81F5D102953}
 		{1C490D44-1C8F-4AE9-9C80-797C83A90696} = {270B5526-5571-4E81-A433-E81F5D102953}
 		{382CE949-FF51-462B-BE74-9AB5DFD59B9C} = {FDFF6877-DF6D-49CC-9678-C807E9C9A4B8}

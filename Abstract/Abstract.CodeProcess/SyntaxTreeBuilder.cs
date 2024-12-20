@@ -67,7 +67,9 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
                 node.AppendChild(EatAsNode()); // namespace
                 node.AppendChild(ParseIdentfier()); // <identifier.*>
                 TryEndLine();
-                node.AppendChild(ParseBlock((n) => n.AppendChild(ParseRoot()))); // {...}
+                node.AppendChild(ParseBlock((BlockNode block, ref bool _) => {
+                    block.AppendChild(ParseRoot()); // {...}
+                }));
 
                 } catch { DiscardLine(); throw; }
                 break;
@@ -94,7 +96,8 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
                 if (useExtendsImplements) node.AppendChild(extendsImplements);
 
                 TryEndLine();
-                node.AppendChild(ParseBlock((n) => n.AppendChild(ParseRoot()))); // {...}
+                node.AppendChild(ParseBlock((BlockNode n, ref bool _)
+                    => n.AppendChild(ParseRoot()))); // {...}
             
                 } catch { DiscardLine(); throw; }
                 break;
@@ -109,7 +112,8 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
                 node.AppendChild(ParseParameterCollection()); // (..., ...)
                 TryEndLine();
                 if (Taste(TokenType.LeftBracketChar))
-                    node.AppendChild(ParseBlock((n) => n.AppendChild(ParseFunctionBody()))); // {...}
+                    node.AppendChild(ParseBlock((BlockNode n, ref bool _)
+                        => n.AppendChild(ParseFunctionBody()))); // {...}
             
                 } catch { DiscardLine(); throw; }
                 break;
@@ -121,7 +125,8 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
                 node.AppendChild(EatAsNode()); // packet
                 node.AppendChild(ParseSingleIdentfier()); // <identifier>
                 TryEndLine();
-                node.AppendChild(ParseBlock((n) => n.AppendChild(ParsePacketBody()))); // {...}
+                node.AppendChild(ParseBlock((BlockNode n, ref bool _)
+                    => n.AppendChild(ParsePacketBody()))); // {...}
 
                 } catch { DiscardLine(); throw; }
                 break;
@@ -143,6 +148,31 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
                 EndLine();
 
                 } catch { DiscardLine(); throw; }
+                break;
+
+            case TokenType.EnumKeyword:
+                node = new EnumDeclarationNode();
+                node.AppendChild(EatAsNode()); // enum
+                node.AppendChild(ParseSingleIdentfier()); // identifier
+                if (Taste(TokenType.LeftPerenthesisChar))
+                    node.AppendChild(ParseArgumentCollection()); // (T)
+                
+                node.AppendChild(ParseBlock((BlockNode block, ref bool _break) => { // {...}
+                    var i = new EnumeratorItemNode();
+
+                    i.AppendChild(ParseSingleIdentfier()); // <ident>
+                    if (TryEatAsNode(TokenType.EqualsChar, out var node))
+                    {
+                        i.AppendChild(node); // =
+                        i.AppendChild(ParseExpression()); // <exp>
+                    }
+
+                    if (!TryEat(TokenType.CommaChar, out _)) _break = true;
+                    TryEndLine();
+
+                    block.AppendChild(i);
+                }));
+
                 break;
 
             case TokenType.AtSiginChar:
@@ -181,7 +211,8 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
             // Blocks
             case TokenType.LeftBracketChar:
                 try {
-                node = ParseBlock((b) => b.AppendChild(ParseFunctionBody()));
+                node = ParseBlock((BlockNode n, ref bool _)
+                    => n.AppendChild(ParseFunctionBody()));
                 } catch { DiscardUntil(TokenType.RightBracketChar); throw; }
                 break;
 
@@ -616,16 +647,21 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
         return new IdentifierNode(Diet(TokenType.Identifier, (e) => {}));
     }
 
-    private BlockNode ParseBlock(Action<BlockNode> processContent)
+    private delegate void ParseBlockProcess(BlockNode node, ref bool _break);
+    private BlockNode ParseBlock(ParseBlockProcess processContent)
     {
         var block = new BlockNode();
         block.AppendChild(DietAsNode(TokenType.LeftBracketChar,
             (t) => throw new UnexpectedTokenException(_currentScript, t)));
         TryEndLine();
 
+        bool _break = false;
         while (!IsEOF() && !Taste(TokenType.RightBracketChar))
         {
-            try { processContent(block); }
+            try {
+                processContent(block, ref _break);
+                if (_break) break;
+            }
             catch (SyntaxException ex) { _errHandler.RegisterError(ex); }
         }
 

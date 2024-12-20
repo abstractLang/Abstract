@@ -1,0 +1,11 @@
+###
+
+    ABSTRACT STANDARD LIBRARY SCRIPT
+
+###
+
+namespace Process {
+
+    @public func noreturn exit(i32 statusCode)
+
+}

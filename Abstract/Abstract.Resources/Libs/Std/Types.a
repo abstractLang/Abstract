@@ -1,11 +1,6 @@
 ###
 
-    ABSTRACT STANDARD LIBRARY HEADER SCRIPT
-
-    Here, only the declarations of most functions need to be
-    written. The final implementation is done by the final
-    compilation where the compiler will handle and linkedit
-    the method calls at the best way to the targeting platform.
+    ABSTRACT STANDARD LIBRARY SCRIPT
 
 ###
 
@@ -54,10 +49,12 @@ namespace Types {
 
     }
     @defineGlobal("i64") @public @valueOnly @final struct SignedInteger64 extends Integer {
+
         @public @static const i64 minValue
         @public @static const i64 maxValue
 
         @ImplicitConvert @public @static func i128 cast_i128(i64 value)
+        
     }
     @defineGlobal("i128") @public @valueOnly @final struct SignedInteger128 extends Integer {
 
@@ -147,10 +144,25 @@ namespace Types {
 
     namespace Collections {
 
-        @public @valueOnly @final struct Array(type ElementT) {
+        @public @final struct Array(type ElementT) {
             @IndexerGet @public func ElementT Get(i32 i)
             @IndexerSet @public func void Set(i32 i, ElementT value)
             @get("Length") @public func i32 GetLength()
+        }
+
+        @public @final struct List(type ElementT) {
+            @IndexerGet @public func ElementT Get(i32 i)
+            @IndexerSet @public func void Set(i32 i, ElementT value)
+            @get("Length") @public func i32 GetLength()
+        }
+
+    }
+
+    namespace Static {
+
+        @public @valueOnly @final struct StringBuffer(int bufferLength)
+        {
+
         }
 
     }

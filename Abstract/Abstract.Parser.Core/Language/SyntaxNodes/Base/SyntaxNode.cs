@@ -9,7 +9,7 @@ public abstract class SyntaxNode
     protected List<SyntaxNode> _children = [];
     public virtual (uint start, uint end) Range => (_children[0].Range.start, _children[^1].Range.end);
 
-    public IEnumerable<SyntaxNode> Children => _children;
+    public SyntaxNode[] Children => [.. _children];
     public void AppendChild(SyntaxNode node)
     {
         if (node != null) {
