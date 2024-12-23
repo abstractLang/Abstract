@@ -160,7 +160,7 @@ namespace Types {
 
     namespace Static {
 
-        @public @valueOnly @final struct StringBuffer(int bufferLength)
+        @public @valueOnly @final struct StringBuffer(uptr bufferLength)
         {
 
         }

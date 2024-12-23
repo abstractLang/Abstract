@@ -15,5 +15,4 @@ public class ProgramRoot(MemberIdentifier programName) : ProgramMember(null, pro
         if (_globalReferences.TryGetValue(name, out var res)) return res;
         return null;
     }
-
 }

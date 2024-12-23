@@ -6,6 +6,6 @@
 
 namespace Process {
 
-    @public func noreturn exit(i32 statusCode)
+    @public func noreturn exit(uptr statusCode)
 
 }

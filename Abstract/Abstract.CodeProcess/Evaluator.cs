@@ -45,6 +45,8 @@ public partial class Evaluator(ErrorHandler errHandler)
         foreach (var i in fields.Keys) refTableStr.AppendLine($"\t- {i}");
         refTableStr.AppendLine("\n# Enums:");
         foreach (var i in enums.Keys) refTableStr.AppendLine($"\t- {i}");
+        refTableStr.AppendLine("\n# Attributes:");
+        //foreach (var i in []) refTableStr.AppendLine($"\t- {i}");
 
         var progStructStr = new StringBuilder();
         progStructStr.AppendLine("## Program Structure ##");

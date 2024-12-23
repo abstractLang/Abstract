@@ -10,6 +10,7 @@ namespace System {
     @public @comptime const HostSystem os
 
     namespace OS {
+        
         namespace Windows {
             namespace Kernel32 {}
             namespace User32 {}
@@ -18,6 +19,7 @@ namespace System {
             namespace Shlwapi32 {}
             namespace Netapi32 {}
         }
+
         namespace Linux {
             ###
             namespace SysCalls {

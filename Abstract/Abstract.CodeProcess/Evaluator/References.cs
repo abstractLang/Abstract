@@ -6,7 +6,6 @@ namespace Abstract.Parser;
 
 public partial class Evaluator
 {
-
     public void RegisterExtraReferences()
     {
 
