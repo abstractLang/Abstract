@@ -26,5 +26,5 @@ public class SolvedTypeReference : TypeReference
     public override string ToString() => ToString("n");
     public override string ToString(string format) => (format != "n" ? $"(Solved) " : "")
     + $"{structure}"
-    + (isGeneric ? $"({string.Join(", ", arguments.Select(e => e.ToString()))})" : "");
+    + (isGeneric ? $"({string.Join(", ", arguments.Select(e => e?.ToString() ?? "nil"))})" : "");
 }

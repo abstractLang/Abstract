@@ -17,7 +17,36 @@ public partial class Evaluator
 
     public void ControlLevelMatchTypeReference()
     {
-        foreach (var i in functions.Values)
+        // Structures scan
+        foreach (var i in program.types.Values)
+        {
+            /*
+            * Function's type references:
+            * - Generic parametes
+            */
+
+            var structureNode = i.structureNode;
+            if (!structureNode.HasGenericArguments) continue;
+
+            List<TypeReference> paramTypes = [];
+            for (var j = 0; j < structureNode.ParameterCollection!.Items.Length; j++)
+            {
+                var parameter = structureNode.ParameterCollection!.Items[j];
+
+                var reference = GetTypeFromTypeExpressionNode(parameter.Type, i);
+                paramTypes.Add(reference);
+
+                if (reference is SolvedTypeReference @solved
+                && solved.structure.GlobalReference == "Std.Types.Type")
+                {
+                    // is of type "type" (bruh)
+                    i.AppendGeneric(parameter.Identifier.ToString(), j);
+                }
+            }
+        }
+
+        // Functions scan
+        foreach (var i in program.functions.Values)
         {
             foreach (var function in i)
             {
@@ -34,9 +63,9 @@ public partial class Evaluator
                 */
 
                 List<TypeReference> paramTypes = [];
-                for (var j = 1; j < funcNode.ParameterCollection.Children.Length - 1; j++)
+                for (var j = 0; j < funcNode.ParameterCollection.Items.Length; j++)
                 {
-                    var parameter = (TypedIdentifierNode)funcNode.ParameterCollection.Children[j];
+                    var parameter = (TypedIdentifierNode)funcNode.ParameterCollection.Items[j];
 
                     var reference = GetTypeFromTypeExpressionNode(parameter.Type, function);
                     paramTypes.Add(reference);
@@ -48,10 +77,10 @@ public partial class Evaluator
                         function.AppendGeneric(parameter.Identifier.ToString(), j);
                     }
                 }
+                
                 function.parameterTypes = [.. paramTypes];
-
                 function.returnType = GetTypeFromTypeExpressionNode(funcNode.ReturnType, function);
-
+                
             }
         }
     }
@@ -83,6 +112,11 @@ public partial class Evaluator
                 var gen = func.SearchForGeneric(identifier.ToString());
                 if (gen != null) return gen;
             }
+            if (parent is Structure @structure)
+            {
+                var gen = structure.SearchForGeneric(identifier.ToString());
+                if (gen != null) return gen;
+            }
         }
         
         // array modifier
@@ -94,7 +128,7 @@ public partial class Evaluator
             return new SolvedTypeReference(arrayStruct, child);
         }
 
-        Console.WriteLine(type.Children[0].GetType().Name);
+        Console.WriteLine($"{type.Children[0].GetType().Name} in {parent?.GetType().Name}");
         return null!;
     }
     public Structure SearchStructure(MemberIdentifier name, ProgramMember? parent = null)
@@ -122,25 +156,57 @@ public partial class Evaluator
 
         // Search imports
 
-        // search in libs
-        else if (name.Step.step == program.identifier && name.Step.next.HasValue)
-        {
-            currNode = program;
-            (step, next) = name.Step.next.Value.Step;
-
-            do {
-                currNode = currNode.SearchForChild(step)!;
-
-                if (next.HasValue) (step, next) = next.Value.Step;
-                else break;
-            }
-            while (currNode != null);
-            
-            if (currNode is Structure @found) return found;
-        }
+        // search in projects
+        if (program.SearchForChild(name) is Structure r)
+            return r;
 
         // Search global
         var member = program.TryGetGlobal(name);
         return (member as Structure)!;
+    }
+
+    public bool CanBeDirectlyAssignedTo(TypeReference b, TypeReference to)
+    {
+        bool result = false;
+        
+        var bSolved = b as SolvedTypeReference;
+        var toSolved = to as SolvedTypeReference;
+
+        // both are solved references
+        if (bSolved != null && toSolved != null)
+        {
+            // true if both are the same type
+            if (bSolved.structure == toSolved.structure)
+            {
+                result = true;
+                goto Return;
+            }
+
+            // true if b extends to
+            var curr = bSolved.structure;
+            while (curr != null)
+            {
+                curr = bSolved.structure.extends;
+                if (toSolved == bSolved)
+                {
+                    result = true;
+                    goto Return;
+                }
+            }
+
+            // true if b is implicitly castable to c
+            // TODO
+        }
+
+        // if b is anytype
+        if (toSolved != null && toSolved.structure.GlobalReference == "Std.Types.AnyType")
+        {
+            result = true;
+            goto Return;
+        }
+
+        Return:
+            typeMatchingLog.AppendLine($"testing {b} -> {to}: {result}");
+            return result;
     }
 }

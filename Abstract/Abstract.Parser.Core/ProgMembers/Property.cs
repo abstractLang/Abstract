@@ -1,6 +1,7 @@
 namespace Abstract.Parser.Core.ProgMembers;
 
-public class Property(ProgramMember? parent, MemberIdentifier identifier) : Field(parent, identifier)
+public class Property(ProgramMember? parent, MemberIdentifier identifier)
+: Field(parent, identifier)
 {
     
     public Function getter = null!;

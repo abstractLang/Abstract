@@ -44,13 +44,13 @@ public class ErrorHandler
             {
                 if (i is CompilerException @comp)
                 {
-                    var pos = GetLineAndCollumn(e.Key, comp.Range.start);
-                    s.AppendLine($"\t - {i.Message} ({pos.line}:{pos.collumn});");
+                    var (line, collumn) = GetLineAndCollumn(e.Key, comp.Range.start);
+                    s.AppendLine($"\t - {i.Message} ({line}:{collumn});");
                 }
                 else if (i is SyntaxException @syntax)
                 {
-                    var pos = GetLineAndCollumn(e.Key, syntax.range.start);
-                    s.AppendLine($"\t - {i.Message} ({pos.line}:{pos.collumn}); {i.StackTrace?.Split("\n", StringSplitOptions.RemoveEmptyEntries)[0]}");
+                    var (line, collumn) = GetLineAndCollumn(e.Key, syntax.range.start);
+                    s.AppendLine($"\t - {i.Message} ({line}:{collumn});"); //{i.StackTrace?.Split("\n", StringSplitOptions.RemoveEmptyEntries)[0]}");
                 }
                 else s.AppendLine($"\t - {i.Message};");
             }
@@ -59,7 +59,7 @@ public class ErrorHandler
         Console.WriteLine(s.ToString());
     }
 
-    private (long line, long collumn) GetLineAndCollumn(Script src, long length)
+    private static (long line, long collumn) GetLineAndCollumn(Script src, long length)
     {
         long line = 0;
         long collumn = 0;

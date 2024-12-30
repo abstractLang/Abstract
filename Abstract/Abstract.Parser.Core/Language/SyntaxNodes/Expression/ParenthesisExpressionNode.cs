@@ -2,5 +2,6 @@ namespace Abstract.Parser.Core.Language.SyntaxNodes.Expression;
 
 public class ParenthesisExpressionNode : ExpressionNode
 {
-    public override string ToString() => $"({string.Join(" ", _children[1..^1])})";
+    public ExpressionNode Content => (ExpressionNode)_children[1];
+    public override string ToString() => $"({(ExpressionNode)_children[1]})";
 }

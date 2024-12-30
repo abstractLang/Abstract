@@ -12,4 +12,24 @@ namespace Compilation {
     @public let string currentSource
     @public let string functionName
     
+    @public enum Operator {
+        # assign and reading operators
+        assign,
+        read,
+
+        # Binary math operators
+        addition,
+        subtraction,
+        multiplication,
+        division,
+        remainder,
+
+        # Binary boolean operators
+        equals,
+        notEquals,
+        lesserThan,
+        greaterThan,
+        lesserEqualThan,
+        greaterEqualThan
+    }
 }

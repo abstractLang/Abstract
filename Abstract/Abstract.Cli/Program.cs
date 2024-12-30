@@ -24,10 +24,10 @@ public class Program
             "Libs/Std/Process.a",
             "Libs/Std/System.a",
             "Libs/Std/Types.a",
-            
-            //"../../../../../test-code/main.a",
 
-            "-o","../../../../../test-code/bin/Std.elf"
+            "../../../../test-code/main.a",
+
+            "-o","../../../../test-code/bin/Std.elf"
            ]);
 #else
         return ProcessCommand(args);

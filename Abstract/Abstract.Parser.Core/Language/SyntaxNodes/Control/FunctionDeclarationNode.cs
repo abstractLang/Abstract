@@ -10,5 +10,6 @@ public class FunctionDeclarationNode : ControlNode
     public TypeExpressionNode ReturnType => (TypeExpressionNode)_children[1];
     public IdentifierNode Identifier => (IdentifierNode)_children[2];
     public ParameterCollectionNode ParameterCollection => (ParameterCollectionNode)_children[3];
-    public BlockNode Body => (BlockNode)_children[4];
+    public bool HasBody => _children.Count == 5;
+    public BlockNode? Body => HasBody ? (BlockNode)_children[4] : null;
 }

@@ -1,10 +1,13 @@
 using System.Text;
 using Abstract.Parser.Core.Language.SyntaxNodes.Base;
+using Abstract.Parser.Core.ProgData;
 
 namespace Abstract.Parser.Core.Language.SyntaxNodes.Control;
 
 public class BlockNode : SyntaxNode
 {
+    public ExecutableCodeBlock EvaluatedData {get; set; } = null!;
+
     public IEnumerable<SyntaxNode> Content => _children.Count > 2 ? _children[1..^1] : [];
     public override string ToString()
     {

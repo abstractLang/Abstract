@@ -12,21 +12,33 @@ public partial class Evaluator(ErrorHandler errHandler)
 
     private readonly ErrorHandler _errHandler = errHandler;
 
+    private ProgramRoot program = null!;
+
     // temporary debug shit
     private StringBuilder typeMatchingLog = new("## Type Matching operations log: #\n");
 
-    public void EvaluateProgram(ProgramNode programRoot)
+    public void EvaluateProgram(ProgramNode Project)
     {
         Console.WriteLine("Starting evaluation process...");
 
 
-        program = new(new("Std"));
-        SearchMembersRecursive(program, [.. programRoot.Children]);
+        program = new(new("MyProgram"));
+        var stdProj = new Project(program, "Std");
+        program.AppendProject(stdProj);
+
+        SearchMembersRecursive(stdProj, [.. Project.Children]);
 
         // Evaluation process starts here
 
+        // Register process pipeline
+        //RegisterAttributes();
         RegisterExtraReferences();
+
+        // Type matching pipeline
         ControlLevelMatchTypeReference();
+
+        // Execution evaluation pipeline
+        ScanCodeBlocks();
 
         // Evaluation process ends here
 
@@ -34,27 +46,28 @@ public partial class Evaluator(ErrorHandler errHandler)
         // Debuggin shits here
 
         var refTableStr = new StringBuilder();
-        refTableStr.AppendLine("## Reference Tables ##");
-        refTableStr.AppendLine("# Namespaces:");
-        foreach (var i in namespaces.Keys) refTableStr.AppendLine($"\t- {i}");
-        refTableStr.AppendLine("\n# Functions:");
-        foreach (var i in functions.Keys) refTableStr.AppendLine($"\t- {i}");
-        refTableStr.AppendLine("\n# Types:");
-        foreach (var i in types.Keys) refTableStr.AppendLine($"\t- {i}");
-        refTableStr.AppendLine("\n# Fields:");
-        foreach (var i in fields.Keys) refTableStr.AppendLine($"\t- {i}");
-        refTableStr.AppendLine("\n# Enums:");
-        foreach (var i in enums.Keys) refTableStr.AppendLine($"\t- {i}");
-        refTableStr.AppendLine("\n# Attributes:");
-        //foreach (var i in []) refTableStr.AppendLine($"\t- {i}");
+        refTableStr.AppendLine("## Reference Tables ##\n");
+
+        refTableStr.AppendLine($"# Namespaces ({program.namespaces.Count}):");
+        foreach (var i in program.namespaces.Keys) refTableStr.AppendLine($"\t- {i}");
+        refTableStr.AppendLine($"\n# Functions ({program.functions.Count}):");
+        foreach (var i in program.functions.Keys) refTableStr.AppendLine($"\t- {i}");
+        refTableStr.AppendLine($"\n# Types ({program.types.Count}):");
+        foreach (var i in program.types.Keys) refTableStr.AppendLine($"\t- {i}");
+        refTableStr.AppendLine($"\n# Fields ({program.fields.Count}):");
+        foreach (var i in program.fields.Keys) refTableStr.AppendLine($"\t- {i}");
+        refTableStr.AppendLine($"\n# Enums ({program.enums.Count}):");
+        foreach (var i in program.enums.Keys) refTableStr.AppendLine($"\t- {i}");
+        refTableStr.AppendLine($"\n# Attributes ({program.attributes.Count}):");
+        foreach (var i in program.attributes.Keys) refTableStr.AppendLine($"\t- {i}");
 
         var progStructStr = new StringBuilder();
         progStructStr.AppendLine("## Program Structure ##");
         progStructStr.Append(BuildProgramStructureTree(program));
 
-        File.WriteAllText($"{programRoot.outDirectory}/reftable.txt", refTableStr.ToString());
-        File.WriteAllText($"{programRoot.outDirectory}/prgstruc.txt", progStructStr.ToString());
-        File.WriteAllText($"{programRoot.outDirectory}/tymatlog.txt", typeMatchingLog.ToString());
+        File.WriteAllText($"{Project.outDirectory}/reftable.txt", refTableStr.ToString());
+        File.WriteAllText($"{Project.outDirectory}/prgstruc.txt", progStructStr.ToString());
+        File.WriteAllText($"{Project.outDirectory}/tymatlog.txt", typeMatchingLog.ToString());
     }
 
     private void SearchMembersRecursive(ProgramMember parentMember, SyntaxNode[] children)
@@ -123,7 +136,7 @@ public partial class Evaluator(ErrorHandler errHandler)
 
         var namespaceReference = new Namespace(parent, new(identifierTokens));
 
-        namespaces.Add(namespaceReference.GlobalReference, namespaceReference);
+        program.namespaces.Add(namespaceReference.GlobalReference, namespaceReference);
 
         parent?.AppendChild(namespaceReference);
         return namespaceReference;
@@ -133,21 +146,26 @@ public partial class Evaluator(ErrorHandler errHandler)
         var identifier = functionNode.Identifier.Value;
 
         var functionReference = new Function(parent, new(identifier), functionNode);
+        var r = functionReference.GlobalReference;
+        FunctionGroup group;
 
-        if (functions.TryGetValue(functionReference.GlobalReference, out var funcList))
-            funcList.Add(functionReference);
-        else functions.Add(functionReference.GlobalReference, [functionReference]);
+        if (!program.functions.TryGetValue(r, out group!))
+        {
+            group = new(parent, identifier);
+            program.functions.Add(r, group);
+            parent?.AppendChild(group);
+        }
+        group.AddOverload(functionReference);
 
-        parent?.AppendChild(functionReference);
         return functionReference;
     }
     private ProgramMember RegisterStructure(StructureDeclarationNode structureNode, ProgramMember? parent)
     {
         var identifier = structureNode.Identifier.Value;
 
-        var structReference = new Structure(parent, new(identifier));
+        var structReference = new Structure(structureNode, parent, new(identifier));
 
-        types.Add(structReference.GlobalReference, structReference);
+        program.types.Add(structReference.GlobalReference, structReference);
 
         parent?.AppendChild(structReference);
         return structReference;
@@ -158,7 +176,7 @@ public partial class Evaluator(ErrorHandler errHandler)
 
         var fieldReference = new Field(parent, new(identifier));
 
-        fields.Add(fieldReference.GlobalReference, fieldReference);
+        program.fields.Add(fieldReference.GlobalReference, fieldReference);
 
         parent?.AppendChild(fieldReference);
         return fieldReference;
@@ -169,22 +187,27 @@ public partial class Evaluator(ErrorHandler errHandler)
 
         var enumReference = new Enumerator(parent, new(identifier));
 
-        enums.Add(enumReference.GlobalReference, enumReference);
+        program.enums.Add(enumReference.GlobalReference, enumReference);
 
         parent?.AppendChild(enumReference);
         return enumReference;
     }
     #endregion
 
-
     private string BuildProgramStructureTree(ProgramMember member)
     {
         var str = new StringBuilder();
 
         str.AppendLine(member.ToString());
-        if ((member is not Function) && (member is not Field) && (member is not Enumerator))
+        if ((member is not FunctionGroup) && (member is not Field) && (member is not Enumerator))
         {
             str.AppendLine("{");
+
+            if (member is Structure @struc)
+            {
+                if (struc.AvaliableOperators.Length > 0)
+                    str.AppendLine($"\t#OPRS {string.Join(" ", struc.AvaliableOperators)}");
+            }
 
             foreach (var i in member.ChildrenNamespaces)
             {
@@ -214,4 +237,5 @@ public partial class Evaluator(ErrorHandler errHandler)
 
         return str.ToString();
     }
+
 }

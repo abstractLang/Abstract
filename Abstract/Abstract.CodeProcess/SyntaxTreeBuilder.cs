@@ -242,7 +242,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
             case TokenType.ElseKeyword:
                 try {
 
-                node = new ElifStatementNode();
+                node = new ElseStatementNode();
                 node.AppendChild(EatAsNode()); // else
                 TryEndLine();
                 node.AppendChild(ParseStatement()); // <statement>
@@ -304,6 +304,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
             !canFallTrough
             && node is not AssignmentExpressionNode
             && node is not LocalVariableNode
+            && node is not FunctionCallExpressionNode
         ) throw new InvalidOnFunctionRoot(_currentScript, node);
 
         return node;
@@ -428,7 +429,8 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
         switch (Bite().type)
         {
             // Identifiers & function calls
-            case TokenType.Identifier:
+            case TokenType.Identifier or
+            TokenType.DotChar:
                 try {
                 
                 var identifier = ParseIdentfier();
@@ -633,7 +635,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
 
     private IdentifierCollectionNode ParseIdentfier()
     {
-        var collection = new IdentifierCollectionNode();
+        var collection = new IdentifierCollectionNode(TryEat(TokenType.DotChar, out _));
 
         collection.AppendChild(ParseSingleIdentfier());
 

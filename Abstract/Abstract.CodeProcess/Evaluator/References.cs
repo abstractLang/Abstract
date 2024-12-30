@@ -9,7 +9,7 @@ public partial class Evaluator
     public void RegisterExtraReferences()
     {
 
-        foreach (var _type in types.Values.ToArray())
+        foreach (var _type in program.types.Values.ToArray())
         {
             if (_type.TryGetAttribute("defineGlobal", out var attrib))
                 ExecuteAttrtribute(_type, attrib);
@@ -19,7 +19,7 @@ public partial class Evaluator
         RegisterGlobal(SearchStructure("Std.Types.UnsignedInteger64"), "uptr");
         RegisterGlobal(SearchStructure("Std.Types.SignedInteger64"), "sptr");
 
-        foreach (var funcOverloads in functions.Values)
+        foreach (var funcOverloads in program.functions.Values)
         {
             foreach (var func in funcOverloads)
             {
@@ -28,6 +28,7 @@ public partial class Evaluator
                 if (func.TryGetAttribute("setter", out attrib)) ExecuteAttrtribute(func, attrib);
                 if (func.TryGetAttribute("indexerGetter", out attrib)) ExecuteAttrtribute(func, attrib);
                 if (func.TryGetAttribute("indexerSetter", out attrib)) ExecuteAttrtribute(func, attrib);
+                if (func.TryGetAttribute("overrideOperator", out attrib)) ExecuteAttrtribute(func, attrib);
             }
         }
     }
@@ -49,7 +50,7 @@ public partial class Evaluator
                         // Create new
                         var nf = new Property(parent, identifier);
                         parent.AppendChild(nf);
-                        fields.Add(nf.GlobalReference, nf);
+                        program.fields.Add(nf.GlobalReference, nf);
                         nf.getter = (Function)member!;
                     }
                     else if (search is Property @prop)
@@ -80,7 +81,7 @@ public partial class Evaluator
                         // Create new
                         var nf = new Property(parent, identifier);
                         parent.AppendChild(nf);
-                        fields.Add(nf.GlobalReference, nf);
+                        program.fields.Add(nf.GlobalReference, nf);
                         nf.setter = (Function)member!;
                     }
                     else if (search is Property @prop)
@@ -110,7 +111,7 @@ public partial class Evaluator
                     // Create new
                     var nf = new Property(parent, identifier);
                     parent.AppendChild(nf);
-                    fields.Add(nf.GlobalReference, nf);
+                    program.fields.Add(nf.GlobalReference, nf);
                     nf.getter = (Function)member!;
                 }
                 else if (search is Property @prop)
@@ -135,7 +136,7 @@ public partial class Evaluator
                     // Create new
                     var nf = new Property(parent, identifier);
                     parent.AppendChild(nf);
-                    fields.Add(nf.GlobalReference, nf);
+                    program.fields.Add(nf.GlobalReference, nf);
                     nf.setter = (Function)member!;
                 }
                 else if (search is Property @prop)
@@ -170,19 +171,51 @@ public partial class Evaluator
             }
             else throw new Exception("TODO no function overload with X arguments");
         }
+    
+        else if (attrib.Name == "overrideOperator")
+        {
+            if (attrib.Arguments.Length == 1)
+            {
+                if (member is not Function @func)
+                    throw new Exception("TODO attribute can only be implemented on functions");
+                if (attrib.Arguments[0] is not StringLiteralNode @str)
+                    throw new Exception("TODO no function overload matching types");
+                
+                AppendOperatorOverload(func, str.Value);
+            }
+            else throw new Exception("TODO no function overload with X arguments");
+        }
     }
 
+    private static readonly string[] allowedOperatorOverloading= [
+        "==", "!=", ">", "<", ">=", "<=", "+", "-", "*", "/", "%", "**"];
+    private void AppendOperatorOverload(Function func, string op)
+    {
+        if (!allowedOperatorOverloading.Contains(op))
+            throw new Exception($"TODO operator {op} not allowd for overload!");
+        if (func.parent is not Structure @parent)
+            throw new Exception($"TODO function parent must be a structure!");
+
+        parent.AppendOperator(op, func);
+    }
     private void RegisterGlobal(ProgramMember member, string alias)
     {
-        if (member is Namespace @nmsp) namespaces.Add(alias, nmsp);
-        else if (member is Structure @struc) types.Add(alias, struc);
-        else if (member is Field @field) fields.Add(alias, field);
-
+        if (member is Namespace @nmsp) program.namespaces.Add(alias, nmsp);
+        else if (member is Structure @struc) program.types.Add(alias, struc);
+        else if (member is Field @field) program.fields.Add(alias, field);
         else if (member is Function @func)
         {
-            if (functions.ContainsKey(alias)) functions.Add(alias, []);
-            functions[alias].Add(func);
+            FunctionGroup group;
+            if (!program.functions.TryGetValue(alias, out group!))
+            {
+                group = new FunctionGroup(null, alias);
+                program.AppendGlobals(alias, group);
+            }
+            group.AddOverload(func);
+
+            return;
         }
+
         program.AppendGlobals(alias, member);
     }
 }

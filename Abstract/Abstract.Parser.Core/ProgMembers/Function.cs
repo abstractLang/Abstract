@@ -10,19 +10,19 @@ public class Function(
 ) : ProgramMember(parent, identifier)
 {
     public readonly FunctionDeclarationNode functionNode = node;
-    public BlockNode FunctionBody => functionNode.Body;
+    public BlockNode FunctionBodyNode => functionNode.Body!;
 
     public TypeReference returnType = null!;
     public TypeReference[] parameterTypes = null!;
 
     public bool IsGeneric => _generics.Count > 0;
-
     protected Dictionary<MemberIdentifier, TypeReference> _generics = [];
 
     public void AppendGeneric(MemberIdentifier identifier, int idx)
     {
         _generics.Add(identifier, new GenericTypeReference(this, idx));
     }
+    
     public override ProgramMember? SearchForChild(MemberIdentifier identifier)
     {
         /*
@@ -33,10 +33,10 @@ public class Function(
         */
         return parent!.SearchForChild(identifier);
     }
-    public TypeReference? SearchForGeneric(MemberIdentifier identifier)
+    public override TypeReference? SearchForGeneric(MemberIdentifier identifier)
     {
         if (_generics.TryGetValue(identifier, out var r)) return r;
-        return null;
+        return base.SearchForGeneric(identifier);
     }
 
     public override string ToString()

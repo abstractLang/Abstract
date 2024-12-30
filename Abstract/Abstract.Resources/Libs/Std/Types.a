@@ -11,10 +11,18 @@ namespace Types {
 
     @public @abstract struct Integer {
 
-        @overrideOperator("==")
-        @public @static func bool equals(Integer a, Integer b)
-        @overrideOperator("!=")
-        @public @static func bool unequals(Integer a, Integer b)
+        @overrideOperator("==") @externInterface
+        @public @static func bool isEquals(Integer a, Integer b)
+        @overrideOperator("!=") @externInterface
+        @public @static func bool isUnequals(Integer a, Integer b)
+        @overrideOperator("<") @externInterface
+        @public @static func bool isLesser(Integer a, Integer b)
+        @overrideOperator(">") @externInterface
+        @public @static func bool isGreater(Integer a, Integer b)
+        @overrideOperator("<=") @externInterface
+        @public @static func bool isLesserEquals(Integer a, Integer b)
+        @overrideOperator(">=") @externInterface
+        @public @static func bool isGreaterEquals(Integer a, Integer b)
 
     }
 
@@ -23,10 +31,67 @@ namespace Types {
         @public @static const i8 minValue
         @public @static const i8 maxValue
 
-        @ImplicitConvert @public @static func i16 cast_i16(i8 value)
-        @ImplicitConvert @public @static func i32 cast_i32(i8 value)
-        @ImplicitConvert @public @static func i64 cast_i64(i8 value)
-        @ImplicitConvert @public @static func i128 cast_i128(i8 value)
+        @implicitConvert @public @static func i16 cast_i16(i8 value)
+        @implicitConvert @public @static func i32 cast_i32(i8 value)
+        @implicitConvert @public @static func i64 cast_i64(i8 value)
+        @implicitConvert @public @static func i128 cast_i128(i8 value)
+
+        @overrideOperator("+") @externInterface @public @static func i8 add(i8 a, i8 b)
+        @overrideOperator("+") @externInterface @public @static func i16 add(i8 a, i16 b)
+        @overrideOperator("+") @externInterface @public @static func i32 add(i8 a, i32 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i8 a, i64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i8 a, i128 b)
+        @overrideOperator("+") @externInterface @public @static func i16 add(i8 a, u8 b)
+        @overrideOperator("+") @externInterface @public @static func i32 add(i8 a, u16 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i8 a, u32 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i8 a, u64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i8 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i8 subtract(i8 a, i8 b)
+        @overrideOperator("-") @externInterface @public @static func i16 subtract(i8 a, i16 b)
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(i8 a, i32 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i8 a, i64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i8 a, i128 b)
+        @overrideOperator("-") @externInterface @public @static func i16 subtract(i8 a, u8 b)
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(i8 a, u16 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i8 a, u32 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i8 a, u64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i8 a, u128 b)
+
+        @overrideOperator("*") @externInterface @public @static func i8 multiply(i8 a, i8 b)
+        @overrideOperator("*") @externInterface @public @static func i16 multiply(i8 a, i16 b)
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(i8 a, i32 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i8 a, i64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i8 a, i128 b)
+        @overrideOperator("*") @externInterface @public @static func i16 multiply(i8 a, u8 b)
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(i8 a, u16 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i8 a, u32 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i8 a, u64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i8 a, u128 b)
+
+        @overrideOperator("/") @externInterface @public @static func i8 divide(i8 a, i8 b)
+        @overrideOperator("/") @externInterface @public @static func i16 divide(i8 a, i16 b)
+        @overrideOperator("/") @externInterface @public @static func i32 divide(i8 a, i32 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i8 a, i64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i8 a, i128 b)
+        @overrideOperator("/") @externInterface @public @static func i16 divide(i8 a, u8 b)
+        @overrideOperator("/") @externInterface @public @static func i32 divide(i8 a, u16 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i8 a, u32 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i8 a, u64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i8 a, u128 b)
+
+        @overrideOperator("%") @externInterface @public @static func i8 reminder(i8 a, i8 b)
+        @overrideOperator("%") @externInterface @public @static func i16 reminder(i8 a, i16 b)
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(i8 a, i32 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i8 a, i64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i8 a, i128 b)
+        @overrideOperator("%") @externInterface @public @static func i16 reminder(i8 a, u8 b)
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(i8 a, u16 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i8 a, u32 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i8 a, u64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i8 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i8 negate(i8 a)
 
     }
     @defineGlobal("i16") @public @final struct SignedInteger16 extends Integer {
@@ -34,18 +99,131 @@ namespace Types {
         @public @static const i16 minValue
         @public @static const i16 maxValue
 
-        @ImplicitConvert @public @static func i32 cast_i32(i16 value)
-        @ImplicitConvert @public @static func i64 cast_i64(i16 value)
-        @ImplicitConvert @public @static func i128 cast_i128(i16 value)
+        @implicitConvert @public @static func i32 cast_i32(i16 value)
+        @implicitConvert @public @static func i64 cast_i64(i16 value)
+        @implicitConvert @public @static func i128 cast_i128(i16 value)
 
+        @overrideOperator("+") @externInterface @public @static func i16 add(i16 a, i8 b)
+        @overrideOperator("+") @externInterface @public @static func i16 add(i16 a, i16 b)
+        @overrideOperator("+") @externInterface @public @static func i32 add(i16 a, i32 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i16 a, i64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i16 a, i128 b)
+        @overrideOperator("+") @externInterface @public @static func i16 add(i16 a, u8 b)
+        @overrideOperator("+") @externInterface @public @static func i32 add(i16 a, u16 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i16 a, u32 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i16 a, u64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i16 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i16 subtract(i16 a, i8 b)
+        @overrideOperator("-") @externInterface @public @static func i16 subtract(i16 a, i16 b)
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(i16 a, i32 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i16 a, i64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i16 a, i128 b)
+        @overrideOperator("-") @externInterface @public @static func i16 subtract(i16 a, u8 b)
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(i16 a, u16 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i16 a, u32 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i16 a, u64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i16 a, u128 b)
+
+        @overrideOperator("*") @externInterface @public @static func i16 multiply(i16 a, i8 b)
+        @overrideOperator("*") @externInterface @public @static func i16 multiply(i16 a, i16 b)
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(i16 a, i32 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i16 a, i64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i16 a, i128 b)
+        @overrideOperator("*") @externInterface @public @static func i16 multiply(i16 a, u8 b)
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(i16 a, u16 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i16 a, u32 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i16 a, u64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i16 a, u128 b)
+
+        @overrideOperator("/") @externInterface @public @static func i16 divide(i16 a, i8 b)
+        @overrideOperator("/") @externInterface @public @static func i16 divide(i16 a, i16 b)
+        @overrideOperator("/") @externInterface @public @static func i32 divide(i16 a, i32 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i16 a, i64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i16 a, i128 b)
+        @overrideOperator("/") @externInterface @public @static func i16 divide(i16 a, u8 b)
+        @overrideOperator("/") @externInterface @public @static func i32 divide(i16 a, u16 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i16 a, u32 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i16 a, u64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i16 a, u128 b)
+
+        @overrideOperator("%") @externInterface @public @static func i16 reminder(i16 a, i8 b)
+        @overrideOperator("%") @externInterface @public @static func i16 reminder(i16 a, i16 b)
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(i16 a, i32 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i16 a, i64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i16 a, i128 b)
+        @overrideOperator("%") @externInterface @public @static func i16 reminder(i16 a, u8 b)
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(i16 a, u16 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i16 a, u32 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i16 a, u64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i16 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i16 negate(i16 a)
     }
     @defineGlobal("i32") @public @final struct SignedInteger32 extends Integer {
 
         @public @static const i32 minValue
         @public @static const i32 maxValue
 
-        @ImplicitConvert @public @static func i64 cast_i64(i32 value)
-        @ImplicitConvert @public @static func i128 cast_i128(i32 value)
+        @implicitConvert @public @static func i64 cast_i64(i32 value)
+        @implicitConvert @public @static func i128 cast_i128(i32 value)
+
+        @overrideOperator("+") @externInterface @public @static func i32 add(i32 a, i8 b)
+        @overrideOperator("+") @externInterface @public @static func i32 add(i32 a, i16 b)
+        @overrideOperator("+") @externInterface @public @static func i32 add(i32 a, i32 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i32 a, i64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i32 a, i128 b)
+        @overrideOperator("+") @externInterface @public @static func i32 add(i32 a, u8 b)
+        @overrideOperator("+") @externInterface @public @static func i32 add(i32 a, u16 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i32 a, u32 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i32 a, u64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i32 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(i32 a, i8 b)
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(i32 a, i16 b)
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(i32 a, i32 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i32 a, i64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i32 a, i128 b)
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(i32 a, u8 b)
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(i32 a, u16 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i32 a, u32 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i32 a, u64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i32 a, u128 b)
+
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(i32 a, i8 b)
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(i32 a, i16 b)
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(i32 a, i32 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i32 a, i64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i32 a, i128 b)
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(i32 a, u8 b)
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(i32 a, u16 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i32 a, u32 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i32 a, u64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i32 a, u128 b)
+
+        @overrideOperator("/") @externInterface @public @static func i32 divide(i32 a, i8 b)
+        @overrideOperator("/") @externInterface @public @static func i32 divide(i32 a, i16 b)
+        @overrideOperator("/") @externInterface @public @static func i32 divide(i32 a, i32 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i32 a, i64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i32 a, i128 b)
+        @overrideOperator("/") @externInterface @public @static func i32 divide(i32 a, u8 b)
+        @overrideOperator("/") @externInterface @public @static func i32 divide(i32 a, u16 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i32 a, u32 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i32 a, u64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i32 a, u128 b)
+
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(i32 a, i8 b)
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(i32 a, i16 b)
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(i32 a, i32 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i32 a, i64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i32 a, i128 b)
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(i32 a, u8 b)
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(i32 a, u16 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i32 a, u32 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i32 a, u64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i32 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i32 negate(i32 a)
 
     }
     @defineGlobal("i64") @public @final struct SignedInteger64 extends Integer {
@@ -53,14 +231,126 @@ namespace Types {
         @public @static const i64 minValue
         @public @static const i64 maxValue
 
-        @ImplicitConvert @public @static func i128 cast_i128(i64 value)
+        @implicitConvert @public @static func i128 cast_i128(i64 value)
+
+        @overrideOperator("+") @externInterface @public @static func i64 add(i64 a, i8 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i64 a, i16 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i64 a, i32 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i64 a, i64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i64 a, i128 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i64 a, u8 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i64 a, u16 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(i64 a, u32 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i64 a, u64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i64 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i64 a, i8 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i64 a, i16 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i64 a, i32 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i64 a, i64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i64 a, i128 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i64 a, u8 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i64 a, u16 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(i64 a, u32 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i64 a, u64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i64 a, u128 b)
+
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i64 a, i8 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i64 a, i16 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i64 a, i32 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i64 a, i64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i64 a, i128 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i64 a, u8 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i64 a, u16 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(i64 a, u32 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i64 a, u64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i64 a, u128 b)
+
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i64 a, i8 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i64 a, i16 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i64 a, i32 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i64 a, i64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i64 a, i128 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i64 a, u8 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i64 a, u16 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(i64 a, u32 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i64 a, u64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i64 a, u128 b)
+
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i64 a, i8 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i64 a, i16 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i64 a, i32 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i64 a, i64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i64 a, i128 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i64 a, u8 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i64 a, u16 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(i64 a, u32 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i64 a, u64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i64 a, u128 b)
         
+        @overrideOperator("-") @externInterface @public @static func i64 negate(i64 a)
     }
     @defineGlobal("i128") @public @final struct SignedInteger128 extends Integer {
 
         @public @static const i128 minValue
         @public @static const i128 maxValue
 
+        @overrideOperator("+") @externInterface @public @static func i128 add(i128 a, i8 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i128 a, i16 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i128 a, i32 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i128 a, i64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i128 a, i128 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i128 a, u8 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i128 a, u16 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i128 a, u32 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i128 a, u64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(i128 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i128 a, i8 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i128 a, i16 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i128 a, i32 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i128 a, i64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i128 a, i128 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i128 a, u8 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i128 a, u16 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i128 a, u32 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i128 a, u64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(i128 a, u128 b)
+
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i128 a, i8 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i128 a, i16 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i128 a, i32 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i128 a, i64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i128 a, i128 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i128 a, u8 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i128 a, u16 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i128 a, u32 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i128 a, u64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(i128 a, u128 b)
+
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i128 a, i8 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i128 a, i16 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i128 a, i32 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i128 a, i64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i128 a, i128 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i128 a, u8 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i128 a, u16 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i128 a, u32 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i128 a, u64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(i128 a, u128 b)
+
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, i8 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, i16 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, i32 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, i64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, i128 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, u8 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, u16 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, u32 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, u64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i128 negate(i128 a)
     }
     
     @defineGlobal(["u8", "byte"]) @public @final struct UnsignedInteger8 extends Integer {
@@ -68,14 +358,69 @@ namespace Types {
         @public @static const u8 minValue
         @public @static const u8 maxValue
 
-        @ImplicitConvert @public @static func u16 cast_u16(u8 value)
-        @ImplicitConvert @public @static func u32 cast_u32(u8 value)
-        @ImplicitConvert @public @static func u64 cast_u64(u8 value)
-        @ImplicitConvert @public @static func u128 cast_u128(u8 value)
-        @ImplicitConvert @public @static func i16 cast_i16(u8 value)
-        @ImplicitConvert @public @static func i32 cast_i32(u8 value)
-        @ImplicitConvert @public @static func i64 cast_i64(u8 value)
-        @ImplicitConvert @public @static func i128 cast_i128(u8 value)
+        @implicitConvert @public @static func u16 cast_u16(u8 value)
+        @implicitConvert @public @static func u32 cast_u32(u8 value)
+        @implicitConvert @public @static func u64 cast_u64(u8 value)
+        @implicitConvert @public @static func u128 cast_u128(u8 value)
+        @implicitConvert @public @static func i16 cast_i16(u8 value)
+        @implicitConvert @public @static func i32 cast_i32(u8 value)
+        @implicitConvert @public @static func i64 cast_i64(u8 value)
+        @implicitConvert @public @static func i128 cast_i128(u8 value)
+
+        @overrideOperator("+") @externInterface @public @static func i16 add(u8 a, i8 b)
+        @overrideOperator("+") @externInterface @public @static func i16 add(u8 a, i16 b)
+        @overrideOperator("+") @externInterface @public @static func i32 add(u8 a, i32 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(u8 a, i64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(u8 a, i128 b)
+        @overrideOperator("+") @externInterface @public @static func u8 add(u8 a, u8 b)
+        @overrideOperator("+") @externInterface @public @static func u16 add(u8 a, u16 b)
+        @overrideOperator("+") @externInterface @public @static func u32 add(u8 a, u32 b)
+        @overrideOperator("+") @externInterface @public @static func u64 add(u8 a, u64 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u8 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i16 subtract(u8 a, i8 b)
+        @overrideOperator("-") @externInterface @public @static func i16 subtract(u8 a, i16 b)
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(u8 a, i32 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(u8 a, i64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(u8 a, i128 b)
+        @overrideOperator("-") @externInterface @public @static func u8 subtract(u8 a, u8 b)
+        @overrideOperator("-") @externInterface @public @static func u16 subtract(u8 a, u16 b)
+        @overrideOperator("-") @externInterface @public @static func u32 subtract(u8 a, u32 b)
+        @overrideOperator("-") @externInterface @public @static func u64 subtract(u8 a, u64 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u8 a, u128 b)
+
+        @overrideOperator("*") @externInterface @public @static func i16 multiply(u8 a, i8 b)
+        @overrideOperator("*") @externInterface @public @static func i16 multiply(u8 a, i16 b)
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(u8 a, i32 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(u8 a, i64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(u8 a, i128 b)
+        @overrideOperator("*") @externInterface @public @static func u16 multiply(u8 a, u8 b)
+        @overrideOperator("*") @externInterface @public @static func u32 multiply(u8 a, u16 b)
+        @overrideOperator("*") @externInterface @public @static func u64 multiply(u8 a, u32 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u8 a, u64 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u8 a, u128 b)
+
+        @overrideOperator("/") @externInterface @public @static func i16 divide(u8 a, i8 b)
+        @overrideOperator("/") @externInterface @public @static func i16 divide(u8 a, i16 b)
+        @overrideOperator("/") @externInterface @public @static func i32 divide(u8 a, i32 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(u8 a, i64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(u8 a, i128 b)
+        @overrideOperator("/") @externInterface @public @static func u16 divide(u8 a, u8 b)
+        @overrideOperator("/") @externInterface @public @static func u32 divide(u8 a, u16 b)
+        @overrideOperator("/") @externInterface @public @static func u64 divide(u8 a, u32 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u8 a, u64 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u8 a, u128 b)
+
+        @overrideOperator("%") @externInterface @public @static func i16 reminder(u8 a, i8 b)
+        @overrideOperator("%") @externInterface @public @static func i16 reminder(u8 a, i16 b)
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(u8 a, i32 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(u8 a, i64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(u8 a, i128 b)
+        @overrideOperator("%") @externInterface @public @static func u16 reminder(u8 a, u8 b)
+        @overrideOperator("%") @externInterface @public @static func u32 reminder(u8 a, u16 b)
+        @overrideOperator("%") @externInterface @public @static func u64 reminder(u8 a, u32 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u8 a, u64 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u8 a, u128 b)
 
     }
     @defineGlobal("u16") @public @final struct UnsignedInteger16 extends Integer {
@@ -83,23 +428,132 @@ namespace Types {
         @public @static const u16 minValue
         @public @static const u16 maxValue
 
-        @ImplicitConvert @public @static func u32 cast_u32(u16 value)
-        @ImplicitConvert @public @static func u64 cast_u64(u16 value)
-        @ImplicitConvert @public @static func u128 cast_u128(u16 value)
-        @ImplicitConvert @public @static func i32 cast_i32(u16 value)
-        @ImplicitConvert @public @static func i64 cast_i64(u16 value)
-        @ImplicitConvert @public @static func i128 cast_i128(u16 value)
+        @implicitConvert @public @static func u32 cast_u32(u16 value)
+        @implicitConvert @public @static func u64 cast_u64(u16 value)
+        @implicitConvert @public @static func u128 cast_u128(u16 value)
+        @implicitConvert @public @static func i32 cast_i32(u16 value)
+        @implicitConvert @public @static func i64 cast_i64(u16 value)
+        @implicitConvert @public @static func i128 cast_i128(u16 value)
 
+        @overrideOperator("+") @externInterface @public @static func i32 add(u16 a, i8 b)
+        @overrideOperator("+") @externInterface @public @static func i32 add(u16 a, i16 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(u16 a, i32 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(u16 a, i64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(u16 a, i128 b)
+        @overrideOperator("+") @externInterface @public @static func u16 add(u16 a, u8 b)
+        @overrideOperator("+") @externInterface @public @static func u16 add(u16 a, u16 b)
+        @overrideOperator("+") @externInterface @public @static func u32 add(u16 a, u32 b)
+        @overrideOperator("+") @externInterface @public @static func u64 add(u16 a, u64 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u16 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(u16 a, i8 b)
+        @overrideOperator("-") @externInterface @public @static func i32 subtract(u16 a, i16 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(u16 a, i32 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(u16 a, i64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(u16 a, i128 b)
+        @overrideOperator("-") @externInterface @public @static func u16 subtract(u16 a, u8 b)
+        @overrideOperator("-") @externInterface @public @static func u16 subtract(u16 a, u16 b)
+        @overrideOperator("-") @externInterface @public @static func u32 subtract(u16 a, u32 b)
+        @overrideOperator("-") @externInterface @public @static func u64 subtract(u16 a, u64 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u16 a, u128 b)
+
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(u16 a, i8 b)
+        @overrideOperator("*") @externInterface @public @static func i32 multiply(u16 a, i16 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(u16 a, i32 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(u16 a, i64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(u16 a, i128 b)
+        @overrideOperator("*") @externInterface @public @static func u16 multiply(u16 a, u8 b)
+        @overrideOperator("*") @externInterface @public @static func u32 multiply(u16 a, u16 b)
+        @overrideOperator("*") @externInterface @public @static func u64 multiply(u16 a, u32 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u16 a, u64 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u16 a, u128 b)
+
+        @overrideOperator("/") @externInterface @public @static func i32 divide(u16 a, i8 b)
+        @overrideOperator("/") @externInterface @public @static func i32 divide(u16 a, i16 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(u16 a, i32 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(u16 a, i64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(u16 a, i128 b)
+        @overrideOperator("/") @externInterface @public @static func u16 divide(u16 a, u8 b)
+        @overrideOperator("/") @externInterface @public @static func u32 divide(u16 a, u16 b)
+        @overrideOperator("/") @externInterface @public @static func u64 divide(u16 a, u32 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u16 a, u64 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u16 a, u128 b)
+
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(u16 a, i8 b)
+        @overrideOperator("%") @externInterface @public @static func i32 reminder(u16 a, i16 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(u16 a, i32 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(u16 a, i64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(u16 a, i128 b)
+        @overrideOperator("%") @externInterface @public @static func u16 reminder(u16 a, u8 b)
+        @overrideOperator("%") @externInterface @public @static func u32 reminder(u16 a, u16 b)
+        @overrideOperator("%") @externInterface @public @static func u64 reminder(u16 a, u32 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u16 a, u64 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u16 a, u128 b)
     }
     @defineGlobal("u32") @public @final struct UnsignedInteger32 extends Integer {
 
         @public @static const u32 minValue
         @public @static const u32 maxValue
 
-        @ImplicitConvert @public @static func u64 cast_u64(u32 value)
-        @ImplicitConvert @public @static func u128 cast_u128(u32 value)
-        @ImplicitConvert @public @static func i64 cast_i64(u32 value)
-        @ImplicitConvert @public @static func i128 cast_i128(u32 value)
+        @implicitConvert @public @static func u64 cast_u64(u32 value)
+        @implicitConvert @public @static func u128 cast_u128(u32 value)
+        @implicitConvert @public @static func i64 cast_i64(u32 value)
+        @implicitConvert @public @static func i128 cast_i128(u32 value)
+
+        @overrideOperator("+") @externInterface @public @static func i64 add(u32 a, i8 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(u32 a, i16 b)
+        @overrideOperator("+") @externInterface @public @static func i64 add(u32 a, i32 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(u32 a, i64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(u32 a, i128 b)
+        @overrideOperator("+") @externInterface @public @static func u32 add(u32 a, u8 b)
+        @overrideOperator("+") @externInterface @public @static func u32 add(u32 a, u16 b)
+        @overrideOperator("+") @externInterface @public @static func u32 add(u32 a, u32 b)
+        @overrideOperator("+") @externInterface @public @static func u64 add(u32 a, u64 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u32 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(u32 a, i8 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(u32 a, i16 b)
+        @overrideOperator("-") @externInterface @public @static func i64 subtract(u32 a, i32 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(u32 a, i64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(u32 a, i128 b)
+        @overrideOperator("-") @externInterface @public @static func u32 subtract(u32 a, u8 b)
+        @overrideOperator("-") @externInterface @public @static func u32 subtract(u32 a, u16 b)
+        @overrideOperator("-") @externInterface @public @static func u32 subtract(u32 a, u32 b)
+        @overrideOperator("-") @externInterface @public @static func u64 subtract(u32 a, u64 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u32 a, u128 b)
+
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(u32 a, i8 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(u32 a, i16 b)
+        @overrideOperator("*") @externInterface @public @static func i64 multiply(u32 a, i32 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(u32 a, i64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(u32 a, i128 b)
+        @overrideOperator("*") @externInterface @public @static func u32 multiply(u32 a, u8 b)
+        @overrideOperator("*") @externInterface @public @static func u32 multiply(u32 a, u16 b)
+        @overrideOperator("*") @externInterface @public @static func u32 multiply(u32 a, u32 b)
+        @overrideOperator("*") @externInterface @public @static func u64 multiply(u32 a, u64 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u32 a, u128 b)
+
+        @overrideOperator("/") @externInterface @public @static func i64 divide(u32 a, i8 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(u32 a, i16 b)
+        @overrideOperator("/") @externInterface @public @static func i64 divide(u32 a, i32 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(u32 a, i64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(u32 a, i128 b)
+        @overrideOperator("/") @externInterface @public @static func u32 divide(u32 a, u8 b)
+        @overrideOperator("/") @externInterface @public @static func u32 divide(u32 a, u16 b)
+        @overrideOperator("/") @externInterface @public @static func u64 divide(u32 a, u32 b)
+        @overrideOperator("/") @externInterface @public @static func u64 divide(u32 a, u64 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u32 a, u128 b)
+
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(u32 a, i8 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(u32 a, i16 b)
+        @overrideOperator("%") @externInterface @public @static func i64 reminder(u32 a, i32 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(u32 a, i64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(u32 a, i128 b)
+        @overrideOperator("%") @externInterface @public @static func u32 reminder(u32 a, u8 b)
+        @overrideOperator("%") @externInterface @public @static func u32 reminder(u32 a, u16 b)
+        @overrideOperator("%") @externInterface @public @static func u64 reminder(u32 a, u32 b)
+        @overrideOperator("%") @externInterface @public @static func u64 reminder(u32 a, u64 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u32 a, u128 b)
 
     }
     @defineGlobal("u64") @public @final struct UnsignedInteger64 extends Integer {
@@ -107,14 +561,124 @@ namespace Types {
         @public @static const u64 minValue
         @public @static const u64 maxValue
 
-        @ImplicitConvert @public @static func u128 cast_u128(u64 value)
-        @ImplicitConvert @public @static func i128 cast_i128(u64 value)
+        @implicitConvert @public @static func u128 cast_u128(u64 value)
+        @implicitConvert @public @static func i128 cast_i128(u64 value)
+
+        @overrideOperator("+") @externInterface @public @static func i128 add(u64 a, i8 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(u64 a, i16 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(u64 a, i32 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(u64 a, i64 b)
+        @overrideOperator("+") @externInterface @public @static func i128 add(u64 a, i128 b)
+        @overrideOperator("+") @externInterface @public @static func u64 add(u64 a, u8 b)
+        @overrideOperator("+") @externInterface @public @static func u64 add(u64 a, u16 b)
+        @overrideOperator("+") @externInterface @public @static func u64 add(u64 a, u32 b)
+        @overrideOperator("+") @externInterface @public @static func u64 add(u64 a, u64 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u64 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(u64 a, i8 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(u64 a, i16 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(u64 a, i32 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(u64 a, i64 b)
+        @overrideOperator("-") @externInterface @public @static func i128 subtract(u64 a, i128 b)
+        @overrideOperator("-") @externInterface @public @static func u64 subtract(u64 a, u8 b)
+        @overrideOperator("-") @externInterface @public @static func u64 subtract(u64 a, u16 b)
+        @overrideOperator("-") @externInterface @public @static func u64 subtract(u64 a, u32 b)
+        @overrideOperator("-") @externInterface @public @static func u64 subtract(u64 a, u64 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u64 a, u128 b)
+
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(u64 a, i8 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(u64 a, i16 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(u64 a, i32 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(u64 a, i64 b)
+        @overrideOperator("*") @externInterface @public @static func i128 multiply(u64 a, i128 b)
+        @overrideOperator("*") @externInterface @public @static func u64 multiply(u64 a, u8 b)
+        @overrideOperator("*") @externInterface @public @static func u64 multiply(u64 a, u16 b)
+        @overrideOperator("*") @externInterface @public @static func u64 multiply(u64 a, u32 b)
+        @overrideOperator("*") @externInterface @public @static func u64 multiply(u64 a, u64 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u64 a, u128 b)
+
+        @overrideOperator("/") @externInterface @public @static func i128 divide(u64 a, i8 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(u64 a, i16 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(u64 a, i32 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(u64 a, i64 b)
+        @overrideOperator("/") @externInterface @public @static func i128 divide(u64 a, i128 b)
+        @overrideOperator("/") @externInterface @public @static func u64 divide(u64 a, u8 b)
+        @overrideOperator("/") @externInterface @public @static func u64 divide(u64 a, u16 b)
+        @overrideOperator("/") @externInterface @public @static func u64 divide(u64 a, u32 b)
+        @overrideOperator("/") @externInterface @public @static func u64 divide(u64 a, u64 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u64 a, u128 b)
+
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(u64 a, i8 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(u64 a, i16 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(u64 a, i32 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(u64 a, i64 b)
+        @overrideOperator("%") @externInterface @public @static func i128 reminder(u64 a, i128 b)
+        @overrideOperator("%") @externInterface @public @static func u64 reminder(u64 a, u8 b)
+        @overrideOperator("%") @externInterface @public @static func u64 reminder(u64 a, u16 b)
+        @overrideOperator("%") @externInterface @public @static func u64 reminder(u64 a, u32 b)
+        @overrideOperator("%") @externInterface @public @static func u64 reminder(u64 a, u64 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u64 a, u128 b)
 
     }
     @defineGlobal("u128") @public @final struct UnsignedInteger128 extends Integer {
 
         @public @static const u128 minValue
         @public @static const u128 maxValue
+
+        @overrideOperator("+") @externInterface @public @static func u128 add(u128 a, i8 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u128 a, i16 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u128 a, i32 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u128 a, i64 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u128 a, i128 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u128 a, u8 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u128 a, u16 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u128 a, u32 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u128 a, u64 b)
+        @overrideOperator("+") @externInterface @public @static func u128 add(u128 a, u128 b)
+
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u128 a, i8 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u128 a, i16 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u128 a, i32 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u128 a, i64 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u128 a, i128 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u128 a, u8 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u128 a, u16 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u128 a, u32 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u128 a, u64 b)
+        @overrideOperator("-") @externInterface @public @static func u128 subtract(u128 a, u128 b)
+
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u128 a, i8 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u128 a, i16 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u128 a, i32 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u128 a, i64 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u128 a, i128 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u128 a, u8 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u128 a, u16 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u128 a, u32 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u128 a, u64 b)
+        @overrideOperator("*") @externInterface @public @static func u128 multiply(u128 a, u128 b)
+
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u128 a, i8 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u128 a, i16 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u128 a, i32 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u128 a, i64 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u128 a, i128 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u128 a, u8 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u128 a, u16 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u128 a, u32 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u128 a, u64 b)
+        @overrideOperator("/") @externInterface @public @static func u128 divide(u128 a, u128 b)
+
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, i8 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, i16 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, i32 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, i64 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, i128 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, u8 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, u16 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, u32 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, u64 b)
+        @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, u128 b)
 
     }
 
@@ -125,17 +689,17 @@ namespace Types {
 
     @defineGlobal("string") @public @valueOnly @final struct String {
 
-        @ImplicitConvert @public func i8 parse_i8(string value)
-        @ImplicitConvert @public func i16 parse_i16(string value)
-        @ImplicitConvert @public func i32 parse_i32(string value)
-        @ImplicitConvert @public func i64 parse_i64(string value)
-        @ImplicitConvert @public func i128 parse_i128(string value)
+        @implicitConvert @public func i8 parse_i8(string value)
+        @implicitConvert @public func i16 parse_i16(string value)
+        @implicitConvert @public func i32 parse_i32(string value)
+        @implicitConvert @public func i64 parse_i64(string value)
+        @implicitConvert @public func i128 parse_i128(string value)
 
-        @ImplicitConvert @public func u8 parse_u8(string value)
-        @ImplicitConvert @public func u16 parse_u16(string value)
-        @ImplicitConvert @public func u32 parse_u32(string value)
-        @ImplicitConvert @public func u64 parse_u64(string value)
-        @ImplicitConvert @public func u128 parse_u128(string value)
+        @implicitConvert @public func u8 parse_u8(string value)
+        @implicitConvert @public func u16 parse_u16(string value)
+        @implicitConvert @public func u32 parse_u32(string value)
+        @implicitConvert @public func u64 parse_u64(string value)
+        @implicitConvert @public func u128 parse_u128(string value)
         
     }
 
@@ -145,15 +709,19 @@ namespace Types {
     namespace Collections {
 
         @public @final struct Array(type ElementT) {
-            @indexerGetter @public func ElementT Get(i32 i)
-            @indexerSetter @public func void Set(i32 i, ElementT value)
-            @getter("Length") @public func i32 GetLength()
+            
+            @indexerGetter @public func ElementT get(i32 i)
+            @indexerSetter @public func void set(i32 i, ElementT value)
+            @getter("Length") @public func i32 getLength()
+
         }
 
         @public @final struct List(type ElementT) {
-            @indexerGetter @public func ElementT Get(i32 i)
-            @indexerSetter @public func void Set(i32 i, ElementT value)
-            @getter("Length") @public func i32 GetLength()
+            
+            @indexerGetter @public func ElementT get(i32 i)
+            @indexerSetter @public func void set(i32 i, ElementT value)
+            @getter("Length") @public func i32 getLength()
+
         }
 
     }

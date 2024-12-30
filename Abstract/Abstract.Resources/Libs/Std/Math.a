@@ -18,8 +18,13 @@ namespace Math {
 
     @public func T sqrt(type T, T value)
 
-    @public func T abs(type T, T value)
-    @public func T ceil(type T, T value)
+    @public func T abs(type T, T value) {
+        if (value >= 0) return value
+        else return -value
+    }
+    @public func T ceil(type T, T value) {
+        
+    }
     @public func T floor(type T, T value)
     @public func T round(type T, T value)
     @public func T truncate(type T, T value)
