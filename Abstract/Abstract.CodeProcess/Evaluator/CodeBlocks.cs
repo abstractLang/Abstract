@@ -154,13 +154,13 @@ public partial class Evaluator
             EvalExpression(node.Left, currblock);
             EvalExpression(node.Right, currblock);
             
-            if (node.DataReference?.refferToType == null)
+            if (node.Left.DataReference?.refferToType == null)
             {
                 node.DataReference = new DataErrorRef();
                 goto Return;
             }
 
-            if (node.DataReference.refferToType is SolvedTypeReference @baseType)
+            if (node.Left.DataReference.refferToType is SolvedTypeReference @baseType)
             {
                 var operatorOverloads = baseType.structure.SearchForOperators(node.Operator);
                 if (operatorOverloads != null)
