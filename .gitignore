@@ -8,4 +8,5 @@ Abstract/**/bin
 
 # My personal development folder where i store some code to
 # compile and test - mila
-/test-code
+Abstract/test-code
+Abstract/test-code/*
