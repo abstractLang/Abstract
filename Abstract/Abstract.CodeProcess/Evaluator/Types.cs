@@ -165,9 +165,64 @@ public partial class Evaluator
         return (member as Structure)!;
     }
 
+    public (Function? f, Function?[] c) TryGetOveloadIndirect(FunctionGroup funcGroup, TypeReference[] types)
+    {
+        Function? func = null!;
+        Function?[] tconvert = null!;
+        
+        foreach (var f in funcGroup)
+        {
+            var parameters = f.parameterTypes;
+
+            if (types.Length != parameters.Length) continue;
+
+            List<Function?> toConvert = [];
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                if (!CanBeAssignedTo(types[i], parameters[i], out var cf)) goto Break;
+                toConvert.Add(cf);
+            }
+
+            func = f;
+            tconvert = [.. toConvert];
+            break;
+
+            Break: continue;
+        }
+
+        return (func, tconvert);
+    }
+    public Function? TryGetOveloadDirect(FunctionGroup funcGroup, TypeReference[] types)
+    {
+        Function? func = null!;
+        
+        foreach (var f in funcGroup)
+        {
+            var parameters = f.parameterTypes;
+
+            if (types.Length != parameters.Length) continue;
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                if (!CanBeDirectlyAssignedTo(types[i], parameters[i])) goto Break;
+            }
+
+            func = f;
+            break;
+
+            Break: continue;
+        }
+
+        return func;
+    }
+
     public bool CanBeDirectlyAssignedTo(TypeReference b, TypeReference to)
+        => CanBeAssignedTo(b, to, out var a) && a == null;
+    public bool CanBeAssignedTo(TypeReference b, TypeReference to, out Function? how)
     {
         bool result = false;
+        how = null;
+
+        if (b == null) goto Return;
         
         var bSolved = b as SolvedTypeReference;
         var toSolved = to as SolvedTypeReference;
@@ -194,8 +249,12 @@ public partial class Evaluator
                 }
             }
 
-            // true if b is implicitly castable to c
-            // TODO
+            // true if b is implicitly castable to
+            how = bSolved.structure.TryGetImplicitConvertTo(toSolved.structure);
+            if (how != null) {
+                result = true;
+                goto Return;
+            }
         }
 
         // if b is anytype
@@ -206,7 +265,7 @@ public partial class Evaluator
         }
 
         Return:
-            typeMatchingLog.AppendLine($"testing {b} -> {to}: {result}");
+            typeMatchingLog.AppendLine($"testing {b} -> {to}: {result}" + (how != null ? " (needs cast)" : ""));
             return result;
     }
 }

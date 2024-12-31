@@ -64,4 +64,20 @@ public class ExecutableCodeBlock
         }
         return null!;
     }
+    public ProgramMember? TryGetMember(MemberIdentifier name)
+    {
+        if (ProgramMemberParent != null)
+        {
+
+            var res = ProgramMemberParent.SearchForChild(name);
+            if (res == null)
+            {
+                var program = ProgramMemberParent.ParentProgram!;
+                res = program.SearchForChild(name);
+            }
+            
+            return res;
+        }
+        return null!;
+    }
 }

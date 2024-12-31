@@ -50,7 +50,7 @@ public static class Builder
         eval.EvaluateProgram(program);
 
         File.WriteAllText($"{buildOps.OutputDirectory}/tree.txt", program.ToTree());
-        File.WriteAllText($"{buildOps.OutputDirectory}/program.txt", program.ToString());
+        File.WriteAllText($"{buildOps.OutputDirectory}/program.txt", program.ToFancyString());
 
         if (errorHandler.ErrorCount > 0) errorHandler.Dump();
 

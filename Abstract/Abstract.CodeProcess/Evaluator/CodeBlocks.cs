@@ -156,21 +156,30 @@ public partial class Evaluator
             
             if (node.Left.DataReference?.refferToType == null)
             {
+                // throw here is better
                 node.DataReference = new DataErrorRef();
                 goto Return;
             }
 
             if (node.Left.DataReference.refferToType is SolvedTypeReference @baseType)
             {
-                var operatorOverloads = baseType.structure.SearchForOperators(node.Operator);
-                if (operatorOverloads != null)
-                {
-                    // TODO
-                    throw new NotImplementedInternalBuildException();
-                }
-                else throw new InvalidOperatorForType(node, baseType.structure.GlobalReference);
+                var operatorOverloads = baseType.structure.SearchForOperators(node.Operator)!;
+                TypeReference[] types = [node.Left.DataReference.refferToType, node.Right.DataReference.refferToType];
+
+                var (function, toConvert) = TryGetOveloadIndirect(operatorOverloads, types);
+
+                if (function == null) throw new InvalidOperatorForType(node, baseType.structure.GlobalReference);
+
+                node.ConvertLeft = toConvert[0];
+                node.ConvertRight = toConvert[1];
+                node.Operate = function;
+
+                node.DataReference = new DynamicDataRef(function.returnType);
+
+                goto Return;
             }
 
+            node.DataReference = new DataErrorRef();
         }
         catch (SyntaxException ex)
         {
@@ -221,22 +230,12 @@ public partial class Evaluator
             if (idReference is FunctionGroupRef @funcGroupRef)
             {
                 var functionGroup = funcGroupRef.group;
-                Function func = null!;
-                foreach (var f in functionGroup)
-                {
-                    if (f.parameterTypes.Length != _argTypes.Count) continue;
 
-                    for (var i = 0; i < f.parameterTypes.Length; i++)
-                        if (!CanBeDirectlyAssignedTo(_argTypes[i], f.parameterTypes[i])) goto Break;
+                // FIXME
+                Function func = TryGetOveloadDirect(functionGroup, [.. _argTypes]) ??
+                throw new NoOverloadForTypes(node, string.Join(", ", _argTypes.Select(e => e?.ToString() ?? "!nil")));
 
-                    func = f;
-                    break;
-
-                    Break: continue;
-                }
-
-                if (func == null!) throw new NoOverloadForTypes(node, string.Join(", ", _argTypes));
-                else node.FunctionTarget = func;
+                node.FunctionTarget = func;
             }
 
             else throw new ReferenceNotCallableException(node);

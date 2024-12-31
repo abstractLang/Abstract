@@ -30,14 +30,13 @@ public partial class Evaluator(ErrorHandler errHandler)
 
         // Evaluation process starts here
 
-        // Register process pipeline
+        // Registring references and root dependences
         //RegisterAttributes();
-        RegisterExtraReferences();
-
-        // Type matching pipeline
+        RegisterLevel_1_ExtraReferences();
         ControlLevelMatchTypeReference();
+        RegisterLevel_2_ExtraReferences();
 
-        // Execution evaluation pipeline
+        // Evaluating code execution
         ScanCodeBlocks();
 
         // Evaluation process ends here

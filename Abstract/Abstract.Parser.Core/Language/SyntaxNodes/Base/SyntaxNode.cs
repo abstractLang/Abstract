@@ -21,6 +21,8 @@ public abstract class SyntaxNode
     public virtual Script GetSourceScript() => _parent.GetSourceScript();
 
     public override string ToString() => $"{string.Join(" ", _children)}";
+    public virtual string ToFancyString() => $"{string.Join(" ", _children.Select(e => e.ToFancyString()))}";
+    
     public virtual string ToTree()
     {
         var buf = new StringBuilder();

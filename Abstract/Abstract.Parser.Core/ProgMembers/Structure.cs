@@ -10,7 +10,9 @@ public class Structure(StructureDeclarationNode node, ProgramMember? parent, Mem
 
     public bool IsGeneric => _generics.Count > 0;
     protected Dictionary<MemberIdentifier, TypeReference> _generics = [];
+
     protected Dictionary<string, FunctionGroup> _overloadedOperators = [];
+    protected Dictionary<Structure, Function> _implicitConversions = [];
 
     public string[] AvaliableOperators => [.. _overloadedOperators.Keys];
 
@@ -28,6 +30,11 @@ public class Structure(StructureDeclarationNode node, ProgramMember? parent, Mem
         _overloadedOperators[op].AddOverload(overload);
     }
 
+    public void AppendImplicitConvert(Structure to, Function how)
+    {
+        _implicitConversions.Add(to, how);
+    }
+
     public override TypeReference? SearchForGeneric(MemberIdentifier identifier)
     {
         if (_generics.TryGetValue(identifier, out var r)) return r;
@@ -35,9 +42,18 @@ public class Structure(StructureDeclarationNode node, ProgramMember? parent, Mem
     }
     public FunctionGroup? SearchForOperators(string op)
     {
-        if (_overloadedOperators.TryGetValue(identifier, out var r)) return r;
+        if (_overloadedOperators.TryGetValue(op, out var r)) return r;
         return null;
     }
     
+
+    public bool CanBeDirectlyImplicitlyConvertedTo(Structure target)
+    => _implicitConversions.ContainsKey(target);
+    public Function? TryGetImplicitConvertTo(Structure target)
+    {
+        if (_implicitConversions.TryGetValue(target, out var r)) return r;
+        return null!;
+    }
+
     public override string ToString() => GlobalReference;
 }

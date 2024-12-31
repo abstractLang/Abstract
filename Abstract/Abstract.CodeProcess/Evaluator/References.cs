@@ -1,13 +1,18 @@
 using Abstract.Parser.Core.Language.SyntaxNodes.Expression.TypeModifiers;
 using Abstract.Parser.Core.Language.SyntaxNodes.Value;
+using Abstract.Parser.Core.ProgData;
 using Abstract.Parser.Core.ProgMembers;
 
 namespace Abstract.Parser;
 
 public partial class Evaluator
 {
-    public void RegisterExtraReferences()
+    public void RegisterLevel_1_ExtraReferences()
     {
+        /* This runs before any type be acessible.
+        *  Here can only contains the process that does not
+        *  depends of types or parameters
+        */
 
         foreach (var _type in program.types.Values.ToArray())
         {
@@ -19,6 +24,15 @@ public partial class Evaluator
         RegisterGlobal(SearchStructure("Std.Types.UnsignedInteger64"), "uptr");
         RegisterGlobal(SearchStructure("Std.Types.SignedInteger64"), "sptr");
 
+    }
+
+    public void RegisterLevel_2_ExtraReferences()
+    {
+        /* This runs after the main level type references be solved
+        *  Here must be processed things related to types like parameters
+        *  and type-dependand attributes
+        */
+
         foreach (var funcOverloads in program.functions.Values)
         {
             foreach (var func in funcOverloads)
@@ -29,6 +43,7 @@ public partial class Evaluator
                 if (func.TryGetAttribute("indexerGetter", out attrib)) ExecuteAttrtribute(func, attrib);
                 if (func.TryGetAttribute("indexerSetter", out attrib)) ExecuteAttrtribute(func, attrib);
                 if (func.TryGetAttribute("overrideOperator", out attrib)) ExecuteAttrtribute(func, attrib);
+                if (func.TryGetAttribute("implicitConvert", out attrib)) ExecuteAttrtribute(func, attrib);
             }
         }
     }
@@ -185,6 +200,12 @@ public partial class Evaluator
             }
             else throw new Exception("TODO no function overload with X arguments");
         }
+    
+        else if (attrib.Name == "implicitConvert")
+        {
+            if (attrib.Arguments.Length == 0) AppendImplicitConversion((Function)member);
+            else throw new Exception("TODO no function overload with X arguments");
+        }
     }
 
     private static readonly string[] allowedOperatorOverloading= [
@@ -197,6 +218,27 @@ public partial class Evaluator
             throw new Exception($"TODO function parent must be a structure!");
 
         parent.AppendOperator(op, func);
+    }
+    private void AppendImplicitConversion(Function func)
+    {
+        if (func.parent is not Structure @parent)
+            throw new Exception($"TODO function parent must be a structure!");
+        if (func.parameterTypes[0] is not SolvedTypeReference @solvedP1)
+            throw new Exception($"TODO unable to solve parameter 1 type!");
+        if (func.returnType is not SolvedTypeReference @solvedrt)
+            throw new Exception($"TODO unable to solve returning type!");
+
+        var p1 = solvedP1.structure;
+        var rt = solvedrt.structure;
+
+        if (p1 == parent)
+            parent.AppendImplicitConvert(rt, func);
+        
+        else if (rt == parent)
+            rt.AppendImplicitConvert(parent, func);
+        
+        else throw new Exception($"TODO the implicit convert function"
+        + "parameter or return type must be the parent structure of the function!");
     }
     private void RegisterGlobal(ProgramMember member, string alias)
     {

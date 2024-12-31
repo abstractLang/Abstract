@@ -701,7 +701,16 @@ namespace Types {
         @implicitConvert @public func u64 parse_u64(string value)
         @implicitConvert @public func u128 parse_u128(string value)
         
+        @overrideOperator("+")
+        @externInterface @public @static func string concatenate(string left, string right)
+        @overrideOperator("+")
+        @externInterface @public @static func string concatenate(string base, char character)
+        @overrideOperator("+")
+        @externInterface @public @static func string concatenate(string base, []char characters)
+
     }
+
+     @defineGlobal("char") @public @valueOnly @final struct Character {}
 
     @defineGlobal("void") @public @abstract @final struct Void {}
     @defineGlobal("noreturn") @public @abstract @final struct NoReturn {}
