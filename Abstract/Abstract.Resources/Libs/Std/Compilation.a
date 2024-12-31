@@ -6,11 +6,11 @@
 
 namespace Compilation {
 
-    @public const Std.System.Archtecture targetArch
-    @public let uptr currentLine
-    @public let uptr currentColumn
-    @public let string currentSource
-    @public let string functionName
+    @public @comptime const Std.System.Archtecture targetArch
+    @public @comptime let uptr currentLine
+    @public @comptime let uptr currentColumn
+    @public @comptime let string currentSource
+    @public @comptime let string functionName
     
     @public enum Operator {
         # assign and reading operators
@@ -35,40 +35,40 @@ namespace Compilation {
 
     namespace Types {
 
-        @public @abstract @valueOnly @final struct ComptimeString {
+        @public @abstract @comptimeOnly @valueOnly @final struct ComptimeString {
 
-            @implicitConvert @public func string asstring(ComptimeString value)
-
-        }
-
-        @public @abstract @valueOnly @final struct ComptimeInteger {
-
-            @implicitConvert @public func i8 asi8(ComptimeInteger value)
-            @implicitConvert @public func i16 asi16(ComptimeInteger value)
-            @implicitConvert @public func i32 asi32(ComptimeInteger value)
-            @implicitConvert @public func i64 asi64(ComptimeInteger value)
-            @implicitConvert @public func i128 asi128(ComptimeInteger value)
-            @implicitConvert @public func u8 asu8(ComptimeInteger value)
-            @implicitConvert @public func u16 asu16(ComptimeInteger value)
-            @implicitConvert @public func u32 asu32(ComptimeInteger value)
-            @implicitConvert @public func u64 asu64(ComptimeInteger value)
-            @implicitConvert @public func u128 asu128(ComptimeInteger value)
-
-            @implicitConvert @public func f32 asf32(ComptimeInteger value)
-            @implicitConvert @public func f64 asf64(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func string asstring(ComptimeString value)
 
         }
 
-        @public @abstract @valueOnly @final struct ComptimeFloating {
+        @public @abstract @comptimeOnly @valueOnly @final struct ComptimeInteger {
 
-            @implicitConvert @public func f32 asf32(ComptimeFloating value)
-            @implicitConvert @public func f64 asf64(ComptimeFloating value)
+            @implicitConvert @public @static @comptime func i8 asi8(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func i16 asi16(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func i32 asi32(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func i64 asi64(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func i128 asi128(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func u8 asu8(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func u16 asu16(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func u32 asu32(ComptimeInteger value)
+            @implicitConvert @public @static comptime func u64 asu64(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func u128 asu128(ComptimeInteger value)
+
+            @implicitConvert @public @static @comptime func f32 asf32(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func f64 asf64(ComptimeInteger value)
 
         }
 
-        @public @abstract @valueOnly @final struct ComptimeBoolean {
+        @public @abstract @comptimeOnly @valueOnly @final struct ComptimeFloating {
 
-            @implicitConvert @public func bool asbool(ComptimeBoolean value)
+            @implicitConvert @public @static @comptime func f32 asf32(ComptimeFloating value)
+            @implicitConvert @public @static @comptime func f64 asf64(ComptimeFloating value)
+
+        }
+
+        @public @abstract @comptimeOnly @valueOnly @final struct ComptimeBoolean {
+
+            @implicitConvert @public @static @comptime func bool asbool(ComptimeBoolean value)
             
         }
 

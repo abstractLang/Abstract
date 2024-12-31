@@ -142,8 +142,17 @@ public partial class Evaluator
         {
             throw new NotImplementedException();
         }
+        else
+        {
+            if (CanBeAssignedTo(
+                node.Right.DataReference.refferToType,
+                node.Left.DataReference.refferToType,
+                out var conversion
+            )) node.ConvertRight = conversion;
+            else throw new NotImplementedInternalBuildException();
+        }
 
-        Console.WriteLine($"{node.Left.DataReference} {node.Operator} {node.Right.DataReference}");
+        node.DataReference = node.Left.DataReference;
         node.evaluated = true;
     }
 
@@ -188,7 +197,6 @@ public partial class Evaluator
         }
 
         Return:
-        Console.WriteLine($"{node.Left.DataReference} {node.Operator} {node.Right.DataReference} ({node.DataReference})");
         node.evaluated = true;
     }
     private void EvalUnaryOperation(UnaryExpressionNode node, ExecutableCodeBlock currblock)
@@ -236,8 +244,8 @@ public partial class Evaluator
                 throw new NoOverloadForTypes(node, string.Join(", ", _argTypes.Select(e => e?.ToString() ?? "!nil")));
 
                 node.FunctionTarget = func;
+                node.DataReference = new DynamicDataRef(func.returnType);
             }
-
             else throw new ReferenceNotCallableException(node);
         }
         catch (SyntaxException ex)

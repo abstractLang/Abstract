@@ -6,6 +6,16 @@
 
 namespace Types {
 
+    @public @comptime func type typeOf(anytype value) {}
+
+    @public @comptime func i32 sizeOf(type type) {}
+    @public @comptime func i32 sizeOf(anytype value) {}
+
+    @public @comptime func i32 bitSizeOf(type type) {}
+    @public @comptime func i32 bitSizeOf(anytype value) {}
+
+    # Primitive and base types
+
     @defineGlobal("type") @public @abstract struct Type {}
     @defineGlobal("anytype") @public @abstract struct AnyType {}
 
@@ -23,6 +33,9 @@ namespace Types {
         @public @static func bool isLesserEquals(Integer a, Integer b)
         @overrideOperator(">=") @externInterface
         @public @static func bool isGreaterEquals(Integer a, Integer b)
+
+        @public @static func []byte getBytes()
+        @public @static func T fromBytes(type T, []byte)
 
     }
 
@@ -689,17 +702,17 @@ namespace Types {
 
     @defineGlobal("string") @public @valueOnly @final struct String {
 
-        @implicitConvert @public func i8 parse_i8(string value)
-        @implicitConvert @public func i16 parse_i16(string value)
-        @implicitConvert @public func i32 parse_i32(string value)
-        @implicitConvert @public func i64 parse_i64(string value)
-        @implicitConvert @public func i128 parse_i128(string value)
+        @implicitConvert @public @static func i8 parse_i8(string value)
+        @implicitConvert @public @static func i16 parse_i16(string value)
+        @implicitConvert @public @static func i32 parse_i32(string value)
+        @implicitConvert @public @static func i64 parse_i64(string value)
+        @implicitConvert @public @static func i128 parse_i128(string value)
 
-        @implicitConvert @public func u8 parse_u8(string value)
-        @implicitConvert @public func u16 parse_u16(string value)
-        @implicitConvert @public func u32 parse_u32(string value)
-        @implicitConvert @public func u64 parse_u64(string value)
-        @implicitConvert @public func u128 parse_u128(string value)
+        @implicitConvert @public @static func u8 parse_u8(string value)
+        @implicitConvert @public @static func u16 parse_u16(string value)
+        @implicitConvert @public @static func u32 parse_u32(string value)
+        @implicitConvert @public @static func u64 parse_u64(string value)
+        @implicitConvert @public @static func u128 parse_u128(string value)
         
         @overrideOperator("+")
         @externInterface @public @static func string concatenate(string left, string right)
@@ -710,10 +723,17 @@ namespace Types {
 
     }
 
-     @defineGlobal("char") @public @valueOnly @final struct Character {}
+    @defineGlobal("char") @public @valueOnly @final struct Character {}
 
     @defineGlobal("void") @public @abstract @final struct Void {}
     @defineGlobal("noreturn") @public @abstract @final struct NoReturn {}
+
+    @public @abstract @final struct Enumerator(type T) {
+
+        @public func T getValue(string identifier)
+        @public func T getIdentifier(T value)
+
+    }
 
     namespace Collections {
 
@@ -729,7 +749,15 @@ namespace Types {
             
             @indexerGetter @public func ElementT get(i32 i)
             @indexerSetter @public func void set(i32 i, ElementT value)
-            @getter("Length") @public func i32 getLength()
+            @getter("Count") @public func i32 getCount()
+
+        }
+
+        @public @interface struct IDictionary(type TKey, type TValue) {
+
+            @indexerGetter @public func TValue get(TKey key)
+            @indexerSetter @public func void set(TKey key, TValue value)
+            @getter("Count") @public func i32 getCount()
 
         }
 
@@ -737,10 +765,9 @@ namespace Types {
 
     namespace Static {
 
-        @public @valueOnly @final struct StringBuffer(uptr bufferLength)
-        {
+        @public @valueOnly @final struct StringBuffer(uptr bufferLength) {}
 
-        }
+        @public @valueOnly @final struct StringSpan {}
 
     }
 

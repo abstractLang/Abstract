@@ -17,8 +17,8 @@ public class BinaryExpressionNode : ExpressionNode
     {
         if (Operate == null) return base.ToFancyString();
 
-        var l = ConvertLeft == null ? Left.ToString() : $"{ConvertLeft.identifier}({Left})";
-        var r = ConvertRight == null ? Right.ToString() : $"{ConvertRight.identifier}({Right})";
+        var l = ConvertLeft == null ? Left.ToFancyString() : $"{ConvertLeft.identifier}({Left.ToFancyString()})";
+        var r = ConvertRight == null ? Right.ToFancyString() : $"{ConvertRight.identifier}({Right.ToFancyString()})";
 
         return $"{Operate.identifier}({l}, {r})";
     }
