@@ -13,7 +13,7 @@ public class Function(
     public BlockNode FunctionBodyNode => functionNode.Body!;
 
     public TypeReference returnType = null!;
-    public TypeReference[] parameterTypes = null!;
+    public (TypeReference type, MemberIdentifier name)[] parameters = null!;
 
     public bool IsGeneric => _generics.Count > 0;
     protected Dictionary<MemberIdentifier, TypeReference> _generics = [];
@@ -40,5 +40,6 @@ public class Function(
     }
 
     public override string ToString()
-        => $"{GlobalReference}({string.Join(", ", (object?[])parameterTypes)}) -> {returnType}";
+        => $"{GlobalReference}({string.Join(", ", parameters
+        .Select(e => e.type) ?? [])}) -> {returnType}";
 }

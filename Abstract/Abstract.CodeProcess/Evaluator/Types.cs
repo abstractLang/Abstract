@@ -62,13 +62,13 @@ public partial class Evaluator
                 * used as the return type.
                 */
 
-                List<TypeReference> paramTypes = [];
+                List<(TypeReference, MemberIdentifier)> parameters = [];
                 for (var j = 0; j < funcNode.ParameterCollection.Items.Length; j++)
                 {
-                    var parameter = (TypedIdentifierNode)funcNode.ParameterCollection.Items[j];
+                    var parameter = funcNode.ParameterCollection.Items[j];
 
                     var reference = GetTypeFromTypeExpressionNode(parameter.Type, function);
-                    paramTypes.Add(reference);
+                    parameters.Add((reference, parameter.Identifier.ToString()));
 
                     if (reference is SolvedTypeReference @solved
                     && solved.structure.GlobalReference == "Std.Types.Type")
@@ -78,7 +78,7 @@ public partial class Evaluator
                     }
                 }
                 
-                function.parameterTypes = [.. paramTypes];
+                function.parameters = [.. parameters];
                 function.returnType = GetTypeFromTypeExpressionNode(funcNode.ReturnType, function);
                 
             }
@@ -172,14 +172,14 @@ public partial class Evaluator
         
         foreach (var f in funcGroup)
         {
-            var parameters = f.parameterTypes;
+            var parameters = f.parameters;
 
             if (types.Length != parameters.Length) continue;
 
             List<Function?> toConvert = [];
             for (var i = 0; i < parameters.Length; i++)
             {
-                if (!CanBeAssignedTo(types[i], parameters[i], out var cf)) goto Break;
+                if (!CanBeAssignedTo(types[i], parameters[i].type, out var cf)) goto Break;
                 toConvert.Add(cf);
             }
 
@@ -198,12 +198,12 @@ public partial class Evaluator
         
         foreach (var f in funcGroup)
         {
-            var parameters = f.parameterTypes;
+            var parameters = f.parameters;
 
             if (types.Length != parameters.Length) continue;
             for (var i = 0; i < parameters.Length; i++)
             {
-                if (!CanBeDirectlyAssignedTo(types[i], parameters[i])) goto Break;
+                if (!CanBeDirectlyAssignedTo(types[i], parameters[i].type)) goto Break;
             }
 
             func = f;

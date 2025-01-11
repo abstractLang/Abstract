@@ -1,4 +1,5 @@
-﻿using Abstract.Build.Core.Exceptions;
+﻿using System.Diagnostics;
+using Abstract.Build.Core.Exceptions;
 using Abstract.Build.Core.Sources;
 using Abstract.CodeProcess;
 using Abstract.Parser;
@@ -13,7 +14,12 @@ public static class Builder
 
     private static int __Execute(BuildOptions buildOps)
     {
-        Console.WriteLine("Starting build process...");
+        Stopwatch entireBuild = new();
+        Stopwatch singleStep = new();
+
+        Console.WriteLine("Initializing build proccess...");
+        entireBuild.Start();
+        singleStep.Start();
 
         var errorHandler = new ErrorHandler();
 
@@ -25,10 +31,15 @@ public static class Builder
             Directory.CreateDirectory(buildOps.OutputDirectory);
 
         
-        List<Script> scripts = [];
+        Dictionary<string, List<Script>> projects = [];
 
         // generating script objects...
-        foreach (var i in buildOps.InputedFilesPath) scripts.Add(new UserScript(i));
+        foreach (var i in buildOps.InputedFilesPath)
+        {
+            projects.Add(i.Key, []);
+            foreach (var j in i.Value)
+                projects[i.Key].Add(new UserScript(j));
+        }
         // appending dependences
         // scripts.Add(new BuildinLibrary("Std"));
 
@@ -40,14 +51,36 @@ public static class Builder
         var lexer = new Lexer();
         var parser = new SyntaxTreeBuilder(errorHandler);
 
-        foreach (var script in scripts)
+        foreach (var project in projects)
         {
-            var tokens = lexer.Parse(script);
-            program.AppendChild(parser.ParseScriptTokens(script, tokens));
+            var projectNode = new ProjectNode(project.Key);
+            foreach (var script in project.Value)
+            {
+                var tokens = lexer.Parse(script);
+                projectNode.AppendChild(parser.ParseScriptTokens(script, tokens));
+            }
+            program.AppendChild(projectNode);
         }
 
+        Console.WriteLine($"Parsing Finished. ({singleStep.Elapsed})");
+        Console.WriteLine("Starting evaluation proccess...");
+        singleStep.Restart();
+
         var eval = new Evaluator(errorHandler);
-        eval.EvaluateProgram(program);
+        var progroot = eval.EvaluateProgram(program);
+
+        Console.WriteLine($"Evaluation finished. ({singleStep.Elapsed})");
+        singleStep.Restart();
+
+        Console.WriteLine("Starting compression proccess...");
+        singleStep.Restart();
+
+        var compressor = new Compressor(errorHandler);
+        compressor.DoCompression(progroot, buildOps.OutputDirectory);
+
+        Console.WriteLine($"Compression finished. ({singleStep.Elapsed})");
+
+        Console.WriteLine($"Build finished! ({entireBuild.Elapsed})");
 
         File.WriteAllText($"{buildOps.OutputDirectory}/tree.txt", program.ToTree());
         File.WriteAllText($"{buildOps.OutputDirectory}/program.txt", program.ToFancyString());
@@ -59,10 +92,13 @@ public static class Builder
 
     private static int ValidadeBuildOptions(BuildOptions buildOps, ErrorHandler err)
     {
-        foreach (var i in buildOps.InputedFilesPath)
+        foreach (var (project, scripts) in buildOps.InputedFilesPath)
         {
-            try { if (!File.Exists(i)) throw new ScriptNotFoundException(i); }
-            catch (ScriptNotFoundException ex) { err.RegisterError(null!, ex); }
+            foreach (var j in scripts)
+            {
+                try { if (!File.Exists(j)) throw new ScriptNotFoundException(j); }
+                catch (ScriptNotFoundException ex) { err.RegisterError(null!, ex); }
+            }
         }
 
         if (err.ErrorCount > 0)

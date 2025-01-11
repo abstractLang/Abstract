@@ -15,18 +15,23 @@ public partial class Evaluator(ErrorHandler errHandler)
     private ProgramRoot program = null!;
 
     // temporary debug shit
-    private StringBuilder typeMatchingLog = new("## Type Matching operations log: #\n");
+    private StringBuilder typeMatchingLog = new("## Type Matching operations log: #region #\n");
 
-    public void EvaluateProgram(ProgramNode Project)
+    public ProgramRoot EvaluateProgram(ProgramNode programNode)
     {
-        Console.WriteLine("Starting evaluation process...");
+        program = new(new("programNode."));
 
+        try {
 
-        program = new(new("MyProgram"));
-        var stdProj = new Project(program, "Std");
-        program.AppendProject(stdProj);
-
-        SearchMembersRecursive(stdProj, [.. Project.Children]);
+        foreach (var i in programNode.Children)
+        {
+            if (i is ProjectNode @project)
+            {
+                var proj = new Project(program, project.projectName);
+                SearchMembersRecursive(proj, [.. project.Children]);
+                program.AppendProject(proj);
+            }
+        }
 
         // Evaluation process starts here
 
@@ -40,6 +45,8 @@ public partial class Evaluator(ErrorHandler errHandler)
         ScanCodeBlocks();
 
         // Evaluation process ends here
+
+        } catch {}
 
 
         // Debuggin shits here
@@ -61,12 +68,16 @@ public partial class Evaluator(ErrorHandler errHandler)
         foreach (var i in program.attributes.Keys) refTableStr.AppendLine($"\t- {i}");
 
         var progStructStr = new StringBuilder();
-        progStructStr.AppendLine("## Program Structure ##");
+        progStructStr.AppendLine("## Program Structure ##\n");
         progStructStr.Append(BuildProgramStructureTree(program));
 
-        File.WriteAllText($"{Project.outDirectory}/reftable.txt", refTableStr.ToString());
-        File.WriteAllText($"{Project.outDirectory}/prgstruc.txt", progStructStr.ToString());
-        File.WriteAllText($"{Project.outDirectory}/tymatlog.txt", typeMatchingLog.ToString());
+        File.WriteAllText($"{programNode.outDirectory}/reftable.txt", refTableStr.ToString());
+        File.WriteAllText($"{programNode.outDirectory}/prgstruc.txt", progStructStr.ToString());
+        File.WriteAllText($"{programNode.outDirectory}/tymatlog.txt", typeMatchingLog.ToString());
+
+        var proot = program;
+        program = null!;
+        return proot;
     }
 
     private void SearchMembersRecursive(ProgramMember parentMember, SyntaxNode[] children)
@@ -75,6 +86,10 @@ public partial class Evaluator(ErrorHandler errHandler)
 
         foreach (var child in children)
         {
+            if (child is ProjectNode @project)
+            {
+                SearchMembersRecursive(parentMember, [.. project.Children]);
+            }
             if (child is ScriptReferenceNode @script)
             {
                 SearchMembersRecursive(parentMember, [.. script.Children]);
@@ -117,6 +132,8 @@ public partial class Evaluator(ErrorHandler errHandler)
                 registred.AppendAttribute([.. attributes]);
                 attributes.Clear();
             }
+        
+            else throw new Exception();
         }
 
         if (attributes.Count > 0)
@@ -193,12 +210,33 @@ public partial class Evaluator(ErrorHandler errHandler)
     }
     #endregion
 
+    private string BuildProgramStructureTree(ProgramRoot root)
+    {
+        var str = new StringBuilder();
+
+        str.AppendLine(root.ToString());
+        str.AppendLine("{");
+
+        foreach (var i in root.projects.Values)
+        {
+            var lines = BuildProgramStructureTree(i)
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+            str.AppendLine($"\t{lines[0]}");
+            foreach (var line in lines[1..]) str.AppendLine($"\t{line}");
+        }
+
+        str.AppendLine("}");
+
+        return str.ToString();
+    }
     private string BuildProgramStructureTree(ProgramMember member)
     {
         var str = new StringBuilder();
 
         str.AppendLine(member.ToString());
-        if ((member is not FunctionGroup) && (member is not Field) && (member is not Enumerator))
+        if ((member is not FunctionGroup)
+        && (member is not Field)
+        && (member is not Enumerator))
         {
             str.AppendLine("{");
 

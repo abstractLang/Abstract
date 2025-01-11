@@ -11,21 +11,23 @@ public class Program
 
 #if DEBUG
         return ProcessCommand([
-            "compile", "Std",
+            "compile", "MyProgram",
 
             "-t", "elf",
             //"-nostd",
 
-            "Libs/Std/Compilation.a",
-            "Libs/Std/Console.a",
-            "Libs/Std/Math.a",
-            "Libs/Std/Memory.a",
-            "Libs/Std/Meta.a",
-            "Libs/Std/Process.a",
-            "Libs/Std/System.a",
-            "Libs/Std/Types.a",
+            "-p", "Std",
+                "Libs/Std/Compilation.a",
+                "Libs/Std/Console.a",
+                "Libs/Std/Math.a",
+                "Libs/Std/Memory.a",
+                "Libs/Std/Meta.a",
+                "Libs/Std/Process.a",
+                "Libs/Std/System.a",
+                "Libs/Std/Types.a",
 
-            "../../../../test-code/main.a",
+            "-p", "MyProgram",
+                "../../../../test-code/main.a",
 
             "-o","../../../../test-code/bin/Std.elf"
            ]);
@@ -77,30 +79,35 @@ public class Program
 
         buildOps.ProgramName = args[0];
 
+        string projectName = args[0];
+
         for (var i = 1; i < args.Length; i++)
         {
             if (args[i] == "-o") // output flag
             {
                 if (args.Length < i + 1) return 1;
 
-                string outputFile = args[i + 1];
+                string outputFile = args[++i];
 
                 string dir = Path.GetDirectoryName(outputFile)!;
                 string name = Path.GetFileName(outputFile);
 
                 buildOps.SetOutput(dir, name);
-
-                i++;
             }
 
-            else if (args[i] == "-t")
+            else if (args[i] == "-t") // target flag
             {
                 if (args.Length < i + 1) return 1;
-                buildOps.SetTarget(args[i + 1]);
-                i++;
+                buildOps.SetTarget(args[++i]);
             }
 
-            else buildOps.AddInputFile(args[i]);
+            else if (args[i] == "-p") // project flag
+            {
+                if (args.Length < i + 1) return 1;
+                projectName = args[++i];
+            }
+
+            else buildOps.AddInputFile(projectName, args[i]);
         }
 
         Builder.Execute(buildOps); // no return

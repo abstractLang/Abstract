@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Abstract.Parser.Core\Abstract.Parser.Core.csproj" />
+    <ProjectReference Include="..\Abstract.Binutils.Abs\Abstract.Binutils.Abs.csproj" />
   </ItemGroup>
 </Project>

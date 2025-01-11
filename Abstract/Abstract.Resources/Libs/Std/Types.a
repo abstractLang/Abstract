@@ -8,10 +8,10 @@ namespace Types {
 
     @public @comptime func type typeOf(anytype value) {}
 
-    @public @comptime func i32 sizeOf(type type) {}
+    @public @comptime func i32 sizeOf(type t) {}
     @public @comptime func i32 sizeOf(anytype value) {}
 
-    @public @comptime func i32 bitSizeOf(type type) {}
+    @public @comptime func i32 bitSizeOf(type t) {}
     @public @comptime func i32 bitSizeOf(anytype value) {}
 
     # Primitive and base types
@@ -35,7 +35,7 @@ namespace Types {
         @public @static func bool isGreaterEquals(Integer a, Integer b)
 
         @public @static func []byte getBytes()
-        @public @static func T fromBytes(type T, []byte)
+        @public @static func T fromBytes(type T, []byte bytes)
 
     }
 
@@ -728,12 +728,10 @@ namespace Types {
     @defineGlobal("void") @public @abstract @final struct Void {}
     @defineGlobal("noreturn") @public @abstract @final struct NoReturn {}
 
-    @public @abstract @final struct Enumerator(type T) {
+    # Type wrappers
+    @public @final struct Nullable(type T) {}
+    @public @final struct Failable(type T) {}
 
-        @public func T getValue(string identifier)
-        @public func T getIdentifier(T value)
-
-    }
 
     namespace Collections {
 

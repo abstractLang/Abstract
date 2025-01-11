@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Immutable;
+using System.Text;
 
 namespace Abstract.Build;
 
@@ -13,8 +14,8 @@ public class BuildOptions
     private bool _isElfExecutable = false;
     public bool IsElfExecutable => _isElfExecutable;
 
-    private readonly List<string> _inputFilePaths = [];
-    public string[] InputedFilesPath => [.. _inputFilePaths];
+    private readonly Dictionary<string, List<string>> _inputFilePaths = [];
+    public Dictionary<string, List<string>> InputedFilesPath=> _inputFilePaths.ToDictionary();
 
 
     private string? _outputDirectory = null;
@@ -23,10 +24,11 @@ public class BuildOptions
     public string OutputDirectory => _outputDirectory ?? String.Empty;
     public string OutputFileName => _outputFileName ?? String.Empty;
 
-    public void AddInputFile(string path)
+    public void AddInputFile(string project, string path)
     {
         string rooted = Path.GetFullPath(path);
-        _inputFilePaths.Add(rooted);
+        if (!_inputFilePaths.ContainsKey(project)) _inputFilePaths.Add(project, []);
+        _inputFilePaths[project].Add(rooted);
     }
 
     public void SetOutput(string dir, string name)

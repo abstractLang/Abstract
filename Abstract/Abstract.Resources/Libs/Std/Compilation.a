@@ -51,7 +51,7 @@ namespace Compilation {
             @implicitConvert @public @static @comptime func u8 asu8(ComptimeInteger value)
             @implicitConvert @public @static @comptime func u16 asu16(ComptimeInteger value)
             @implicitConvert @public @static @comptime func u32 asu32(ComptimeInteger value)
-            @implicitConvert @public @static comptime func u64 asu64(ComptimeInteger value)
+            @implicitConvert @public @static @comptime func u64 asu64(ComptimeInteger value)
             @implicitConvert @public @static @comptime func u128 asu128(ComptimeInteger value)
 
             @implicitConvert @public @static @comptime func f32 asf32(ComptimeInteger value)

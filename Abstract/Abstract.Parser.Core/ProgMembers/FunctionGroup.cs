@@ -8,6 +8,8 @@ public class FunctionGroup(ProgramMember? parent, MemberIdentifier identifier)
     protected List<Function> _overloads = [];
     public bool IsSingle => _overloads.Count == 1;
 
+    public Function[] Overloads => [.. _overloads];
+
     public void AddOverload(Function overload)
     {
         _overloads.Add(overload);

@@ -50,4 +50,6 @@ public class ProgramRoot(MemberIdentifier programName) : ProgramMember(null, pro
         }
         return null!;
     }
+
+    public override string ToString() => $"{identifier}";
 }
