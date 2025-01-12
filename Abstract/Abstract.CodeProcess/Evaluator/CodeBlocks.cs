@@ -243,8 +243,6 @@ public partial class Evaluator
                 Function func = TryGetOveloadDirect(functionGroup, [.. _argTypes]) ??
                 throw new NoOverloadForTypes(node, string.Join(", ", _argTypes.Select(e => e?.ToString() ?? "!nil")));
 
-                currblock.ParentProject?.TestUseOfReference(func);
-
                 node.FunctionTarget = func;
                 node.DataReference = new DynamicDataRef(func.returnType);
             }

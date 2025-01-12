@@ -19,15 +19,24 @@ public class Compressor(ErrorHandler errHandler)
 
     private readonly ErrorHandler _errHandler = errHandler;
 
-    public void DoCompression(ProgramRoot program, string outpsth)
+    private Project _currentProject = null!;
+    private Dictionary<string, List<(string kind, string identifier)>> _dependences = [];
+
+    public ElfProgram[] DoCompression(ProgramRoot program, string outpsth)
     {
+        List<ElfProgram> elfs = [];
+
         // Each program should result in one ELF file
         foreach (var i in program.projects)
         {
-            var projectElf = CompressProject(i.Key, i.Value, program);
-            File.WriteAllText($"{outpsth}/{i.Key}.txt", projectElf.ToString());
+            using var projectElf = CompressProject(i.Key, i.Value, program);
+            var bakedElf = ElfProgram.BakeBuilder(projectElf);
+
+            File.WriteAllText($"{outpsth}/{i.Key}.txt", bakedElf.ToString());
+            elfs.Add(bakedElf);
         }
 
+        return [.. elfs];
     }
 
 
@@ -36,92 +45,36 @@ public class Compressor(ErrorHandler errHandler)
         var elfBuilder = new ElfBuilder(projectName);
         var dirRoot = elfBuilder.Root;
 
+        _currentProject = project;
+        _dependences.Clear();
+
         var projectdir = new DirectoryBuilder("PROJECT", project.identifier);
         //var includedir = new DirectoryBuilder("INCLUDE", "./");
 
-
-
         dirRoot.AppendChild(projectdir);
-        dirRoot.AppendChild(CompressDependences(project, program));
-        //dirRoot.AppendChild(includedir);
-        
         AppendProgramMembers(projectdir, project);
+        dirRoot.AppendChild(CompressDependences());
+
+        _currentProject = null!;
 
         return elfBuilder;
     }
+    
 
-    private DirectoryBuilder[] CompressDependences(Project project, ProgramRoot prog)
+    private DirectoryBuilder[] CompressDependences()
     {
         List<DirectoryBuilder> importDir = [];
 
-        Dictionary<string, List<ProgramMember>> elfs = [];
-
-        foreach (var i in project.Dependences)
-        {
-            var root = i.GlobalReference.Step.step;
-            if (!elfs.ContainsKey(root)) elfs.Add(root, []);
-            elfs[root].Add(i);
-        }
-
-        foreach (var i in elfs)
+        foreach (var i in _dependences)
         {
             var elfref = new DirectoryBuilder("IMPORT", i.Key);
-
-            var depproj = prog.projects[i.Key];
             foreach (var j in i.Value)
-            {
-                CompressDependenceProgramMember(elfref, j);
-            }
+                elfref.AppendChild(new MetaBuilder(j.kind, j.identifier));
 
             importDir.Add(elfref);
         }
 
         return [.. importDir];
-    }
-    private void CompressDependenceProgramMember(DirectoryBuilder parent, ProgramMember member)
-    {
-        if (member is Namespace @nmsp)
-        {
-            var dir = new DirectoryBuilder("NMSP", nmsp.GlobalReference);
-            parent.AppendChild(dir);
-        }
-        else if (member is Structure @struc)
-        {
-            var dir = new DirectoryBuilder("TYPE", struc.GlobalReference);
-            parent.AppendChild(dir);
-        }
-        else if (member is FunctionGroup @fGroup)
-        {
-            var dir = new DirectoryBuilder("FGROUP", fGroup.GlobalReference);
-            parent.AppendChild(dir);
-        }
-        else if (member is Function @func)
-        {
-            if (parent.TryGetChild("FGROUP", func.GlobalReference, out var group))
-            {
-                var dir = new DirectoryBuilder("FUNCTION", $"overload_{group.ChildrenCount}");
-                var param = new ParametersLumpBuilder();
-
-                foreach (var i in func.parameters)
-                    param.parameters.Add((i.type.ToString()!, i.name));
-
-                dir.AppendChild(param);
-                group.AppendChild(dir);
-            }
-            else
-            {
-                var dir = new DirectoryBuilder("FUNCTION", func.GlobalReference);
-                var param = new ParametersLumpBuilder();
-
-                foreach (var i in func.parameters)
-                    param.parameters.Add((i.type.ToString()!, i.name));
-
-                dir.AppendChild(param);
-                parent.AppendChild(dir);
-            }
-        }
-    
-        else throw new Exception();
     }
 
     private void CompressProgramMember(DirectoryBuilder parent, ProgramMember member)
@@ -132,6 +85,8 @@ public class Compressor(ErrorHandler errHandler)
         else goto Others;
 
         var hdir = new DirectoryBuilder(kind, member.identifier);
+        hdir.AppendChild(new MetaBuilder("GLOBAL", member.GlobalReference));
+
         AppendProgramMembers(hdir, member);
         parent.AppendChild(hdir);
 
@@ -140,6 +95,7 @@ public class Compressor(ErrorHandler errHandler)
         if (member is Field @field)
         {
             var lump = new LumpBuilder("FIELD", member.identifier);
+            lump.AppendChild(new MetaBuilder("GLOBAL", member.GlobalReference));
             parent.AppendChild(lump);
         }
 
@@ -150,6 +106,7 @@ public class Compressor(ErrorHandler errHandler)
                 var f = funcGroup.Overloads[0];
 
                 var funcdir = new DirectoryBuilder("FUNCTION", f.identifier);
+                funcdir.AppendChild(new MetaBuilder("GLOBAL", member.GlobalReference));
                 CompressFuntion(funcdir, f);
                 parent.AppendChild(funcdir);
             }
@@ -205,17 +162,9 @@ public class Compressor(ErrorHandler errHandler)
             }
 
             code.WriteOpCode(Base.LeaveFrame);
+            code.WriteOpCode(Base.Ret);
 
-            // code.WriteOpCode(Instructions.Get(Base.Nop));
-            // code.WriteOpCode(Instructions.Get(Base.LdConst, Types.i16), (short)100);
-            // code.WriteOpCode(Instructions.Get(Base.LdConst, Types.i32), 500);
-            // code.WriteOpCode(Instructions.Get(Base.LdConst, Types.Str), "Hello, World!");
-
-            // code.WriteOpCode(Instructions.Get(Base.Pop));
-            // code.WriteOpCode(Instructions.Get(Base.Pop));
-            // code.WriteOpCode(Instructions.Get(Base.Pop));
-
-            // code.WriteOpCode(Instructions.Get(Base.Ret));
+            code.Bake();
         }
         
     }
@@ -241,7 +190,11 @@ public class Compressor(ErrorHandler errHandler)
 
     private void AssembleStatement(CodeBuilder builder, StatementNode node)
     {
-        Console.WriteLine(node.GetType().Name);
+        if (node is ReturnStatementNode @return)
+        {
+            builder.WriteOpCode(Base.Ret);
+        }
+        else Console.WriteLine("Unhandled stat: " + node.GetType().Name);
     }
 
     private void AssembleExpression(CodeBuilder builder, ExpressionNode node)
@@ -258,16 +211,29 @@ public class Compressor(ErrorHandler errHandler)
             else throw new Exception();
         }
 
+        else if (node is BinaryExpressionNode @binary)
+        {
+            if (binary.ConvertLeft is not null)
+                AssembleCall(builder, binary.ConvertLeft, [binary.Left]);
+            else AssembleExpression(builder, binary.Left);
+
+            if (binary.ConvertRight is not null)
+                AssembleCall(builder, binary.ConvertRight, [binary.Right]);
+            else AssembleExpression(builder, binary.Right);
+            
+            AssembleCall(builder, binary.Operate, null!);
+        }
+
         else if (node is FunctionCallExpressionNode @funcCall)
         {
             AssembleCall(builder, funcCall.FunctionTarget, funcCall.Arguments);
         }
 
 
-        else AssembleLoadValie(builder, node);
+        else AssembleLoadValue(builder, node);
     }
 
-    private void AssembleLoadValie(CodeBuilder builder, ExpressionNode node)
+    private void AssembleLoadValue(CodeBuilder builder, ExpressionNode node)
     {
         if (node is IdentifierCollectionNode @identifier)
         {
@@ -328,8 +294,9 @@ public class Compressor(ErrorHandler errHandler)
 
 
         // Load arguments on stack
-        foreach (var i in args) AssembleExpression(builder, i);
+        foreach (var i in args ?? []) AssembleExpression(builder, i);
         // Invoke the function
+        CheckUseOfReference(target);
         builder.WriteOpCode(Base.Call, GetAsmType(target.returnType),
             $"{target.GlobalReference}({string.Join(", ", target.parameters.Select(e => e.type))})");
 
@@ -373,6 +340,31 @@ public class Compressor(ErrorHandler errHandler)
             };
         }
         else return Types.Struct;;
+    }
+    private void CheckUseOfReference(ProgramMember member)
+    {
+        var memberProj = member.ParentProject!;
+        if (_currentProject != memberProj)
+        {
+            var projName = memberProj.identifier;
+            if (_dependences.TryGetValue(projName, out var deps))
+            {
+                var r = GetMemberReferenceIdentifier(member);
+                if (!deps.Contains(r)) deps.Add(r);
+            }
+            else _dependences.Add(projName, [GetMemberReferenceIdentifier(member)]);
+        }
+    }
+
+    private static (string kind, string identifier) GetMemberReferenceIdentifier(ProgramMember member)
+    {
+        if (member is Function @func)
+        {
+            return ("FUNCTION", $"{func.GlobalReference}({string
+            .Join(", ", func.parameters.Select(e => e.type))})");
+        }
+
+        else throw new Exception();
     }
 
 }

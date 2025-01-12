@@ -162,7 +162,6 @@ public partial class Evaluator
 
         // Search global
         var member = program.TryGetGlobal(name) as Structure;
-        if (member != null) parent?.ParentProject?.TestUseOfReference(member);
         return member!;
     }
 

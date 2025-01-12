@@ -57,8 +57,6 @@ public class ExecutableCodeBlock
             
             if (res != null)
             {
-                ParentProject?.TestUseOfReference(res);
-
                 if (res is FunctionGroup fgroup)
                     return new FunctionGroupRef(fgroup);
 

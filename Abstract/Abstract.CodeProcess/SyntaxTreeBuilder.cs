@@ -282,7 +282,8 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
 
                 node = new ReturnStatementNode();
                 node.AppendChild(EatAsNode()); // return
-                node.AppendChild(ParseExpression()); // <value>
+                if (!Taste(TokenType.LineFeedChar))
+                    node.AppendChild(ParseExpression()); // <value>
                 
                 } catch { DiscardLine(); throw; }
                 break;
