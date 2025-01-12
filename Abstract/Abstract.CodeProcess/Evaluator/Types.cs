@@ -161,8 +161,9 @@ public partial class Evaluator
             return r;
 
         // Search global
-        var member = program.TryGetGlobal(name);
-        return (member as Structure)!;
+        var member = program.TryGetGlobal(name) as Structure;
+        if (member != null) parent?.ParentProject?.TestUseOfReference(member);
+        return member!;
     }
 
     public (Function? f, Function?[] c) TryGetOveloadIndirect(FunctionGroup funcGroup, TypeReference[] types)

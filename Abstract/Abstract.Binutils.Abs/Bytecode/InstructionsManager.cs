@@ -45,13 +45,13 @@ internal static class InstructionsManager
 
         opCodes.Add(InstructionBuilder.Create(Base.LdStatic).WithArgs("refstatic"));
         opCodes.Add(InstructionBuilder.Create(Base.LdField).WithArgs("reffield"));
-        opCodes.Add(InstructionBuilder.Create(Base.LdLocal).WithArgs("reflocal"));
+        opCodes.Add(InstructionBuilder.Create(Base.LdLocal).WithArgs("immu16"));
         opCodes.Add(InstructionBuilder.Create(Base.LdIndex));
         opCodes.Add(InstructionBuilder.Create(Base.LdType).WithArgs("reftype"));
 
         opCodes.Add(InstructionBuilder.Create(Base.SetStatic).WithArgs("refstatic"));
         opCodes.Add(InstructionBuilder.Create(Base.SetField).WithArgs("reffield"));
-        opCodes.Add(InstructionBuilder.Create(Base.SetLocal).WithArgs("reflocal"));
+        opCodes.Add(InstructionBuilder.Create(Base.SetLocal).WithArgs("immu16"));
         opCodes.Add(InstructionBuilder.Create(Base.SetIndex));
 
         opCodes.Add(InstructionBuilder.Create(Base.GetType));
@@ -66,7 +66,8 @@ internal static class InstructionsManager
         opCodes.Add(InstructionBuilder.CreateIllegal()); // call null
         opCodes.Add(InstructionBuilder.Create(Base.Call).WithAllTypesMinus(Types.Null, Types.Void)
         .WithArgs("reffunc"));
-        opCodes.Add(InstructionBuilder.Create(Base.Conv).WithAllTypesMinus(Types.Void, Types.Null));
+        opCodes.Add(InstructionBuilder.Create(Base.Conv)
+        .WithAllTypesMinus(Types.Void, Types.Null).WithArgs("immtype"));
 
         opCodes.Add(InstructionBuilder.Create(Base.Add));
         opCodes.Add(InstructionBuilder.Create(Base.Sub));
@@ -107,7 +108,7 @@ internal static class InstructionsManager
 
         opCodes.Add(InstructionBuilder.Create(Base.Ret));
 
-        opCodes.Add(InstructionBuilder.Create(Base.EnterFrame));
+        opCodes.Add(InstructionBuilder.Create(Base.EnterFrame).WithArgs("immi16"));
         opCodes.Add(InstructionBuilder.Create(Base.LeaveFrame));
 
         opCodes.Add(InstructionBuilder.Create(Base.Throw));

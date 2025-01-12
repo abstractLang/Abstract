@@ -9,9 +9,10 @@ public class LocalDataRef(ExecutableCodeBlock block, MemberIdentifier name) : Da
     private MemberIdentifier name = name;
 
     public override TypeReference refferToType => block.GetLocalReference(name).type;
+    public int GetIndex => block.GetLocalReference(name).idx;
 
     public override string ToString() {
-        var (type, isconst) = block.GetLocalReference(name);
-        return $"l(" + (isconst ? "const" : "let" ) + $" {name} -> {type})";
+        var (idx, type, isconst) = block.GetLocalReference(name);
+        return $"l{idx}(" + (isconst ? "const" : "let" ) + $" {name} -> {type})";
     }
 }

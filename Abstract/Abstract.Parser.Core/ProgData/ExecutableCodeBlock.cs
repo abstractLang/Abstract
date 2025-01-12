@@ -6,19 +6,24 @@ namespace Abstract.Parser.Core.ProgData;
 public class ExecutableCodeBlock
 {
     public ProgramMember? ProgramMemberParent { get; set; }
+    public Project? ParentProject => ProgramMemberParent?.ParentProject;
     public ExecutableCodeBlock? BlockParent { get; set; }
 
-    private Dictionary<MemberIdentifier, (TypeReference type, bool constant)> _localVariables = [];
+    private Dictionary<MemberIdentifier, (int idx, TypeReference type, bool constant)> _localVariables = [];
     private List<dynamic> _localConstants = [];
+
+
+    public Dictionary<MemberIdentifier, (int idx, TypeReference type, bool constant)> LocalVariables => _localVariables;
+
 
     public void AppendLocalReference(MemberIdentifier name, TypeReference type, bool isConstant)
     {
         if (_localVariables.ContainsKey(name))
             throw new Exception("TODO this shit is already registred bruh");
 
-        _localVariables.Add(name, (type, isConstant));
+        _localVariables.Add(name, (_localVariables.Count, type, isConstant));
     }
-    public (TypeReference type, bool constant) GetLocalReference(MemberIdentifier name)
+    public (int idx, TypeReference type, bool constant) GetLocalReference(MemberIdentifier name)
     {
         return _localVariables[name];
     }
@@ -52,6 +57,8 @@ public class ExecutableCodeBlock
             
             if (res != null)
             {
+                ParentProject?.TestUseOfReference(res);
+
                 if (res is FunctionGroup fgroup)
                     return new FunctionGroupRef(fgroup);
 
@@ -62,6 +69,7 @@ public class ExecutableCodeBlock
                 }
             }
         }
+        
         return null!;
     }
     public ProgramMember? TryGetMember(MemberIdentifier name)
