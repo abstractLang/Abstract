@@ -1,9 +1,6 @@
-using System.Text;
-using Abstract.Binutils.Abs;
 using Abstract.Binutils.Abs.Bytecode;
 using Abstract.Binutils.Abs.Elf;
 using Abstract.Build;
-using Abstract.Parser.Core.Language.SyntaxNodes.Control;
 using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
 using Abstract.Parser.Core.Language.SyntaxNodes.Statement;
 using Abstract.Parser.Core.Language.SyntaxNodes.Value;
@@ -69,7 +66,7 @@ public class Compressor(ErrorHandler errHandler)
         {
             var elfref = new DirectoryBuilder("IMPORT", i.Key);
             foreach (var j in i.Value)
-                elfref.AppendChild(new MetaBuilder(j.kind, j.identifier));
+                elfref.AppendChild(new MetaBuilder('I' + j.kind, j.identifier));
 
             importDir.Add(elfref);
         }
@@ -107,7 +104,7 @@ public class Compressor(ErrorHandler errHandler)
 
                 var funcdir = new DirectoryBuilder("FUNCTION", f.identifier);
                 funcdir.AppendChild(new MetaBuilder("GLOBAL", member.GlobalReference));
-                CompressFuntion(funcdir, f);
+                CompressFunction(funcdir, f);
                 parent.AppendChild(funcdir);
             }
             else
@@ -119,7 +116,7 @@ public class Compressor(ErrorHandler errHandler)
                     var f = funcGroup.Overloads[i];
 
                     var funcdir = new DirectoryBuilder("FUNCTION", $"#overload_{i}");
-                    CompressFuntion(funcdir, f);
+                    CompressFunction(funcdir, f);
                     dir.AppendChild(funcdir);
                 }
 
@@ -129,17 +126,25 @@ public class Compressor(ErrorHandler errHandler)
 
     }
 
-    private void CompressFuntion(DirectoryBuilder builder, Function func)
+    private void CompressFunction(DirectoryBuilder builder, Function func)
     {
 
         var attrb = new LumpBuilder("META", "attrb");
-        var param = new ParametersLumpBuilder();
         
-        foreach (var (type, name) in func.parameters)
-            param.parameters.Add((type.ToString() ?? "a", name));
+        for(var i = 0; i < func.parameters.Length; i++)
+        {
+            var param = new DirectoryBuilder("PARAM", $"{i:X4}");
+
+            var (type, name) = func.parameters[i];
+            CheckUseOfReference(type);
+
+            param.AppendChild(new DirectoryBuilder("TYPE", type.ToString() ?? throw new Exception()));
+            param.AppendChild(new DirectoryBuilder("NAME", name));
+
+            builder.AppendChild(param);
+        }
 
         builder.AppendChild(attrb);
-        builder.AppendChild(param);
 
         // Code block
         if (func.FunctionBodyNode?.EvaluatedData != null)
@@ -153,7 +158,13 @@ public class Compressor(ErrorHandler errHandler)
             builder.AppendChild(code);
             builder.AppendChild(data);
 
-            code.WriteOpCode(Base.EnterFrame, (short)bodyMeta.LocalVariables.Count);
+            foreach (var i in bodyMeta.LocalVariables)
+            {
+                code.WriteOpCode(Base.LdPType, [GetAsmType(i.Value.type)]);
+            }
+
+            //                                builtin,                              structs
+            code.WriteOpCode(Base.EnterFrame, (short)bodyMeta.LocalVariables.Count, (short)0);
 
             foreach (var i in body.Content)
             {
@@ -339,7 +350,7 @@ public class Compressor(ErrorHandler errHandler)
                 _ => Types.Struct
             };
         }
-        else return Types.Struct;;
+        else return Types.Struct;
     }
     private void CheckUseOfReference(ProgramMember member)
     {
@@ -355,6 +366,26 @@ public class Compressor(ErrorHandler errHandler)
             else _dependences.Add(projName, [GetMemberReferenceIdentifier(member)]);
         }
     }
+    private void CheckUseOfReference(TypeReference type)
+    {
+        if (type is SolvedTypeReference @solved)
+        {
+            var memberProj = solved.structure.ParentProject!;
+            if (_currentProject != memberProj)
+            {
+                var projName = memberProj.identifier;
+                if (_dependences.TryGetValue(projName, out var deps))
+                {
+                    var r = GetMemberReferenceIdentifier(solved.structure);
+                    if (!deps.Contains(r)) deps.Add(r);
+                }
+                else _dependences.Add(projName, [GetMemberReferenceIdentifier(solved.structure)]);
+            }
+        }
+        else if (type is GenericTypeReference) { /* ignore for now lol */ }
+
+        else throw new NotImplementedException();
+    }
 
     private static (string kind, string identifier) GetMemberReferenceIdentifier(ProgramMember member)
     {
@@ -364,7 +395,12 @@ public class Compressor(ErrorHandler errHandler)
             .Join(", ", func.parameters.Select(e => e.type))})");
         }
 
-        else throw new Exception();
+        else if (member is Structure @struc)
+        {
+            return ("TYPE", $"{struc.GlobalReference}");
+        }
+
+        else throw new NotImplementedException();
     }
 
 }

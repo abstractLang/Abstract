@@ -88,19 +88,6 @@ public class ElfBuilder(string pname) : IDisposable {
             return str.ToString();
         }
     }
-    public class ParametersLumpBuilder() : DirBuilder("META", "param") {
-        public List<(string type, string name)> parameters = [];
-
-        public override string ToString()
-        {
-            var str = new StringBuilder();
-
-            str.Append( $"#{kind} {identifier} ");
-            str.AppendLine($"({string.Join(", ", parameters.Select(e => $"{e.type} {e.name}"))})");
-
-            return str.ToString();
-        }
-    }
 
     public class LumpBuilder : DirBuilder
     {
@@ -189,6 +176,8 @@ public class ElfBuilder(string pname) : IDisposable {
                     case "immu128": if (argValue is not UInt128) goto Invalid; break;
 
                     case "immtype": if (argValue is not Types) goto Invalid; break;
+
+                    
 
                     case "refstr"
 

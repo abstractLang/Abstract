@@ -10,6 +10,11 @@ public class ElfProgram {
     private Directory _root = null!;
     private List<Directory> _allDirectories = [];
 
+    public string Name => _root.identifier;
+    public Directory RootDirectory => _root;
+    public Directory[] AllDirectories => [.. _allDirectories];
+
+
     public static ElfProgram Load(byte[] data) => Load(new MemoryStream(data));
     public static ElfProgram LoadFile(string path)
     {

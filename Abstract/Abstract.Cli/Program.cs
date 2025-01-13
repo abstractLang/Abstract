@@ -1,4 +1,5 @@
 ﻿using Abstract.Build;
+using Abstract.CompileTarget.Core;
 using System.Reflection;
 
 namespace Abstract.Cli;
@@ -13,8 +14,7 @@ public class Program
         return ProcessCommand([
             "compile", "MyProgram",
 
-            "-t", "elf",
-            //"-nostd",
+            "-t", "wasm-text",//"elf",
 
             "-p", "Std",
                 "Libs/Std/Compilation.a",
@@ -29,7 +29,7 @@ public class Program
             "-p", "MyProgram",
                 "../../../../test-code/main.a",
 
-            "-o","../../../../test-code/bin/Std.elf"
+            "-o","../../../../test-code/bin/Std"
            ]);
 #else
         return ProcessCommand(args);
@@ -45,12 +45,15 @@ public class Program
             if (dir.StartsWith("./Abstract.CompileTarget") && dir.EndsWith(".dll") && !dir.EndsWith("Core.dll"))
             {
                 var assembly = Assembly.Load(File.ReadAllBytes(dir));
-                var types = assembly.GetTypes();
-
-                foreach (var t in types)
+                var targetExtensions = assembly.GetTypes()
+                    .Where(e => e.BaseType == typeof(CompileTargetExtension));
+                
+                foreach (var i in targetExtensions)
                 {
-                    // TODO
+                    CompileTargetExtension ext = (CompileTargetExtension)Activator.CreateInstance(i)!;
+                    Builder._compileTargets.Add(ext.TargetID, ext);
                 }
+
             }
         }
     }

@@ -11,6 +11,7 @@
     <ProjectReference Include="..\Abstract.CodeProcess\Abstract.Parser.csproj" />
     <ProjectReference Include="..\Abstract.Parser.Core\Abstract.Parser.Core.csproj" />
     <ProjectReference Include="..\Abstract.Resources\Abstract.Resources.csproj" />
+    <ProjectReference Include="..\Abstract.CompileTarget.Core\Abstract.CompileTarget.Core.csproj" />
   </ItemGroup>
 
 </Project>

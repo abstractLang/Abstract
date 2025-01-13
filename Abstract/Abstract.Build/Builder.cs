@@ -2,6 +2,7 @@
 using Abstract.Build.Core.Exceptions;
 using Abstract.Build.Core.Sources;
 using Abstract.CodeProcess;
+using Abstract.CompileTarget.Core;
 using Abstract.Parser;
 using Abstract.Parser.Core.Language.SyntaxNodes.Control;
 
@@ -9,6 +10,9 @@ namespace Abstract.Build;
 
 public static class Builder
 {
+
+    public static Dictionary<string, CompileTargetExtension> _compileTargets = [];
+
 
     public static void Execute(BuildOptions buildOps) => Environment.Exit(__Execute(buildOps));
 
@@ -70,15 +74,33 @@ public static class Builder
         var progroot = eval.EvaluateProgram(program);
 
         Console.WriteLine($"Evaluation finished. ({singleStep.Elapsed})");
-        singleStep.Restart();
 
         Console.WriteLine("Starting compression proccess...");
         singleStep.Restart();
 
         var compressor = new Compressor(errorHandler);
-        compressor.DoCompression(progroot, buildOps.OutputDirectory);
+        var elfprograms = compressor.DoCompression(progroot, buildOps.OutputDirectory);
 
         Console.WriteLine($"Compression finished. ({singleStep.Elapsed})");
+
+        Console.WriteLine($"Starting compilation process... (target: {buildOps.Target})");
+        singleStep.Restart();
+
+        var target = _compileTargets[buildOps.Target!];
+        var compiler = target.CompilerInstance;
+
+        // Skipping std for now as it implementation
+        // is target-dependant and the elf is just a
+        // interface.
+
+        var path = (buildOps.OutputDirectory, buildOps.OutputFileName);
+        var elfs = elfprograms.Where(e => e.Name != "Std").ToArray();
+
+        compiler.Compile(path, elfs);
+
+        compiler.Dispose();
+
+        Console.WriteLine($"Compilation finished. ({singleStep.Elapsed})");
 
         Console.WriteLine($"Build finished! ({entireBuild.Elapsed})");
 

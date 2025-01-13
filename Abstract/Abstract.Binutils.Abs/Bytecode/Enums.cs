@@ -12,6 +12,7 @@ public enum Base : byte
     LdLocal,
     LdIndex,
     LdType,
+    LdPType,
     LdSelf,
 
     SetStatic,

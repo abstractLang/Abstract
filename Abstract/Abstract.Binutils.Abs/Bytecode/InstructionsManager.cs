@@ -48,6 +48,7 @@ internal static class InstructionsManager
         opCodes.Add(InstructionBuilder.Create(Base.LdLocal).WithArgs("immu16"));
         opCodes.Add(InstructionBuilder.Create(Base.LdIndex));
         opCodes.Add(InstructionBuilder.Create(Base.LdType).WithArgs("reftype"));
+        opCodes.Add(InstructionBuilder.Create(Base.LdPType).WithArgs("immtype"));
 
         opCodes.Add(InstructionBuilder.Create(Base.SetStatic).WithArgs("refstatic"));
         opCodes.Add(InstructionBuilder.Create(Base.SetField).WithArgs("reffield"));
@@ -108,7 +109,7 @@ internal static class InstructionsManager
 
         opCodes.Add(InstructionBuilder.Create(Base.Ret));
 
-        opCodes.Add(InstructionBuilder.Create(Base.EnterFrame).WithArgs("immi16"));
+        opCodes.Add(InstructionBuilder.Create(Base.EnterFrame).WithArgs("immi16", "immi16"));
         opCodes.Add(InstructionBuilder.Create(Base.LeaveFrame));
 
         opCodes.Add(InstructionBuilder.Create(Base.Throw));
