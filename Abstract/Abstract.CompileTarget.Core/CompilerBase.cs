@@ -5,10 +5,7 @@ namespace Abstract.CompileTarget.Core;
 public abstract class CompilerBase : IDisposable
 {
 
-    public abstract void Compile(
-        (string dir, string name) outPath,
-        ElfProgram[] source
-    );
+    public abstract void Compile(string outPath, ElfProgram[] source);
 
     public virtual void Dispose() => GC.SuppressFinalize(this);
 }

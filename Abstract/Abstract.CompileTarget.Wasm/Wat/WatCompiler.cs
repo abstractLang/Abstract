@@ -1,14 +1,13 @@
 using System.Diagnostics;
+using System.Reflection;
 using Abstract.Binutils.Abs.Elf;
 using Abstract.CompileTarget.Core;
 
-namespace Abstract.CompileTarget.Wasm.Wasm;
+namespace Abstract.CompileTarget.Wasm.Wat;
 
 public class WatCompiler : CompilerBase
 {
-    public override void Compile(
-        (string dir, string name) outPath,
-        ElfProgram[] source)
+    public override void Compile(string outPath, ElfProgram[] source)
     {
         
         foreach (var i in source)
@@ -17,7 +16,7 @@ public class WatCompiler : CompilerBase
             using var bytes = new MemoryStream();
             module.WriteToBinary(bytes);
             
-            var fstream = File.OpenWrite($"{outPath.dir}/{i.Name}.wasm");
+            var fstream = File.OpenWrite($"{outPath}/{i.Name}.wasm");
 
             // reset file
             fstream.SetLength(0);
@@ -34,7 +33,7 @@ public class WatCompiler : CompilerBase
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "wasm2wat",
-                        Arguments = $"\"{outPath.dir}/{i.Name}.wasm\" -o \"{outPath.dir}/{i.Name}.wat\"",
+                        Arguments = $"\"{outPath}/{i.Name}.wasm\" -o \"{outPath}/{i.Name}.wat\"",
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
                         UseShellExecute = false,
@@ -57,6 +56,27 @@ public class WatCompiler : CompilerBase
                 Console.WriteLine(ex);
                 Console.ResetColor();
             }
+        }
+
+        // copy web dependences
+        var assembly = Assembly.GetExecutingAssembly();
+        var asmname = assembly.GetName().Name;
+
+        (string from, string to)[] toCopyResources = [
+            ($"{asmname}.webProgram.index.html", "index.html"),
+            ($"{asmname}.webProgram.script.js",  "script.js"),
+            ($"{asmname}.webProgram.std.js",     "std.js"),
+        ];
+
+        foreach (var (from, to) in toCopyResources)
+        {
+            using Stream stream = assembly.GetManifestResourceStream(from)!;
+            using StreamReader reader = new(stream);
+
+            var content = reader.ReadToEnd();
+            content = content.Replace("cs.replace.webassembly.path", $"./{source[0].Name}.wasm");
+
+            File.WriteAllText($"{outPath}/{to}", content);
         }
 
     }

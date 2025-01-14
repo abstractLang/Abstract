@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Console</title>
+</head>
+<body>
+    <div id="stdout"></div>
+    <input id="stdin" autocomplete="off" placeholder=">">
+
+    <script type="module" src="script.js"></script>
+
+    <style>
+
+        body {
+            margin: 0;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #stdout {
+            background-color: #282A36;
+
+            height: calc(100% - 40px - 30px - 20px);
+            width: calc(100% - 40px);
+            padding: 20px;
+
+            position: absolute;
+            top: 0;
+
+            overflow-y: scroll;
+            overflow-x: auto;
+        } 
+
+        #stdout > span {
+            color: #F8F8F2;
+            font-size: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+        }
+
+        #stdout > span.control {
+            color: #6272A4;
+            font-style: italic;
+        }
+
+        #stdin {
+            background-color: #44475A;
+            height: 30px;
+            padding: 10px 20px 10px 20px;
+            width: calc(100% - 40px);
+            color: #F8F8F2;
+
+            font-size: 20px;
+            font-family: 'Courier New', Courier, monospace;
+
+            outline: none;
+            border: none;
+            border-top: 1px solid #6272A4;
+
+            position: absolute;
+            bottom: 0;
+        }
+
+    </style>
+</body>
+</html>

@@ -34,6 +34,9 @@ public static class Builder
         if (!Directory.Exists(buildOps.OutputDirectory))
             Directory.CreateDirectory(buildOps.OutputDirectory);
 
+        // Creating the debug out folder...
+        if (buildOps.DebugOutDirectory != null && !Directory.Exists(buildOps.DebugOutDirectory))
+            Directory.CreateDirectory(buildOps.DebugOutDirectory);
         
         Dictionary<string, List<Script>> projects = [];
 
@@ -49,8 +52,11 @@ public static class Builder
 
         // TODO optimize memory on this pipeline
 
-        ProgramNode program = new();
-        program.outDirectory = buildOps.OutputDirectory;
+        ProgramNode program = new()
+        {
+            outDirectory = buildOps.OutputDirectory,
+            debugOutDirectory = buildOps.DebugOutDirectory
+        };
 
         var lexer = new Lexer();
         var parser = new SyntaxTreeBuilder(errorHandler);
@@ -75,11 +81,21 @@ public static class Builder
 
         Console.WriteLine($"Evaluation finished. ({singleStep.Elapsed})");
 
+        // DEBUG
+        if (buildOps.DebugOutDirectory != null) File.WriteAllText($"{buildOps.DebugOutDirectory}/tree.txt", program.ToTree());
+        if (buildOps.DebugOutDirectory != null) File.WriteAllText($"{buildOps.DebugOutDirectory}/program.txt", program.ToFancyString());
+
         Console.WriteLine("Starting compression proccess...");
         singleStep.Restart();
 
         var compressor = new Compressor(errorHandler);
-        var elfprograms = compressor.DoCompression(progroot, buildOps.OutputDirectory);
+        var elfprograms = compressor.DoCompression(progroot);
+
+        if (buildOps.DebugOutDirectory != null)
+        {
+            foreach (var i in elfprograms)
+                File.WriteAllText($"{buildOps.DebugOutDirectory}/{i.Name}.txt", i.ToString());
+        }
 
         Console.WriteLine($"Compression finished. ({singleStep.Elapsed})");
 
@@ -93,7 +109,7 @@ public static class Builder
         // is target-dependant and the elf is just a
         // interface.
 
-        var path = (buildOps.OutputDirectory, buildOps.OutputFileName);
+        var path = buildOps.OutputDirectory;
         var elfs = elfprograms.Where(e => e.Name != "Std").ToArray();
 
         compiler.Compile(path, elfs);
@@ -103,9 +119,6 @@ public static class Builder
         Console.WriteLine($"Compilation finished. ({singleStep.Elapsed})");
 
         Console.WriteLine($"Build finished! ({entireBuild.Elapsed})");
-
-        File.WriteAllText($"{buildOps.OutputDirectory}/tree.txt", program.ToTree());
-        File.WriteAllText($"{buildOps.OutputDirectory}/program.txt", program.ToFancyString());
 
         if (errorHandler.ErrorCount > 0) errorHandler.Dump();
 

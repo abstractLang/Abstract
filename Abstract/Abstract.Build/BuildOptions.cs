@@ -19,10 +19,11 @@ public class BuildOptions
 
 
     private string? _outputDirectory = null;
-    private string? _outputFileName = null;
+    private string? _debugOutDirectory = null;
 
-    public string OutputDirectory => _outputDirectory ?? String.Empty;
-    public string OutputFileName => _outputFileName ?? String.Empty;
+
+    public string OutputDirectory => _outputDirectory ?? string.Empty;
+    public string? DebugOutDirectory => _debugOutDirectory;
 
     public void AddInputFile(string project, string path)
     {
@@ -31,11 +32,15 @@ public class BuildOptions
         _inputFilePaths[project].Add(rooted);
     }
 
-    public void SetOutput(string dir, string name)
+    public void SetOutput(string dir)
     {
         string rooted = Path.GetFullPath(dir);
         _outputDirectory = rooted;
-        _outputFileName = name;
+    }
+    public void SetDebugOut(string dir)
+    {
+        string rooted = Path.GetFullPath(dir);
+        _debugOutDirectory = rooted;
     }
 
     public void SetTarget(string target) => _target = target;
@@ -51,8 +56,11 @@ public class BuildOptions
 
         writer.AppendLine($"\nCompilation Target: {_target}");
 
-        writer.AppendLine("\nOutput File:");
-        writer.AppendLine($"\t\"{Path.Join(_outputDirectory, _outputFileName)}\"");
+        writer.AppendLine("\nOutput Directory:");
+        writer.AppendLine($"\t\"{Path.Join(_outputDirectory)}\"");
+
+        writer.AppendLine("\nDebug Out Directory:");
+        writer.AppendLine($"\t\"{Path.Join(_debugOutDirectory)}\"");
 
         writer.AppendLine($"\nInput Files ({_inputFilePaths.Count}):");
         foreach (var file in _inputFilePaths) writer.AppendLine($"\t- \"{file}\";");

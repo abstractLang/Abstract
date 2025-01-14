@@ -71,9 +71,9 @@ public partial class Evaluator(ErrorHandler errHandler)
         progStructStr.AppendLine("## Program Structure ##\n");
         progStructStr.Append(BuildProgramStructureTree(program));
 
-        File.WriteAllText($"{programNode.outDirectory}/reftable.txt", refTableStr.ToString());
-        File.WriteAllText($"{programNode.outDirectory}/prgstruc.txt", progStructStr.ToString());
-        File.WriteAllText($"{programNode.outDirectory}/tymatlog.txt", typeMatchingLog.ToString());
+        if (programNode.debugOutDirectory != null) File.WriteAllText($"{programNode.debugOutDirectory}/reftable.txt", refTableStr.ToString());
+        if (programNode.debugOutDirectory != null) File.WriteAllText($"{programNode.debugOutDirectory}/prgstruc.txt", progStructStr.ToString());
+        if (programNode.debugOutDirectory != null) File.WriteAllText($"{programNode.debugOutDirectory}/tymatlog.txt", typeMatchingLog.ToString());
 
         var proot = program;
         program = null!;

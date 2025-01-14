@@ -5,6 +5,7 @@ using WebAssembly;
 using WebAssembly.Instructions;
 using Directory = Abstract.Binutils.Abs.Elf.Directory;
 using WasmValueType = WebAssembly.WebAssemblyValueType;
+using ImportFunc = WebAssembly.Import.Function;
 
 namespace Abstract.CompileTarget.Wasm;
 
@@ -15,11 +16,50 @@ internal static class Compiler
     {
         var module = new Module();
 
-        var (elfFuncs, elfTypes) = SegregateElfData(elf);
+        var (elfFuncs, elfTypes, elfImports) = SegregateElfData(elf);
+        Dictionary<uint, uint> importMap = [];
 
         // initialize memory
         module.Memories.Add(new Memory(1, null));
+        module.Exports.Add(new Export {
+            Name = "mem",
+            Kind = ExternalKind.Memory,
+            Index = 0
+        });
         uint memoryPtr = 0;
+
+        // compile imports
+        foreach (var i in elfImports)
+        {
+            List<WasmValueType> returns = [];
+            List<WasmValueType> parameters = [];
+
+            var id = i.identifier;
+            var refModule = id[..id.IndexOf('.')];
+            var refBase = id[(id.IndexOf('.')+1)..id.IndexOf('(')];
+            
+            var ps = id.Substring(id.IndexOf('(')+1, id.LastIndexOf(')') - id.IndexOf('(') - 1).Split(", ", StringSplitOptions.TrimEntries);
+
+            for (var j = 0; j < ps.Length; j++)
+                parameters.AddRange(Struct2WasmType(ps[j]));
+
+            var importType = new WebAssemblyType {
+                Parameters = [.. parameters],
+                Returns = [.. returns]
+            };
+
+            var typeid = (uint)module.Types.Count;
+            module.Types.Add(importType);
+
+            var importid = (uint)module.Imports.Count;
+            module.Imports.Add(new ImportFunc {
+                TypeIndex = typeid,
+                Field = refBase,
+                Module = refModule
+            });
+
+            importMap.Add((uint)i.index, importid);
+        }
 
         // compile functions
         foreach (var i in elfFuncs)
@@ -51,7 +91,8 @@ internal static class Compiler
                 Returns = []
             };
 
-            var (locals, instructions) = ParseFunctionBody(elf, codeLump.content!, memoffset);
+            var (locals, instructions) = ParseFunctionBody(
+                elf, codeLump.content!, memoffset, importMap);
 
             var funcBody = new FunctionBody {
                 Locals = locals,
@@ -70,17 +111,19 @@ internal static class Compiler
                 Name = i.identifier
             });
         }
-        
+
         return module;
     }
 
     private static (
         List<Directory> functions,
-        List<Directory> types
+        List<Directory> types,
+        List<Directory> imports
     ) SegregateElfData(ElfProgram elf)
     {
         List<Directory> functions = [];
         List<Directory> types = [];
+        List<Directory> imports = [];
 
         Stack<(Directory dir, Queue<Directory> children)> _searchingStack = [];
         var projectRoot = elf.RootDirectory.GetChild("PROJECT", elf.Name)!;
@@ -100,11 +143,14 @@ internal static class Compiler
                 _searchingStack.Push((c, new(c.Children)));
         }
 
-        return (functions, types);
+        foreach (var i in elf.RootDirectory.Children.Where(e => e.kind == "IMPORT"))
+            imports.AddRange(i.Children);
+
+        return (functions, types, imports);
     }
 
     private static (List<Local>, List<Instruction>) ParseFunctionBody(
-        ElfProgram program, Stream bytecode, uint memoffset)
+        ElfProgram program, Stream bytecode, uint memoffset, Dictionary<uint, uint> importMap)
     {
         List<Local> locals = [];
         List<Instruction> instructions = [];
@@ -220,13 +266,7 @@ internal static class Compiler
                             instructions.Add(new Drop());
                     }
                     else if (func.kind == "IFUNCTIO")
-                    {
-                        var i = func.identifier;
-                        var ps = i.Substring(i.IndexOf('(')+1, i.LastIndexOf(')') - i.IndexOf('(') - 1).Split(", ", StringSplitOptions.TrimEntries);
-
-                        for (var j = 0; j < ps.Length; j++)
-                            instructions.Add(new Drop());
-                    }
+                        instructions.Add(new Call(importMap[funcref]));
 
                     if (instruction.t == Types.Str)
                         instructions.Add(new Int32Constant(0));
@@ -261,6 +301,23 @@ internal static class Compiler
         Types.Struct => [WasmValueType.Int32],
 
         _ => throw new Exception()
+    };
+    private static WasmValueType[] Struct2WasmType(string structName) => structName switch {
+        "Std.Types.UnsignedInteger8" or "Std.Types.SignedInteger8" or
+        "Std.Types.UnsignedInteger16" or "Std.Types.SignedInteger16" or
+        "Std.Types.UnsignedInteger32" or "Std.Types.SignedInteger32"
+        => [ WasmValueType.Int32 ],
+
+        "Std.Types.UnsignedInteger64" or "Std.Types.SignedInteger64"
+        => [ WasmValueType.Int64 ],
+
+        "Std.Types.UnsignedInteger128" or "Std.Types.SignedInteger128"
+        => [ WasmValueType.Int64, WasmValueType.Int64 ],
+
+        "Std.Types.Single" => [ WasmValueType.Float32 ],
+        "Std.Types.Double" => [ WasmValueType.Float64 ],
+
+        _ => [WasmValueType.Int32] // ptr or simple int representable
     };
 
     private class VirtualStack {

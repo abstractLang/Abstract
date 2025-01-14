@@ -14,7 +14,7 @@ public class Program
         return ProcessCommand([
             "compile", "MyProgram",
 
-            "-t", "wasm-text",//"elf",
+            "-t", "wasm-text",
 
             "-p", "Std",
                 "Libs/Std/Compilation.a",
@@ -29,7 +29,8 @@ public class Program
             "-p", "MyProgram",
                 "../../../../test-code/main.a",
 
-            "-o","../../../../test-code/bin/Std"
+            "-o", "../../../../test-code/bin/",
+            "-d", "../../../../test-code/dbg/"
            ]);
 #else
         return ProcessCommand(args);
@@ -93,9 +94,17 @@ public class Program
                 string outputFile = args[++i];
 
                 string dir = Path.GetDirectoryName(outputFile)!;
-                string name = Path.GetFileName(outputFile);
+                buildOps.SetOutput(dir);
+            }
+            
+            else if (args[i] == "-d") // debug output flag
+            {
+                if (args.Length < i + 1) return 1;
 
-                buildOps.SetOutput(dir, name);
+                string outputFile = args[++i];
+
+                string dir = Path.GetDirectoryName(outputFile)!;
+                buildOps.SetDebugOut(dir);
             }
 
             else if (args[i] == "-t") // target flag
@@ -112,6 +121,7 @@ public class Program
 
             else buildOps.AddInputFile(projectName, args[i]);
         }
+
 
         Builder.Execute(buildOps); // no return
         return 0;

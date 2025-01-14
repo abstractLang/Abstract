@@ -19,7 +19,7 @@ public class Compressor(ErrorHandler errHandler)
     private Project _currentProject = null!;
     private Dictionary<string, List<(string kind, string identifier)>> _dependences = [];
 
-    public ElfProgram[] DoCompression(ProgramRoot program, string outpsth)
+    public ElfProgram[] DoCompression(ProgramRoot program)
     {
         List<ElfProgram> elfs = [];
 
@@ -28,8 +28,6 @@ public class Compressor(ErrorHandler errHandler)
         {
             using var projectElf = CompressProject(i.Key, i.Value, program);
             var bakedElf = ElfProgram.BakeBuilder(projectElf);
-
-            File.WriteAllText($"{outpsth}/{i.Key}.txt", bakedElf.ToString());
             elfs.Add(bakedElf);
         }
 
