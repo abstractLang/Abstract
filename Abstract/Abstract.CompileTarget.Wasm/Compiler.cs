@@ -288,7 +288,6 @@ internal static class Compiler
 
                 default: throw new NotImplementedException($"Unhandled: {instruction}");
             }
-
         }
 
         return (locals, instructions);

@@ -294,6 +294,33 @@ public class Compressor(ErrorHandler errHandler)
                 if (fref.Length == 5 && fref[2] == "Types"
                 && fref[3].StartsWith("Comptime") && fref[4].StartsWith("as"))
                 {
+                    if (fref[3] == "ComptimeInteger")
+                    {
+                        var value = (IntegerLiteralNode)args[0];
+
+                        switch (fref[4])
+                        {
+                            case "asi8": builder.WriteOpCode(Base.LdConst, Types.i8, (sbyte)value.Value); break;
+                            case "asu8": builder.WriteOpCode(Base.LdConst, Types.u8, (byte)value.Value); break;
+                            
+                            case "asi16": builder.WriteOpCode(Base.LdConst, Types.i16, (short)value.Value); break;
+                            case "asu16": builder.WriteOpCode(Base.LdConst, Types.u16, (ushort)value.Value); break;
+
+                            case "asi32": builder.WriteOpCode(Base.LdConst, Types.i32, (int)value.Value); break;
+                            case "asu32": builder.WriteOpCode(Base.LdConst, Types.u32, (uint)value.Value); break;
+
+                            case "asi64": builder.WriteOpCode(Base.LdConst, Types.i64, (long)value.Value); break;
+                            case "asu64": builder.WriteOpCode(Base.LdConst, Types.u64, (ulong)value.Value); break;
+
+                            case "asi128": builder.WriteOpCode(Base.LdConst, Types.i128, (Int128)value.Value); break;
+                            case "asu128": builder.WriteOpCode(Base.LdConst, Types.u128, (UInt128)value.Value); break;
+
+                            default: throw new Exception();
+                        }
+
+                        return;
+                    }
+
                     switch (fref[3..])
                     {
                         case ["ComptimeString", "asstring"]:

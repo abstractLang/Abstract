@@ -29,7 +29,7 @@ function append_simple_stdout(text) { append_stdout("", text); }
 
 function append_stdout(classes, text)
 {
-    text = text.replace("\n", "<br>");
+    text = handle_escape(text);
     let clist = classes.split(" ").filter(e => e != "");
 
     const newline = document.createElement("span");
@@ -52,4 +52,18 @@ function allow_stdin(mode)
         append_stdout("control", "todo allow stdin");
     }
 
+}
+
+function handle_escape(text)
+{
+    // common characters
+    text = text.replace("\n", "<br>");
+
+    // placeholder CSI shit
+    var csicolorpattern = /\\{Console\.CSIFGColor\.([a-zA-Z_][a-zA-Z0-9_]*)}/g;
+
+    text = text.replace(csicolorpattern, (_, identifier) => `<span class="fg-${identifier}">`);
+    text = text.replace("\\{Console.CSIGeneral.reset}", '</span>');
+
+    return text;
 }
