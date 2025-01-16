@@ -31,6 +31,14 @@ public class Directory {
     {
         return _children.Find(e => e.kind == kind && e.identifier == identifier);
     }
+    public Directory? GetChild(string kind)
+    {
+        return _children.Find(e => e.kind == kind);
+    }
+    public Directory[] GetChildren(string kind)
+    {
+        return [.. _children.Where(e => e.kind == kind)];
+    }
 
     public override string ToString()
     {

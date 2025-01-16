@@ -3,7 +3,7 @@ import { Std, Settings } from './std.js';
 const stdout = document.querySelector("#stdout");
 const stdin = document.querySelector("#stdin");
 
-const webassemblyMainPath = 'cs.replace.webassembly.path';
+const webassemblyMainPath = './MyProgram.wasm';
 
 await _start();
 async function _start() {
@@ -13,15 +13,14 @@ async function _start() {
 
     const wasminstance = (await WebAssembly.instantiateStreaming(wasmcode, rootlibs)).instance;
 
-    const main = wasminstance.exports.main;
+    const main = wasminstance.exports["MyProgram.main"];
     const mem = wasminstance.exports.mem;
 
     Settings.define_stdout(append_simple_stdout);
     Settings.define_memory(mem);
-
-    // test
     
     append_stdout("control", "Program started\n");
+    Settings.pre_main();
     main();
     append_stdout("control", "Program finished\n");
 }

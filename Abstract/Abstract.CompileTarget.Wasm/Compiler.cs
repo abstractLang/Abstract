@@ -26,7 +26,7 @@ internal static class Compiler
             Kind = ExternalKind.Memory,
             Index = 0
         });
-        uint memoryPtr = 0;
+        uint memoryPtr = 4;
 
         // compile imports
         foreach (var i in elfImports)
@@ -38,10 +38,15 @@ internal static class Compiler
             var refModule = id[..id.IndexOf('.')];
             var refBase = id[(id.IndexOf('.')+1)..id.IndexOf('(')];
             
-            var ps = id.Substring(id.IndexOf('(')+1, id.LastIndexOf(')') - id.IndexOf('(') - 1).Split(", ", StringSplitOptions.TrimEntries);
+            var ps = i.GetChildren("PARAM");
+            foreach (var p in ps)
+            {
+                var t = p.GetChild("TYPE")!;
+                parameters.AddRange(Struct2WasmType(t.identifier));
+            }
 
-            for (var j = 0; j < ps.Length; j++)
-                parameters.AddRange(Struct2WasmType(ps[j]));
+            var ret = i.GetChild("RET");
+            if (ret != null) returns.AddRange(Struct2WasmType(ret.identifier));
 
             var importType = new WebAssemblyType {
                 Parameters = [.. parameters],
@@ -64,31 +69,35 @@ internal static class Compiler
         // compile functions
         foreach (var i in elfFuncs)
         {
-
             var codeLump = i.GetChild("CODE", "main")!;
             var dataLump = i.GetChild("DATA", "main")!;
 
             var memoffset = memoryPtr;
 
+            // Append data lump
             module.Data.Add(new Data {
                 RawData = ((MemoryStream)dataLump.content!).GetBuffer()[.. (int)dataLump.content.Length],
                 InitializerExpression = [ new Int32Constant(memoryPtr), new End() ]
             });
             memoryPtr += (uint)dataLump.content.Length;
 
-            List<WasmValueType> _params = [];
-            int idx = 0;
-            while(true)
-            {
-                var c = i.GetChild("PARAM", $"{idx++:X4}");
-                if (c == null) break;
+            // create type
+            List<WasmValueType> returns = [];
+            List<WasmValueType> parameters = [];
 
-                // TODO process c here lol
+            var ps = i.GetChildren("PARAM");
+            foreach (var p in ps)
+            {
+                var t = p.GetChild("TYPE")!;
+                parameters.AddRange(Struct2WasmType(t.identifier));
             }
 
+            var ret = i.GetChild("RET");
+            if (ret != null) returns.AddRange(Struct2WasmType(ret.identifier));
+
             var funcType = new WebAssemblyType {
-                Parameters = [],
-                Returns = []
+                Parameters = [.. returns],
+                Returns = [.. parameters]
             };
 
             var (locals, instructions) = ParseFunctionBody(
@@ -105,12 +114,22 @@ internal static class Compiler
             module.Functions.Add(new Function(typeid));
             module.Codes.Add(funcBody);
 
+            var global = i.GetChild("GLOBAL")!;
+
             module.Exports.Add(new Export {
                 Index = typeid,
                 Kind = ExternalKind.Function,
-                Name = i.identifier
+                Name = global.identifier
             });
         }
+
+        // static memory end
+        byte[] buf = new byte[4];
+        BinaryPrimitives.WriteUInt32BigEndian(buf, memoryPtr);
+        module.Data.Add(new Data {
+            RawData = buf,
+            InitializerExpression = [ new Int32Constant(0), new End() ]
+        });
 
         return module;
     }
@@ -136,7 +155,7 @@ internal static class Compiler
 
             var c = children.Dequeue();
 
-            if (c.kind == "FUNCTION") functions.Add(c);
+            if (c.kind == "FUNC") functions.Add(c);
             else if (c.kind == "TYPE") types.Add(c);
 
             if (c.ChildrenCount > 0)
@@ -256,20 +275,12 @@ internal static class Compiler
                     var funcref = bytecode.ReadU32();
                     var func = program.AllDirectories[funcref];
 
-                    if (func.kind == "FUNCTION")
-                    {
-                        var pcount = 0;
-                        while(func.GetChild("PARAM", $"{pcount:X4}") != null) pcount++;
-                        pcount--;
+                    if (func.kind == "FUNC")
+                        throw new Exception();
+                        //instructions.Add(new Call(importMap[funcref]));
 
-                        for (var i = 0; i < pcount; i++)
-                            instructions.Add(new Drop());
-                    }
-                    else if (func.kind == "IFUNCTIO")
+                    else if (func.kind == "IFUNC")
                         instructions.Add(new Call(importMap[funcref]));
-
-                    if (instruction.t == Types.Str)
-                        instructions.Add(new Int32Constant(0));
 
                     break;
 
@@ -282,6 +293,7 @@ internal static class Compiler
 
         return (locals, instructions);
     }
+
     private static WasmValueType[] Abs2WasmType(Types t) => t switch {
         Types.Void => [],
         Types.Null => [WasmValueType.Int32],
@@ -303,6 +315,8 @@ internal static class Compiler
         _ => throw new Exception()
     };
     private static WasmValueType[] Struct2WasmType(string structName) => structName switch {
+        "Std.Types.Void" => [],
+
         "Std.Types.UnsignedInteger8" or "Std.Types.SignedInteger8" or
         "Std.Types.UnsignedInteger16" or "Std.Types.SignedInteger16" or
         "Std.Types.UnsignedInteger32" or "Std.Types.SignedInteger32"

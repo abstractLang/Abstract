@@ -17,7 +17,7 @@ public class Compressor(ErrorHandler errHandler)
     private readonly ErrorHandler _errHandler = errHandler;
 
     private Project _currentProject = null!;
-    private Dictionary<string, List<(string kind, string identifier)>> _dependences = [];
+    private Dictionary<string,List<Dependence>> _dependences = [];
 
     public ElfProgram[] DoCompression(ProgramRoot program)
     {
@@ -64,7 +64,29 @@ public class Compressor(ErrorHandler errHandler)
         {
             var elfref = new DirectoryBuilder("IMPORT", i.Key);
             foreach (var j in i.Value)
-                elfref.AppendChild(new MetaBuilder('I' + j.kind, j.identifier));
+            {
+                var parent = new MetaBuilder('I' + j.kind, j.name);
+                elfref.AppendChild(parent);
+
+                if (j.source is Function @func)
+                {
+                    for (var k = 0; k < func.parameters.Length; k++)
+                    {
+                        var (type, name) = func.parameters[k];
+                        var p = new DirectoryBuilder("PARAM", $"{k:X4}");
+                        
+                        p.AppendChild(new DirectoryBuilder("TYPE", type.ToString()
+                            ?? throw new Exception()));
+                        p.AppendChild(new DirectoryBuilder("NAME", name));
+
+                        parent.AppendChild(p);
+
+                    }
+                 
+                    parent.AppendChild(new DirectoryBuilder("RET", func.returnType.ToString()
+                        ?? throw new Exception()));
+                }
+            }
 
             importDir.Add(elfref);
         }
@@ -100,7 +122,7 @@ public class Compressor(ErrorHandler errHandler)
             {
                 var f = funcGroup.Overloads[0];
 
-                var funcdir = new DirectoryBuilder("FUNCTION", f.identifier);
+                var funcdir = new DirectoryBuilder("FUNC", f.identifier);
                 funcdir.AppendChild(new MetaBuilder("GLOBAL", member.GlobalReference));
                 CompressFunction(funcdir, f);
                 parent.AppendChild(funcdir);
@@ -113,7 +135,7 @@ public class Compressor(ErrorHandler errHandler)
                 {
                     var f = funcGroup.Overloads[i];
 
-                    var funcdir = new DirectoryBuilder("FUNCTION", $"#overload_{i}");
+                    var funcdir = new DirectoryBuilder("FUNC", $"#overload_{i}");
                     CompressFunction(funcdir, f);
                     dir.AppendChild(funcdir);
                 }
@@ -141,6 +163,7 @@ public class Compressor(ErrorHandler errHandler)
 
             builder.AppendChild(param);
         }
+        builder.AppendChild(new DirectoryBuilder("RET", func.returnType.ToString() ?? throw new Exception()));
 
         builder.AppendChild(attrb);
 
@@ -350,6 +373,8 @@ public class Compressor(ErrorHandler errHandler)
         }
         else return Types.Struct;
     }
+
+
     private void CheckUseOfReference(ProgramMember member)
     {
         var memberProj = member.ParentProject!;
@@ -358,10 +383,11 @@ public class Compressor(ErrorHandler errHandler)
             var projName = memberProj.identifier;
             if (_dependences.TryGetValue(projName, out var deps))
             {
-                var r = GetMemberReferenceIdentifier(member);
+                var r = new Dependence(GetMemberReferenceIdentifier(member), member);
                 if (!deps.Contains(r)) deps.Add(r);
             }
-            else _dependences.Add(projName, [GetMemberReferenceIdentifier(member)]);
+            else _dependences.Add(projName,
+                [new Dependence(GetMemberReferenceIdentifier(member), member)]);
         }
     }
     private void CheckUseOfReference(TypeReference type)
@@ -374,10 +400,11 @@ public class Compressor(ErrorHandler errHandler)
                 var projName = memberProj.identifier;
                 if (_dependences.TryGetValue(projName, out var deps))
                 {
-                    var r = GetMemberReferenceIdentifier(solved.structure);
+                    var r = new Dependence(GetMemberReferenceIdentifier(solved.structure), solved.structure);
                     if (!deps.Contains(r)) deps.Add(r);
                 }
-                else _dependences.Add(projName, [GetMemberReferenceIdentifier(solved.structure)]);
+                else _dependences.Add(projName,
+                    [new Dependence(GetMemberReferenceIdentifier(solved.structure), solved.structure)]);
             }
         }
         else if (type is GenericTypeReference) { /* ignore for now lol */ }
@@ -389,7 +416,7 @@ public class Compressor(ErrorHandler errHandler)
     {
         if (member is Function @func)
         {
-            return ("FUNCTION", $"{func.GlobalReference}({string
+            return ("FUNC", $"{func.GlobalReference}({string
             .Join(", ", func.parameters.Select(e => e.type))})");
         }
 
@@ -401,4 +428,10 @@ public class Compressor(ErrorHandler errHandler)
         else throw new NotImplementedException();
     }
 
+
+    private struct Dependence((string kind, string name) identifier, ProgramMember src) {
+        public string kind = identifier.kind;
+        public string name = identifier.name;
+        public ProgramMember source = src;
+    }
 }
