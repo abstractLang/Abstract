@@ -85,42 +85,49 @@ public static class Builder
         if (buildOps.DebugOutDirectory != null) File.WriteAllText($"{buildOps.DebugOutDirectory}/tree.txt", program.ToTree());
         if (buildOps.DebugOutDirectory != null) File.WriteAllText($"{buildOps.DebugOutDirectory}/program.txt", program.ToFancyString());
 
-        Console.WriteLine("Starting compression proccess...");
-        singleStep.Restart();
-
-        var compressor = new Compressor(errorHandler);
-        var elfprograms = compressor.DoCompression(progroot);
-
-        if (buildOps.DebugOutDirectory != null)
+        if (errorHandler.ErrorCount == 0)
         {
-            foreach (var i in elfprograms)
-                File.WriteAllText($"{buildOps.DebugOutDirectory}/{i.Name}.txt", i.ToString());
+
+            Console.WriteLine("Starting compression proccess...");
+            singleStep.Restart();
+
+            var compressor = new Compressor(errorHandler);
+            var elfprograms = compressor.DoCompression(progroot);
+
+            if (buildOps.DebugOutDirectory != null)
+            {
+                foreach (var i in elfprograms)
+                    File.WriteAllText($"{buildOps.DebugOutDirectory}/{i.Name}.txt", i.ToString());
+            }
+
+            Console.WriteLine($"Compression finished. ({singleStep.Elapsed})");
+
+            Console.WriteLine($"Starting compilation process... (target: {buildOps.Target})");
+            singleStep.Restart();
+
+            var target = _compileTargets[buildOps.Target!];
+            var compiler = target.CompilerInstance;
+
+            // Skipping std for now as it implementation
+            // is target-dependant and the elf is just a
+            // interface.
+
+            var path = buildOps.OutputDirectory;
+            var elfs = elfprograms.Where(e => e.Name != "Std").ToArray();
+
+            compiler.Compile(path, elfs);
+
+            compiler.Dispose();
+
+            Console.WriteLine($"Compilation finished. ({singleStep.Elapsed})");
+
+            Console.WriteLine($"Build finished! ({entireBuild.Elapsed})");
         }
-
-        Console.WriteLine($"Compression finished. ({singleStep.Elapsed})");
-
-        Console.WriteLine($"Starting compilation process... (target: {buildOps.Target})");
-        singleStep.Restart();
-
-        var target = _compileTargets[buildOps.Target!];
-        var compiler = target.CompilerInstance;
-
-        // Skipping std for now as it implementation
-        // is target-dependant and the elf is just a
-        // interface.
-
-        var path = buildOps.OutputDirectory;
-        var elfs = elfprograms.Where(e => e.Name != "Std").ToArray();
-
-        compiler.Compile(path, elfs);
-
-        compiler.Dispose();
-
-        Console.WriteLine($"Compilation finished. ({singleStep.Elapsed})");
-
-        Console.WriteLine($"Build finished! ({entireBuild.Elapsed})");
-
-        if (errorHandler.ErrorCount > 0) errorHandler.Dump();
+        else
+        {
+            Console.WriteLine($"Build failed! ({entireBuild.Elapsed})");
+            errorHandler.Dump();
+        }
 
         return errorHandler.ErrorCount;
     }

@@ -9,6 +9,7 @@ public class BlockNode : SyntaxNode
     public ExecutableCodeBlock EvaluatedData {get; set; } = null!;
 
     public IEnumerable<SyntaxNode> Content => _children.Count > 2 ? _children[1..^1] : [];
+    
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -19,7 +20,7 @@ public class BlockNode : SyntaxNode
         {
             foreach (var i in _children[1..^1])
             {
-                var lines = i.ToString().Split("\n", StringSplitOptions.RemoveEmptyEntries);
+                var lines = i.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var j in lines) sb.AppendLine($"\t{j}");
             }
         }
@@ -38,7 +39,7 @@ public class BlockNode : SyntaxNode
         {
             foreach (var i in _children[1..^1])
             {
-                var lines = i.ToFancyString().Split("\n", StringSplitOptions.RemoveEmptyEntries);
+                var lines = i.ToFancyString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var j in lines) sb.AppendLine($"\t{j}");
             }
         }

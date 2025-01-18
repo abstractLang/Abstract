@@ -105,12 +105,17 @@ public class Lexer
         currentSrc = source;
 
         var sourceCode = source.GetContent();
+        return ParseTokens(sourceCode);
+    }
+    
+    public Token[] ParseTokens(string source)
+    {
         List<Token> tokens = [];
 
-        for (int i = 0; i < sourceCode.Length; i++)
+        for (int i = 0; i < source.Length; i++)
         {
-            char c = sourceCode[i];
-            char c2 = sourceCode.Length > i + 1 ? sourceCode[i + 1] : '\0';
+            char c = source[i];
+            char c2 = source.Length > i + 1 ? source[i + 1] : '\0';
 
             // Check if it's skipable
             if (c == ' ' | c == '\r' | c == '\t') { continue; }
@@ -155,48 +160,29 @@ public class Lexer
                 if (tokens.Count > 0 && tokens[^1].type != TokenType.LineFeedChar)
                 tokens.Add(Tokenize("\\n", TokenType.LineFeedChar, i, -1));
             }
-            else if (c == '(')
-                tokens.Add(Tokenize(c, TokenType.LeftPerenthesisChar, i));
-            else if (c == ')')
-                tokens.Add(Tokenize(c, TokenType.RightParenthesisChar, i));
-            else if (c == '{')
-                tokens.Add(Tokenize(c, TokenType.LeftBracketChar, i));
-            else if (c == '}')
-                tokens.Add(Tokenize(c, TokenType.RightBracketChar, i));
-            else if (c == '[')
-                tokens.Add(Tokenize(c, TokenType.LeftSquareBracketChar, i));
-            else if (c == ']')
-                tokens.Add(Tokenize(c, TokenType.RightSquareBracketChar, i));
+            else if (c == '(') tokens.Add(Tokenize(c, TokenType.LeftPerenthesisChar, i));
+            else if (c == ')') tokens.Add(Tokenize(c, TokenType.RightParenthesisChar, i));
+            else if (c == '{') tokens.Add(Tokenize(c, TokenType.LeftBracketChar, i));
+            else if (c == '}') tokens.Add(Tokenize(c, TokenType.RightBracketChar, i));
+            else if (c == '[') tokens.Add(Tokenize(c, TokenType.LeftSquareBracketChar, i));
+            else if (c == ']') tokens.Add(Tokenize(c, TokenType.RightSquareBracketChar, i));
 
-            else if (c == '<')
-                tokens.Add(Tokenize(c, TokenType.LeftAngleChar, i));
-            else if (c == '>')
-                tokens.Add(Tokenize(c, TokenType.RightAngleChar, i));
+            else if (c == '<') tokens.Add(Tokenize(c, TokenType.LeftAngleChar, i));
+            else if (c == '>') tokens.Add(Tokenize(c, TokenType.RightAngleChar, i));
 
-            else if (c == '+')
-                tokens.Add(Tokenize(c, TokenType.CrossChar, i));
-            else if (c == '-')
-                tokens.Add(Tokenize(c, TokenType.MinusChar, i));
-            else if (c == '*')
-                tokens.Add(Tokenize(c, TokenType.StarChar, i));
-            else if (c == '/')
-                tokens.Add(Tokenize(c, TokenType.SlashChar, i));
-            else if (c == '%')
-                tokens.Add(Tokenize(c, TokenType.PercentChar, i));
-            else if (c == '=')
-                tokens.Add(Tokenize(c, TokenType.EqualsChar, i));
+            else if (c == '+') tokens.Add(Tokenize(c, TokenType.CrossChar, i));
+            else if (c == '-') tokens.Add(Tokenize(c, TokenType.MinusChar, i));
+            else if (c == '*') tokens.Add(Tokenize(c, TokenType.StarChar, i));
+            else if (c == '/') tokens.Add(Tokenize(c, TokenType.SlashChar, i));
+            else if (c == '%') tokens.Add(Tokenize(c, TokenType.PercentChar, i));
+            else if (c == '=') tokens.Add(Tokenize(c, TokenType.EqualsChar, i));
 
-            else if (c == '&')
-                tokens.Add(Tokenize(c, TokenType.AmpersandChar, i));
-            else if (c == '?')
-                tokens.Add(Tokenize(c, TokenType.QuestionChar, i));
-            else if (c == '@')
-                tokens.Add(Tokenize(c, TokenType.AtSiginChar, i));
+            else if (c == '&') tokens.Add(Tokenize(c, TokenType.AmpersandChar, i));
+            else if (c == '?') tokens.Add(Tokenize(c, TokenType.QuestionChar, i));
+            else if (c == '@') tokens.Add(Tokenize(c, TokenType.AtSiginChar, i));
 
-            else if (c == ',')
-                tokens.Add(Tokenize(c, TokenType.CommaChar, i));
-            else if (c == '.')
-                tokens.Add(Tokenize(c, TokenType.DotChar, i));
+            else if (c == ',') tokens.Add(Tokenize(c, TokenType.CommaChar, i));
+            else if (c == '.') tokens.Add(Tokenize(c, TokenType.DotChar, i));
 
             else
             {
@@ -212,12 +198,12 @@ public class Lexer
 
                     if (c == '0') // verify different bases
                     {
-                        if (char.ToLower(sourceCode[i + 1]) == 'x')
+                        if (char.ToLower(source[i + 1]) == 'x')
                         {
                             numBase = 16;
                             i += 2;
                         }
-                        if (char.ToLower(sourceCode[i + 1]) == 'b')
+                        if (char.ToLower(source[i + 1]) == 'b')
                         {
                             numBase = 2;
                             i += 2;
@@ -225,9 +211,9 @@ public class Lexer
                     }
 
                     int j = i;
-                    for (; sourceCode.Length > j; j++)
+                    for (; source.Length > j; j++)
                     {
-                        char cc = sourceCode[j];
+                        char cc = source[j];
 
                         if (cc == '.')
                         {
@@ -258,8 +244,8 @@ public class Lexer
                     string token = "";
 
                     int j = i;
-                    for (; sourceCode.Length > j && sourceCode[j].IsValidOnIdentifier(); j++)
-                        token += sourceCode[j];
+                    for (; source.Length > j && source[j].IsValidOnIdentifier(); j++)
+                        token += source[j];
 
                     if (_keyword2TokenMap.TryGetValue(token, out var type))
                         tokens.Add(Tokenize(token, type, i, j));
@@ -270,16 +256,84 @@ public class Lexer
 
                 }
 
-                // Build string token
+                // Build string tokens
                 else if (c == '"')
                 {
-                    string token = "";
+                    tokens.Add(Tokenize("\"", TokenType.DoubleQuotes, i, -1));
 
-                    int j = i + 1;
-                    for (; sourceCode.Length > j && sourceCode[j] != '"'; j++)
-                        token += sourceCode[j];
+                    string curr = "";
+                    int currstart = i + 1;
 
-                    tokens.Add(Tokenize(token, TokenType.StringLiteral, i, j));
+                    int j = currstart;
+                    for (; source.Length > j; j++)
+                    {
+                        // test escape
+                        if (source[j] == '\\')
+                        {
+                            if (!string.IsNullOrEmpty(curr))
+                            {
+                                tokens.Add(Tokenize(curr, TokenType.StringLiteral, currstart, j));
+                                curr = "";
+                            }
+
+                            if (source.Length < j + 1) break;
+                            char escapeCode = source[j + 1];
+
+                            // interpolation
+                            if (escapeCode == '{')
+                            {
+                                // FIXME
+                                // interpolation content detection is a little
+                                // raw implemented :p
+
+                                tokens.Add(Tokenize("\\{", TokenType.EscapedLeftBracketChar, i, j));
+
+                                string interpolation = "";
+                                int subscopes = 0;
+                                bool inString = false;
+
+                                while (source.Length > j && !(subscopes == 0 && source[j] == '}'))
+                                {
+                                    if (source[j] == '"') inString = !inString;
+                                    else if (source[j] == '{' && inString == false) subscopes++;
+                                    else if (source[j] == '}' && inString == false) subscopes--;
+
+                                    interpolation += source[j];
+                                }
+
+                                tokens.AddRange(ParseTokens(interpolation));
+
+                                if (source[j] == '}')
+                                    tokens.Add(Tokenize("}", TokenType.RightBracketChar, i, j));
+                                continue;
+                            }
+                            // hexadecimal
+                            else if (escapeCode == 'x')
+                            {
+                                int k = j + 2;
+                                string hex = "";
+                                while (source.Length > k && source[k] != '\\')
+                                    hex += source[k++];
+
+                                tokens.Add(Tokenize($"\\x{hex}\\", TokenType.CharacterLiteral, i, j));
+                            }
+
+                            else tokens.Add(Tokenize($"\\{escapeCode}", TokenType.CharacterLiteral, j, ++j));
+
+                            currstart = j+1;
+                            continue;
+                        }
+
+                        // test end of string
+                        else if (source[j] == '"')
+                        {
+                            if (!string.IsNullOrEmpty(curr)) tokens.Add(Tokenize(curr, TokenType.StringLiteral, currstart, j));
+                            tokens.Add(Tokenize("\"", TokenType.DoubleQuotes, i, -1));
+                            break;
+                        }
+
+                        else curr += source[j];
+                    }
 
                     i = j;
                 }
@@ -287,17 +341,17 @@ public class Lexer
                 // Igonore comments
                 else if (c == '#')
                 {
-                    if (sourceCode.Length > i + 3 && sourceCode[i..(i + 3)] == "###")
+                    if (source.Length > i + 3 && source[i..(i + 3)] == "###")
                     {
                         i += 3;
-                        while (sourceCode.Length > i + 3 && sourceCode[i..(i + 3)] != "###") i++;
+                        while (source.Length > i + 3 && source[i..(i + 3)] != "###") i++;
                         i += 3;
                     }
                     else
                     {
                         i++;
-                        while (sourceCode.Length > i + 1 && sourceCode[i] != '#' && sourceCode[i] != '\n') i++;
-                        if (sourceCode[i] == '#') i++;
+                        while (source.Length > i + 1 && source[i] != '#' && source[i] != '\n') i++;
+                        if (source[i] == '#') i++;
                     }
                 }
 
@@ -312,9 +366,9 @@ public class Lexer
             }
 
         }
-        sourceCode = "";
+        source = "";
 
-        tokens.Add(Tokenize("\\EOF", TokenType.EOFChar, sourceCode.Length, -1));
+        tokens.Add(Tokenize("\\EOF", TokenType.EOFChar, source.Length, -1));
 
         VerifyEndOfStatements(tokens);
 

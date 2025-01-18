@@ -31,7 +31,7 @@ public abstract class SyntaxNode
         for (int i = 0; i < _children.Count; i++)
         {
             buf.Append("  " + (i < _children.Count - 1 ? "|- " : "'- "));
-            var lines = _children[i].ToTree().Split("\n", StringSplitOptions.RemoveEmptyEntries);
+            var lines = _children[i].ToTree().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
             buf.AppendLine(lines[0]);
             foreach (var l in lines[1..])
                 buf.AppendLine((i < _children.Count - 1 ? $"  |  " : $"     ") + l);

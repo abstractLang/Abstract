@@ -57,7 +57,7 @@ public partial class Evaluator
                 if (attrib.Arguments[0] is StringLiteralNode @str)
                 {
                     var parent = member.parent!;
-                    var identifier = new MemberIdentifier(str.Value);
+                    var identifier = new MemberIdentifier(str.RawContent);
                     var search = parent.SearchForChild(identifier);
 
                     if (search == null)
@@ -88,7 +88,7 @@ public partial class Evaluator
                 if (attrib.Arguments[0] is StringLiteralNode @str)
                 {
                     var parent = member.parent!;
-                    var identifier = new MemberIdentifier(str.Value);
+                    var identifier = new MemberIdentifier(str.RawContent);
                     var search = parent.SearchForChild(identifier);
 
                     if (search == null)
@@ -170,7 +170,7 @@ public partial class Evaluator
             {
                 if (attrib.Arguments[0] is StringLiteralNode @alias)
                 {
-                    RegisterGlobal(member, alias.Value);
+                    RegisterGlobal(member, alias.RawContent);
                 }
                 else if (attrib.Arguments[0] is GenericCollectionExpressionNode @aliases)
                 {
@@ -178,7 +178,7 @@ public partial class Evaluator
                     {
                         if (i is not StringLiteralNode @asString)
                             throw new Exception("TODO invalid type X in collection of type string");
-                        RegisterGlobal(member, asString.Value);
+                        RegisterGlobal(member, asString.RawContent);
                     }
                 }
                 
@@ -196,7 +196,7 @@ public partial class Evaluator
                 if (attrib.Arguments[0] is not StringLiteralNode @str)
                     throw new Exception("TODO no function overload matching types");
                 
-                AppendOperatorOverload(func, str.Value);
+                AppendOperatorOverload(func, str.RawContent);
             }
             else throw new Exception("TODO no function overload with X arguments");
         }

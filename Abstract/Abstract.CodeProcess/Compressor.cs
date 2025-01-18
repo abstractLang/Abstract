@@ -276,7 +276,8 @@ public class Compressor(ErrorHandler errHandler)
         }
 
         else if (node is StringLiteralNode @strlit)
-            builder.WriteOpCode(Base.LdConst, Types.Str, strlit.Value);
+            throw new Exception();
+            //builder.WriteOpCode(Base.LdConst, Types.Str, strlit);
 
         else Console.WriteLine("Unhandled exp: " + node.GetType().Name);
     }
@@ -325,7 +326,7 @@ public class Compressor(ErrorHandler errHandler)
                     {
                         case ["ComptimeString", "asstring"]:
                             var value = (StringLiteralNode)args[0];
-                            builder.WriteOpCode(Base.LdConst, Types.Str, value.Value);
+                            builder.WriteOpCode(Base.LdConst, Types.Str, value.RawContent);
                             return;
 
                         default: throw new Exception();

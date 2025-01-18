@@ -3,6 +3,7 @@ using Abstract.Build.Exceptions;
 using Abstract.Parser.Core.Exceptions.Evaluation;
 using Abstract.Parser.Core.Language.SyntaxNodes.Control;
 using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
+using Abstract.Parser.Core.Language.SyntaxNodes.Misc;
 using Abstract.Parser.Core.Language.SyntaxNodes.Statement;
 using Abstract.Parser.Core.Language.SyntaxNodes.Value;
 using Abstract.Parser.Core.ProgData;
@@ -128,6 +129,24 @@ public partial class Evaluator
             EvalIdentifier(identifierCollection, currblock);
         }
 
+        else if (node is StringLiteralNode @stringLit)
+        {
+            if (stringLit.isSinple)
+            {
+                var idx = currblock.AppendConstantReference(stringLit.RawContent);
+                node.DataReference = new StringConstRef(currblock, idx);
+            }
+            else
+            {
+                foreach (var i in stringLit.Content)
+                {
+                    if (i is StringInterpolationNode @interpolation)
+                        EvalExpression(interpolation.Expression, currblock);
+
+                    // TODO eval chars
+                }
+            }
+        }
         else if (node is ValueNode @value) EvalValue(value, currblock);
 
         else Console.WriteLine($"expression {node} ({node.GetType().Name})");
@@ -271,12 +290,7 @@ public partial class Evaluator
     }
     private void EvalValue(ValueNode node, ExecutableCodeBlock currblock)
     {
-        if (node is StringLiteralNode @stringl)
-        {
-            var idx = currblock.AppendConstantReference(stringl.Value);
-            node.DataReference = new StringConstRef(currblock, idx);
-        }
-        else if (node is IntegerLiteralNode @intl)
+        if (node is IntegerLiteralNode @intl)
         {
             var idx = currblock.AppendConstantReference(intl.Value);
             node.DataReference = new IntegerConstRef(currblock, idx);

@@ -488,8 +488,35 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
                 break;
             
             // String
-            case TokenType.StringLiteral:
-                node = new StringLiteralNode(Eat());
+            case TokenType.DoubleQuotes:
+                node = new StringLiteralNode();
+
+                node.AppendChild(EatAsNode());
+                while (!IsEOF())
+                {
+                    if (Taste(TokenType.StringLiteral))
+                        node.AppendChild(new StringSectionNode(Eat()));
+
+                    else if (Taste(TokenType.EscapedLeftBracketChar))
+                    {
+                        var interpNode = new StringInterpolationNode();
+                        interpNode.AppendChild(EatAsNode());
+                        interpNode.AppendChild(ParseExpression());
+                        interpNode.AppendChild(DietAsNode(TokenType.RightBracketChar, (t)
+                            => throw new UnexpectedTokenException(_currentScript, t)));
+                        node.AppendChild(interpNode);
+                    }
+
+                    else if (Taste(TokenType.CharacterLiteral))
+                        node.AppendChild(new CharacterLiteralNode(Eat()));
+
+                    else if (Taste(TokenType.DoubleQuotes)) break;
+
+                    else throw new UnexpectedTokenException(_currentScript, Eat());
+                }
+                node.AppendChild(DietAsNode(TokenType.DoubleQuotes, (e)
+                    => throw new UnexpectedTokenException(_currentScript, e)));
+
                 break;
 
             // collections (or type arrays)

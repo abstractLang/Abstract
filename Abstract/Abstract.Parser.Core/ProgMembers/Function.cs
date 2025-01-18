@@ -39,7 +39,8 @@ public class Function(
         return base.SearchForGeneric(identifier);
     }
 
-    public override string ToString()
-        => $"{GlobalReference}({string.Join(", ", parameters
-        .Select(e => e.type) ?? [])}) -> {returnType}";
+    public override string ToString() => (parameters != null && returnType != null)
+        ? $"{GlobalReference}({string.Join(", ", parameters.Select(e => e.type) ?? [])}) -> {returnType}"
+        : $"{GlobalReference}({functionNode.ParameterCollection}) -> {functionNode.ReturnType}";
+
 }

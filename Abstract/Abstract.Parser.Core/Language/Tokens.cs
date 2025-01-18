@@ -31,6 +31,7 @@ public enum TokenType : byte
     IntegerNumberLiteral,
     FloatingNumberLiteral,
     StringLiteral,
+    CharacterLiteral,
     Identifier,
 
     NamespaceKeyword,       // namespace
@@ -76,6 +77,8 @@ public enum TokenType : byte
     LeftAngleChar,          // <
     RightAngleChar,         // >
 
+    EscapedLeftBracketChar, // \{
+
     CrossChar,              // +
     MinusChar,              // -
     StarChar,               // *
@@ -109,6 +112,9 @@ public enum TokenType : byte
     DecrementOperator,      // --
 
     RangeOperator,          // ..
+
+    SingleQuotes,           // '
+    DoubleQuotes,           // "
 
     CommaChar,              // ,
     DotChar,                // .
