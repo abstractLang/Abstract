@@ -131,7 +131,7 @@ public partial class Evaluator
 
         else if (node is StringLiteralNode @stringLit)
         {
-            if (stringLit.isSinple)
+            if (stringLit.isSimple)
             {
                 var idx = currblock.AppendConstantReference(stringLit.RawContent);
                 node.DataReference = new StringConstRef(currblock, idx);
