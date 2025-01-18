@@ -720,7 +720,8 @@ namespace Types {
         @externInterface @public @static func string concatenate(string base, char character)
         @overrideOperator("+")
         @externInterface @public @static func string concatenate(string base, []char characters)
-
+        # remember also Std.Compilation.ComptimeString.concatenate functions
+        
     }
 
     @defineGlobal("char") @public @valueOnly @final struct Character {}

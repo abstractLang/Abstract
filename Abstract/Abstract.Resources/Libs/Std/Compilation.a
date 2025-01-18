@@ -7,10 +7,16 @@
 namespace Compilation {
 
     @public @comptime const Std.System.Archtecture targetArch
-    @public @comptime let uptr currentLine
-    @public @comptime let uptr currentColumn
-    @public @comptime let string currentSource
-    @public @comptime let string functionName
+    @public @comptime const uptr currentLine
+    @public @comptime const uptr currentColumn
+    @public @comptime const string currentSource
+    @public @comptime const string functionName
+
+    namespace Link {
+
+        @public @comptime @externalInterface func void DefineEntryPoint()
+
+    }
     
     @public enum Operator {
         # assign and reading operators
@@ -39,6 +45,24 @@ namespace Compilation {
 
             @implicitConvert @public @static @comptime func string asstring(ComptimeString value)
 
+            @comptime @inline
+            @overrideOperator("+") @public @static func string concatenate(ComptimeString left, string right) {
+                # return string.concatenate(asstring(left), right);
+                #return asstring(left) + right;
+            }
+            @comptime @inline
+            @overrideOperator("+") @public @static func string concatenate(ComptimeString base, char character) {
+                # return string.concatenate(asstring(left), character);
+                #return asstring(left) + character;
+            }
+            @comptime @inline
+            @overrideOperator("+") @public @static func string concatenate(ComptimeString base, []char characters) {
+                # return string.concatenate(asstring(left), characters);
+                #return asstring(left) + characters;
+            }
+
+            @overrideOperator("+") @comptime @inline
+            @externInterface @public @static func string comptimeConcatenate(ComptimeString left, ComptimeString right)
         }
 
         @public @abstract @comptimeOnly @valueOnly @final struct ComptimeInteger {
@@ -73,4 +97,5 @@ namespace Compilation {
         }
 
     }
+    
 }

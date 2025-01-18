@@ -23,7 +23,9 @@ export const Std = {
     "Console.write": Console_write,
     "Console.writeln": Console_writeln,
 
-    "Types.String.concatenate": Types_String_concatenate
+    "Types.String.concatenate": Types_String_concatenate,
+
+    "Compilation.Types.ComptimeString.concatenate": Types_String_concatenate,
 
 }
 

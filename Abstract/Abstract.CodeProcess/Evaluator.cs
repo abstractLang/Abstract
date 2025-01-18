@@ -21,7 +21,6 @@ public partial class Evaluator(ErrorHandler errHandler)
     {
         program = new(new("programNode."));
 
-        try {
 
         foreach (var i in programNode.Children)
         {
@@ -45,8 +44,6 @@ public partial class Evaluator(ErrorHandler errHandler)
         ScanCodeBlocks();
 
         // Evaluation process ends here
-
-        } catch {}
 
 
         // Debuggin shits here

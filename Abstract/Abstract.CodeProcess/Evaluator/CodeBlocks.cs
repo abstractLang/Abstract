@@ -42,6 +42,13 @@ public partial class Evaluator
         };
         blockNode.EvaluatedData = block;
 
+        if (parent is Function @parentFunction)
+        {
+            foreach (var (type, name) in parentFunction.parameters)
+                block.AppendLocalParameter(name, type);
+
+        }
+
         ScanBlock(blockNode, block);
     }
     private void EvalBlock(BlockNode blockNode, ExecutableCodeBlock parentBlock)
@@ -183,20 +190,22 @@ public partial class Evaluator
             EvalExpression(node.Right, currblock);
             
             if (node.Left.DataReference?.refferToType == null)
-            {
-                // throw here is better
-                node.DataReference = new DataErrorRef();
-                goto Return;
-            }
+                throw new Exception();
 
             if (node.Left.DataReference.refferToType is SolvedTypeReference @baseType)
             {
-                var operatorOverloads = baseType.structure.SearchForOperators(node.Operator)!;
+                var operatorOverloads = baseType.structure.SearchForOperators(node.Operator)
+                    ?? throw new InvalidOperatorForTypeException(node, baseType.structure.GlobalReference);
+                
                 TypeReference[] types = [node.Left.DataReference.refferToType, node.Right.DataReference.refferToType];
 
                 var (function, toConvert) = TryGetOveloadIndirect(operatorOverloads, types);
 
-                if (function == null) throw new InvalidOperatorForType(node, baseType.structure.GlobalReference);
+                if (function == null)
+                {
+                    throw new InvalidOperatorOverloadException(node,
+                        baseType.structure.GlobalReference);
+                }
 
                 node.ConvertLeft = toConvert[0];
                 node.ConvertRight = toConvert[1];
@@ -233,7 +242,7 @@ public partial class Evaluator
         TypeReference type = GetTypeFromTypeExpressionNode(node.TypedIdentifier.Type, currblock.ProgramMemberParent);
         string name = node.TypedIdentifier.Identifier.Value;
 
-        currblock.AppendLocalReference(name, type, isConstant);
+        currblock.AppendLocalVariable(name, type, isConstant);
         node.DataReference = new LocalDataRef(currblock, name);
 
         node.evaluated = true;
