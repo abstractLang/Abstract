@@ -19,6 +19,7 @@ public class Lexer
             TokenType.AtSiginChar,
         ] },
         { "bothSides", [
+            TokenType.DotChar,
             TokenType.CrossChar, TokenType.MinusChar, TokenType.PowerOperator,
             TokenType.StarChar, TokenType.StarChar, TokenType.PercentChar,
             TokenType.EqualsChar,
@@ -38,6 +39,7 @@ public class Lexer
         // keywords
         { "namespace", TokenType.NamespaceKeyword },
         { "import", TokenType.ImportKeyword },
+        { "from", TokenType.FromKeyword },
 
         { "let", TokenType.LetKeyword },
         { "const", TokenType.ConstKeyword },
@@ -179,6 +181,7 @@ public class Lexer
 
             else if (c == '&') tokens.Add(Tokenize(c, TokenType.AmpersandChar, i));
             else if (c == '?') tokens.Add(Tokenize(c, TokenType.QuestionChar, i));
+            else if (c == '!') tokens.Add(Tokenize(c, TokenType.BangChar, i));
             else if (c == '@') tokens.Add(Tokenize(c, TokenType.AtSiginChar, i));
 
             else if (c == ',') tokens.Add(Tokenize(c, TokenType.CommaChar, i));
@@ -282,7 +285,7 @@ public class Lexer
                             // interpolation
                             if (escapeCode == '{')
                             {
-                                // FIXME
+                                // FIXME interpolation
                                 // interpolation content detection is a little
                                 // raw implemented :p
 

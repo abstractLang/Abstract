@@ -269,7 +269,7 @@ internal static class Compiler
                     }
 
                     break;
-                case Base.LeaveFrame: /* TODO */ break;
+                case Base.LeaveFrame: /* TODO leaveFrame instruction */ break;
 
                 case Base.Call:
                     var funcref = bytecode.ReadU32();

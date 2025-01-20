@@ -1,17 +1,85 @@
-###
+###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
 
-    ABSTRACT STANDARD LIBRARY SCRIPT
+import { Slice } from Std.Types.Static
 
-###
+# FIXME shit not a single reference is working here
 
 namespace Memory {
 
-    #@public func void fill(uptr pointer, uptr size, u8 data)
-    #@public func void copy(uptr from, uptr to, uptr size)
+    #let ?Allocator rootAllocator = null
+    #const List(Allocator) _scopeAllocatorStack
 
-    #@public func *T allocate(type T)
-    #@public func *[]T allocate(type T, uptr count)
+    #@getter("rootAllocator")
+    #@public func Allocator getRootAllocator() {
+    #    return rootAllocator
+    #}
 
-    #@public func void free(type T, *T data)
+    #@getter("generalAllocator")
+    #@public func Allocator getGPAllocator() {}
 
+    ### FIXME compiler can't process it
+    @public @abstract struct Allocator {
+
+        # methods to be overrided
+        @public @abstract Slice(u8) rawAlloc(int length, byte aliginment)
+        @public @abstract Slice(u8) rawResize(Slice(u8) buf, int new_length)
+        @public @abstract void rawFree(Slice(u8) buf)
+
+        @public *T alloc(type T)
+        @public void free(type T, *T value)
+
+        @public *[]T alloc(type T, uptr length)
+        @public *[]T resize(type T, uptr length)
+        @public void free(type T, *[]T value)
+
+    }
+    ###
+
+    # TODO BufferAllocator
+    # TODO GeneralPurposeAllocator
+
+    ### FIXME compiler can't process it
+    @public struct ScopeAllocator extends Allocator {
+
+        @readonly let Allocator _parentAllocator
+
+        constructor(Allocator parent) {
+            _parentAllocator = parent
+        }
+
+        destructor() {
+            # TODO free every node allocated by this
+            # instance
+        }
+
+        @public @abstract Slice(u8) rawAlloc(int length, byte aliginment) {
+            # TODO ScopeAllocator.rawAlloc
+        }
+        @public @abstract Slice(u8) rawResize(Slice(u8) buf, int new_length) {
+            # TODO ScopeAllocator.rawResize
+        }
+        @public @abstract void rawFree(Slice(u8) buf) {
+            # TODO ScopeAllocator.rawFree
+        }
+    }
+    ###
+
+    #namespace PageAllocator {
+
+        ###
+        Simple default interface to communicate directly with the OS
+        and provide a entire memory page (4096 bytes or 4KiB usually).
+
+        This should allow the program to statically and agnostically
+        require a entire memory page from any OS, target or system
+        configuration (Std.System depending on the target).
+        ###
+
+    #    @getter("pageSize")
+    #    @public func Allocator getPageSize() {}
+
+        #@public func Slice(u8) allocPage()
+        #@public func void freePage(Slice(u8) page)
+
+    #}
 }

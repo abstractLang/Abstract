@@ -231,7 +231,7 @@ public partial class Evaluator
     {
         EvalExpression(node.Expression, currblock);
         //Console.WriteLine($"unary {node} ({node.GetType().Name})");
-        // TODO
+        // TODO eval unary operators
 
         //node.evaluated = true;
     }
@@ -267,7 +267,6 @@ public partial class Evaluator
             {
                 var functionGroup = funcGroupRef.group;
 
-                // FIXME
                 Function func = TryGetOveloadDirect(functionGroup, [.. _argTypes]) ??
                 throw new NoOverloadForTypes(node, string.Join(", ", _argTypes.Select(e => e?.ToString() ?? "!nil")));
 

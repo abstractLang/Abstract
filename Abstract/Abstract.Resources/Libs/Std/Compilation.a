@@ -6,11 +6,11 @@
 
 namespace Compilation {
 
-    @public @comptime const Std.System.Archtecture targetArch
-    @public @comptime const uptr currentLine
-    @public @comptime const uptr currentColumn
-    @public @comptime const string currentSource
-    @public @comptime const string functionName
+    @public @comptime @externInterface const Std.System.Archtecture targetArch
+    @public @comptime @externInterface const uptr currentLine
+    @public @comptime @externInterface const uptr currentColumn
+    @public @comptime @externInterface const string currentSource
+    @public @comptime @externInterface const string functionName
 
     namespace Link {
 
@@ -18,27 +18,6 @@ namespace Compilation {
 
     }
     
-    @public enum Operator {
-        # assign and reading operators
-        assign,
-        read,
-
-        # Binary math operators
-        addition,
-        subtraction,
-        multiplication,
-        division,
-        remainder,
-
-        # Binary boolean operators
-        equals,
-        notEquals,
-        lesserThan,
-        greaterThan,
-        lesserEqualThan,
-        greaterEqualThan
-    }
-
     namespace Types {
 
         @public @abstract @comptimeOnly @valueOnly @final struct ComptimeString {
@@ -48,17 +27,17 @@ namespace Compilation {
             @comptime @inline
             @overrideOperator("+") @public @static func string concatenate(ComptimeString left, string right) {
                 # return string.concatenate(asstring(left), right);
-                #return asstring(left) + right;
+                return asstring(left) + right;
             }
             @comptime @inline
             @overrideOperator("+") @public @static func string concatenate(ComptimeString base, char character) {
                 # return string.concatenate(asstring(left), character);
-                #return asstring(left) + character;
+                return asstring(base) + character;
             }
             @comptime @inline
             @overrideOperator("+") @public @static func string concatenate(ComptimeString base, []char characters) {
                 # return string.concatenate(asstring(left), characters);
-                #return asstring(left) + characters;
+                return asstring(base) + characters;
             }
 
             @overrideOperator("+") @comptime @inline
@@ -98,4 +77,25 @@ namespace Compilation {
 
     }
     
+    @public enum Operator {
+        # assign and reading operators
+        assign,
+        read,
+
+        # Binary math operators
+        addition,
+        subtraction,
+        multiplication,
+        division,
+        remainder,
+
+        # Binary boolean operators
+        equals,
+        notEquals,
+        lesserThan,
+        greaterThan,
+        lesserEqualThan,
+        greaterEqualThan
+    }
+
 }

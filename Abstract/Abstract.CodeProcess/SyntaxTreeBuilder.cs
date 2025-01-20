@@ -27,7 +27,9 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
         _tokens = new(tkns);
         _currentScript = src;
 
-        var res = ParseScript(src);
+        ScriptReferenceNode res = null!;
+
+        res = ParseScript(src);
 
         _tokens = null!;
         _currentScript = null!;
@@ -57,7 +59,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
     private ControlNode ParseRoot()
     {
         ControlNode node;
-        
+       
         switch (Bite().type)
         {
             case TokenType.NamespaceKeyword:
@@ -173,6 +175,10 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
                     block.AppendChild(i);
                 }));
 
+                break;
+
+            case TokenType.ImportKeyword:
+                node = ParseImport();
                 break;
 
             case TokenType.AtSiginChar:
@@ -578,6 +584,47 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
         throw new UnexpectedTokenException(_currentScript, Eat());
     }
 
+    private ImportFromNode ParseImport()
+    {
+        var nodebase = new ImportFromNode();
+
+        nodebase.AppendChild(DietAsNode(TokenType.ImportKeyword, (t)
+            => throw new UnexpectedTokenException(_currentScript, t)));
+
+        if (Taste(TokenType.LeftBracketChar))
+        {
+            var collection = new ImportCollectionNode();
+
+            collection.AppendChild(DietAsNode(TokenType.LeftBracketChar, (t)
+                => throw new UnexpectedTokenException(_currentScript, t)));
+
+            while (!Taste(TokenType.RightBracketChar))
+            {
+                var item = new ImportItemNode();
+                
+                item.AppendChild(ParseIdentfier());
+                if (TryEatAsNode(TokenType.AsKeyword, out var asNode)) {
+                    item.AppendChild(asNode);
+                    item.AppendChild(ParseIdentfier());
+                }
+
+                collection.AppendChild(item);
+                if (!Taste(TokenType.CommaChar)) break;
+            }
+
+            collection.AppendChild(DietAsNode(TokenType.RightBracketChar, (t)
+                => throw new UnexpectedTokenException(_currentScript, t)));
+
+            nodebase.AppendChild(collection);
+        }
+
+        nodebase.AppendChild(DietAsNode(TokenType.FromKeyword, (t)
+            => throw new UnexpectedTokenException(_currentScript, t)));
+
+        nodebase.AppendChild(ParseIdentfier());
+
+        return nodebase;
+    }
 
     private ParameterCollectionNode ParseParameterCollection()
     {

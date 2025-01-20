@@ -36,6 +36,7 @@ public enum TokenType : byte
 
     NamespaceKeyword,       // namespace
     ImportKeyword,          // import
+    FromKeyword,            // from
     TypeKeyword,
     LetKeyword,             // let
     ConstKeyword,           // const
@@ -87,6 +88,7 @@ public enum TokenType : byte
     EqualsChar,             // =
     AmpersandChar,          // &
     QuestionChar,           // ?
+    BangChar,               // !
 
     AtSiginChar,            // @
 

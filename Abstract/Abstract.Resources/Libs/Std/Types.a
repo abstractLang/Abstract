@@ -1,8 +1,4 @@
-###
-
-    ABSTRACT STANDARD LIBRARY SCRIPT
-
-###
+###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
 
 namespace Types {
 
@@ -764,8 +760,18 @@ namespace Types {
 
     namespace Static {
 
-        @public @valueOnly @final struct StringBuffer(uptr bufferLength) {}
+        @public @valueOnly @readonly @final struct Slice(type ElementT) {
 
+            #FIXME make pointers works
+            #@public @readonly let *ElementT ptr;
+            @public @readonly let uptr len;
+
+            @indexerGetter @public func ElementT get(i32 i)
+            @indexerSetter @public func void set(i32 i, ElementT value)
+
+        }
+
+        @public @valueOnly @final struct StringBuffer(uptr bufferLength) {}
         @public @valueOnly @final struct StringSpan {}
 
     }

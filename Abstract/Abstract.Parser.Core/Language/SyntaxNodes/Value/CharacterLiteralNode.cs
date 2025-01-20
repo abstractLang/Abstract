@@ -12,10 +12,16 @@ public class CharacterLiteralNode(Token token, bool insideString = false) : Valu
     {
         return Value switch
         {
+            // Control
             "\\t" => "\t",
             "\\n" => "\n",
             "\\r" => "\r",
             "\\0" => char.ConvertFromUtf32(0x00),
+
+            // Characters
+            "\\\"" => "\"",
+            "\\\'" => "\'",
+            "\\\\" => "\\",
 
             _ => throw new NotImplementedException()
         };

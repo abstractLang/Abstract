@@ -130,6 +130,11 @@ public partial class Evaluator(ErrorHandler errHandler)
                 attributes.Clear();
             }
         
+            else if (child is ImportFromNode @import)
+            {
+                // TODO handle import
+            }
+
             else throw new Exception();
         }
 
