@@ -196,7 +196,9 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
                 } catch { DiscardLine(); throw; }
                 break;
 
-            default: throw new UnexpectedTokenException(_currentScript, Eat());
+            // TODO constructors and destructors
+
+            default: throw new UnexpectedTokenException(_currentScript, Eat(), "func, let, const, namespace, struct or @");
         }
 
         TryEndLine();
@@ -545,6 +547,10 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
             or TokenType.StarChar:
                 return ParseType();
 
+            // null
+            case TokenType.NullKeyword:
+                return new NullLiteralNode(Eat());
+
             default: throw new UnexpectedTokenException(_currentScript, Eat());
         }
 
@@ -678,8 +684,8 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
 
         if (Taste(TokenType.TypeKeyword))
             type.AppendChild(new IdentifierNode(Eat()));
-        
-        else if(TryEatAsNode(TokenType.LeftSquareBracketChar, out var leftBrac))
+
+        else if (TryEatAsNode(TokenType.LeftSquareBracketChar, out var leftBrac))
         {
             var arrayMod = new ArrayTypeModifierNode();
 
@@ -695,8 +701,34 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
             type.AppendChild(arrayMod);
         }
 
-        else
-            type.AppendChild(ParseExpression());
+        else if (TryEatAsNode(TokenType.QuestionChar, out var question))
+        {
+            var nullableMod = new NullableTypeModifierNode();
+
+            nullableMod.AppendChild(question);
+            nullableMod.AppendChild(ParseType());
+            type.AppendChild(nullableMod);
+        }
+
+        else if (TryEatAsNode(TokenType.BangChar, out var bang))
+        {
+            var failableMod = new FailableTypeModifierNode();
+
+            failableMod.AppendChild(question);
+            failableMod.AppendChild(ParseType());
+            type.AppendChild(failableMod);
+        }
+
+        else if (TryEatAsNode(TokenType.StarChar, out var star))
+        {
+            var refMod = new ReferenceTypeModifierNode();
+
+            refMod.AppendChild(question);
+            refMod.AppendChild(ParseType());
+            type.AppendChild(refMod);
+        }
+
+        else type.AppendChild(ParseExpression());
         
         return type;
     }

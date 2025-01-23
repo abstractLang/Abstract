@@ -1,5 +1,6 @@
 using System.Text;
 using Abstract.Build;
+using Abstract.Parser.Core.Exceptions.Evaluation;
 using Abstract.Parser.Core.Language.SyntaxNodes.Base;
 using Abstract.Parser.Core.Language.SyntaxNodes.Control;
 using Abstract.Parser.Core.Language.SyntaxNodes.Value;
@@ -138,8 +139,17 @@ public partial class Evaluator(ErrorHandler errHandler)
             else throw new Exception();
         }
 
-        if (attributes.Count > 0)
-            throw new Exception("TODO");
+        while (attributes.Count > 0)
+        {
+            try
+            {
+                var attrib = attributes[0].node;
+                attributes.RemoveAt(0);
+                throw new AttributeWithNoMemberException(attrib);
+            }
+            catch (AttributeWithNoMemberException e) { _errHandler.RegisterError(e); }
+
+        }
     }
 
     #region Register methods

@@ -6,78 +6,78 @@ import { Slice } from Std.Types.Static
 
 namespace Memory {
 
-    let ?Allocator rootAllocator = null
-    const List(Allocator) _scopeAllocatorStack
+    # let ?Allocator _rootAllocator = null
+    # const List(Allocator) _scopeAllocatorStack
 
-    @getter("rootAllocator")
-    @public func Allocator getRootAllocator() {
-       return rootAllocator
-    }
+    # @getter("rootAllocator")
+    # @public func Allocator getRootAllocator() {
+    #    return _rootAllocator
+    # }
 
-    @getter("generalAllocator")
-    @public func Allocator getGPAllocator() {}
+    # @getter("generalAllocator")
+    # @public func Allocator getGPAllocator() {}
 
-    ### FIXME compiler can't process it ###
-    @public @abstract struct Allocator {
+    # ### FIXME compiler can't process it ###
+    # @public @abstract struct Allocator {
 
-        # methods to be overrided
-        @public @abstract Slice(u8) rawAlloc(int length, byte aliginment)
-        @public @abstract Slice(u8) rawResize(Slice(u8) buf, int new_length)
-        @public @abstract void rawFree(Slice(u8) buf)
+    #     # methods to be overrided
+    #     @public @abstract func Slice(u8) rawAlloc(int length, byte aliginment)
+    #     @public @abstract func Slice(u8) rawResize(Slice(u8) buf, int new_length)
+    #     @public @abstract func void rawFree(Slice(u8) buf)
 
-        @public *T alloc(type T)
-        @public void free(type T, *T value)
+    #     @public func *T alloc(type T)
+    #     @public func void free(type T, *T value)
 
-        @public *[]T alloc(type T, uptr length)
-        @public *[]T resize(type T, uptr length)
-        @public void free(type T, *[]T value)
+    #     @public func *[]T alloc(type T, uptr length)
+    #     @public func *[]T resize(type T, uptr length)
+    #     @public func void free(type T, *[]T value)
 
-    }
+    # }
 
-    # TODO BufferAllocator
-    # TODO GeneralPurposeAllocator
+    # # TODO BufferAllocator
+    # # TODO GeneralPurposeAllocator
 
-    ### FIXME compiler can't process it ###
-    @public struct ScopeAllocator extends Allocator {
+    # ### FIXME compiler can't process it ###
+    # @public struct ScopeAllocator extends Allocator {
 
-        @readonly let Allocator _parentAllocator
+    #     @readonly let Allocator _parentAllocator
 
-        constructor(Allocator parent) {
-            _parentAllocator = parent
-        }
+    #     #constructor(Allocator parent) {
+    #     #    _parentAllocator = parent
+    #     #}
 
-        destructor() {
-            # TODO free every node allocated by this
-            # instance
-        }
+    #     #destructor() {
+    #         # TODO free every node allocated by this
+    #         # instance
+    #     #}
 
-        @public @abstract Slice(u8) rawAlloc(int length, byte aliginment) {
-            # TODO ScopeAllocator.rawAlloc
-        }
-        @public @abstract Slice(u8) rawResize(Slice(u8) buf, int new_length) {
-            # TODO ScopeAllocator.rawResize
-        }
-        @public @abstract void rawFree(Slice(u8) buf) {
-            # TODO ScopeAllocator.rawFree
-        }
-    }
+    #     @public @abstract func Slice(u8) rawAlloc(int length, byte aliginment) {
+    #         # TODO ScopeAllocator.rawAlloc
+    #     }
+    #     @public @abstract func Slice(u8) rawResize(Slice(u8) buf, int new_length) {
+    #         # TODO ScopeAllocator.rawResize
+    #     }
+    #     @public @abstract func void rawFree(Slice(u8) buf) {
+    #         # TODO ScopeAllocator.rawFree
+    #     }
+    # }
 
-    namespace PageAllocator {
+    # namespace PageAllocator {
 
-        ###
-        Simple default interface to communicate directly with the OS
-        and provide a entire memory page (4096 bytes or 4KiB usually).
+    #     ###
+    #     Simple default interface to communicate directly with the OS
+    #     and provide a entire memory page (4096 bytes or 4KiB usually).
 
-        This should allow the program to statically and agnostically
-        require a entire memory page from any OS, target or system
-        configuration (Std.System depending on the target).
-        ###
+    #     This should allow the program to statically and agnostically
+    #     require a entire memory page from any OS, target or system
+    #     configuration (Std.System depending on the target).
+    #     ###
 
-        @getter("pageSize")
-        @public func Allocator getPageSize() {}
+    #     @getter("pageSize")
+    #     @public func uptr getPageSize() {}
 
-        @public func Slice(u8) allocPage()
-        @public func void freePage(Slice(u8) page)
+    #     @public func Slice(u8) allocPage()
+    #     @public func void freePage(Slice(u8) page)
 
-    }
+    # }
 }

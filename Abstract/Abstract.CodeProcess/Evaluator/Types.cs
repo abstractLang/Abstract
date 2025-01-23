@@ -128,7 +128,9 @@ public partial class Evaluator
             return new SolvedTypeReference(arrayStruct, child);
         }
 
-        Console.WriteLine($"{type.Children[0].GetType().Name} in {parent?.GetType().Name}");
+        var diagnostics = (new System.Diagnostics.StackFrame(0, true));
+        Console.WriteLine($"(...{diagnostics.GetFileName()?[^15..]}:{diagnostics.GetFileLineNumber()}) "
+            + $"{type.Children[0].GetType().Name} in {parent?.GetType().Name}");
         return null!;
     }
     public Structure SearchStructure(MemberIdentifier name, ProgramMember? parent = null)

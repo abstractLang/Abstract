@@ -74,7 +74,7 @@ public partial class Evaluator
                         if (prop.getter != null) throw new Exception("TODO this property already have a getter function");
                         prop.getter = (Function)member!;
                     }
-                    else throw new Exception("TODO this node already have a member with that name");
+                    else throw new Exception($"TODO this node already have a member with that name ({identifier})");
 
                 }
                 else throw new Exception("TODO no function overload matching types");

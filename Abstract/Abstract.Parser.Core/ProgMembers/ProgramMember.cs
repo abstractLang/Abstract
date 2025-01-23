@@ -11,7 +11,7 @@ public abstract class ProgramMember(ProgramMember? parent, MemberIdentifier iden
     public readonly ProgramMember? parent = parent;
     public readonly MemberIdentifier identifier = identifier;
 
-    protected Dictionary<string, MemberAttribute> _attributes = [];
+    protected List<MemberAttribute> _attributes = [];
     protected Dictionary<MemberIdentifier, Namespace> _childrenNamespaces = [];
     protected Dictionary<MemberIdentifier, FunctionGroup> _childrenFunctions = [];
     protected Dictionary<MemberIdentifier, Structure> _childrenTypes = [];
@@ -19,7 +19,7 @@ public abstract class ProgramMember(ProgramMember? parent, MemberIdentifier iden
     protected Dictionary<MemberIdentifier, Enumerator> _childrenEnums = [];
     protected Dictionary<MemberIdentifier, ProgramMember> _allChildren = [];
 
-    public MemberAttribute[] Attributes => [.. _attributes.Values];
+    public MemberAttribute[] Attributes => [.. _attributes];
     public Namespace[] ChildrenNamespaces => [.. _childrenNamespaces.Values];
     public FunctionGroup[] ChildrenFunctions => [.. _childrenFunctions.Values];
     public Structure[] ChildrenTypes => [.. _childrenTypes.Values];
@@ -72,14 +72,15 @@ public abstract class ProgramMember(ProgramMember? parent, MemberIdentifier iden
     #region attributes
     public void AppendAttribute(params MemberAttribute[] attrib)
     {
-        foreach (var i in attrib) _attributes.Add(i.Name, i);
+        foreach (var i in attrib) _attributes.Add(i);
     }
-    public bool HasAttribute(string name) => _attributes.ContainsKey(name);
+    public bool HasAttribute(string name) => _attributes.Any((e) => e.Name == name);
     public bool TryGetAttribute(string name, out MemberAttribute attrib)
     {
-        return _attributes.TryGetValue(name, out attrib!);
+        attrib = _attributes.FirstOrDefault((e) => e.Name == name)!;
+        return attrib != null;
     }
-    public MemberAttribute GetAttribute(string name) => _attributes[name];
-    public MemberAttribute[] GetAttributesList() => [.. _attributes.Values];
+    public MemberAttribute GetAttribute(string name) => _attributes.First((e) => e.Name == name);
+    public MemberAttribute[] GetAttributesList() => [.. _attributes];
     #endregion
 }

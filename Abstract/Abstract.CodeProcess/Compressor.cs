@@ -163,7 +163,9 @@ public class Compressor(ErrorHandler errHandler)
 
             builder.AppendChild(param);
         }
-        builder.AppendChild(new DirectoryBuilder("RET", func.returnType.ToString() ?? throw new Exception()));
+        if (func.returnType != null)
+            builder.AppendChild(new DirectoryBuilder("RET", func.returnType.ToString() ?? throw new Exception()));
+        else Console.WriteLine($"{func} returning type was null");
 
         builder.AppendChild(attrb);
 
@@ -436,7 +438,7 @@ public class Compressor(ErrorHandler errHandler)
         }
         else if (type is GenericTypeReference) { /* ignore for now lol */ }
 
-        else throw new NotImplementedException();
+        else return;//throw new NotImplementedException();
     }
 
     private static (string kind, string identifier) GetMemberReferenceIdentifier(ProgramMember member)

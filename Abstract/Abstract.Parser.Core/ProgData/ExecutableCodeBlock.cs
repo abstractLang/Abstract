@@ -72,9 +72,14 @@ public class ExecutableCodeBlock
                 if (res is FunctionGroup fgroup)
                     return new FunctionGroupRef(fgroup);
 
+                else if (res is Field @field)
+                    return new FieldDataRef(field);
+
                 else
                 {
-                    Console.WriteLine($"{res}");
+                    var diagnostics = (new System.Diagnostics.StackFrame(0, true));
+                    Console.WriteLine($"(...{diagnostics.GetFileName()?[^15..]}:{diagnostics.GetFileLineNumber()}) "
+                    + $"not implemented return for {res}");
                     return null!;
                 }
             }

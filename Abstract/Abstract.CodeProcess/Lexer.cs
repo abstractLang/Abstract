@@ -353,7 +353,7 @@ public class Lexer
                     else
                     {
                         i++;
-                        while (source.Length > i + 1 && source[i] != '#' && source[i] != '\n') i++;
+                        while (source.Length > i + 1 && source[i] != '\n') i++;
                         if (source[i] == '#') i++;
                     }
                 }

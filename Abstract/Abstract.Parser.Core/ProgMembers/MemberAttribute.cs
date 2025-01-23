@@ -16,4 +16,12 @@ public sealed class MemberAttribute(AttributeNode node)
         : null;
     public ExpressionNode[] Arguments
         => ArgumentsNode?.Arguments ?? [];
+
+    public override string ToString()
+    {
+        var args = ArgumentsNode;
+        var argsstr = args == null ? "" : $"({string.Join(", ", (object[])args.Arguments)})";
+
+        return $"@{Name}{argsstr}";
+    }
 }
