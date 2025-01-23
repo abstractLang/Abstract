@@ -6,18 +6,18 @@ import { Slice } from Std.Types.Static
 
 namespace Memory {
 
-    #let ?Allocator rootAllocator = null
-    #const List(Allocator) _scopeAllocatorStack
+    let ?Allocator rootAllocator = null
+    const List(Allocator) _scopeAllocatorStack
 
-    #@getter("rootAllocator")
-    #@public func Allocator getRootAllocator() {
-    #    return rootAllocator
-    #}
+    @getter("rootAllocator")
+    @public func Allocator getRootAllocator() {
+       return rootAllocator
+    }
 
-    #@getter("generalAllocator")
-    #@public func Allocator getGPAllocator() {}
+    @getter("generalAllocator")
+    @public func Allocator getGPAllocator() {}
 
-    ### FIXME compiler can't process it
+    ### FIXME compiler can't process it ###
     @public @abstract struct Allocator {
 
         # methods to be overrided
@@ -33,12 +33,11 @@ namespace Memory {
         @public void free(type T, *[]T value)
 
     }
-    ###
 
     # TODO BufferAllocator
     # TODO GeneralPurposeAllocator
 
-    ### FIXME compiler can't process it
+    ### FIXME compiler can't process it ###
     @public struct ScopeAllocator extends Allocator {
 
         @readonly let Allocator _parentAllocator
@@ -62,9 +61,8 @@ namespace Memory {
             # TODO ScopeAllocator.rawFree
         }
     }
-    ###
 
-    #namespace PageAllocator {
+    namespace PageAllocator {
 
         ###
         Simple default interface to communicate directly with the OS
@@ -75,11 +73,11 @@ namespace Memory {
         configuration (Std.System depending on the target).
         ###
 
-    #    @getter("pageSize")
-    #    @public func Allocator getPageSize() {}
+        @getter("pageSize")
+        @public func Allocator getPageSize() {}
 
-        #@public func Slice(u8) allocPage()
-        #@public func void freePage(Slice(u8) page)
+        @public func Slice(u8) allocPage()
+        @public func void freePage(Slice(u8) page)
 
-    #}
+    }
 }
