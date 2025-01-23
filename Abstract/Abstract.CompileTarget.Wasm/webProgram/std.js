@@ -40,8 +40,8 @@ function Console_writeln(strptr) {
 
 
 function Types_String_concatenate(strptr_a, strptr_b) {
-    let str_a_length = memoryView.getInt32(strptr_a, false) -1;
-    let str_b_length = memoryView.getInt32(strptr_b, false) -1;
+    let str_a_length = memoryView.getInt32(strptr_a, false);
+    let str_b_length = memoryView.getInt32(strptr_b, false);
 
     // len + str_a(wo \0) + str_b(w0 \0) + \0
     let finallength = 4 + str_a_length + str_b_length + 1;
@@ -49,6 +49,8 @@ function Types_String_concatenate(strptr_a, strptr_b) {
 
     let str_a = GetStringFromMemory(strptr_a);
     let str_b = GetStringFromMemory(strptr_b);
+
+    console.log(str_a, str_b);
 
     let finalstr = str_a + str_b;
     let strbuffer = new TextEncoder().encode(finalstr);

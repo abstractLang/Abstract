@@ -100,20 +100,21 @@ public class Directory {
         bytes.AddRange(code.LookArray(1));
         var instruction = Instructions.Get(code.ReadU8());
         
-        buf.Append($"\t${code.Position:X6}:\t");
+        buf.Append($"\t${code.Position:X4}:\t");
         inst.Append($"{instruction.b}");
         
         if (instruction.t != Types.Unspecified)
         {
-            inst.Append(new string(' ', 15 - inst.Length));
+            inst.Append(new string(' ', 10 - inst.Length));
             inst.Append($"\t{instruction.t.ToString().ToLower()}");
         }
 
         if (instruction.args != null && instruction.args.Length > 0)
         {
+            int argsCount = 0;
             foreach (var arg in instruction.args)
             {
-                inst.Append(new string(' ', ((int)(Math.Ceiling(inst.Length / 25.0) + 1) * 25) - inst.Length));
+                inst.Append(new string(' ',Math.Max(1, 25 + (15 * argsCount++) - inst.Length) + '\t'));
                 
                 switch (arg)
                 {
@@ -168,8 +169,10 @@ public class Directory {
                         bytes.AddRange(code.LookArray(4));
                         var strptr = code.ReadU32();
                         data.Position = strptr;
-                        var strdata = data.ReadStringUTF8();
-                        inst.Append($"\"{strdata}\"");
+                        var strdata = data.ReadStringUTF8()
+                            .Replace("\n", "\\n").Replace("\r", "\\r")
+                            .Replace("\t", "\\t").Replace("" + char.ConvertFromUtf32(0), "\\0"); ;
+                        inst.Append($"* -> \"{strdata}\"");
                         break;
 
                     case "reftype"

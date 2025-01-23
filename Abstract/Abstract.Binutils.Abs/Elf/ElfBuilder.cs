@@ -266,15 +266,16 @@ public class ElfBuilder(string pname) : IDisposable {
             
             if (instruction.t != Types.Unspecified)
             {
-                inst.Append(new string(' ', 15 - inst.Length));
+                inst.Append(new string(' ', 10 - inst.Length));
                 inst.Append($"\t{instruction.t.ToString().ToLower()}");
             }
 
             if (instruction.args != null && instruction.args.Length > 0)
             {
+                int argcount = 1;
                 foreach (var arg in instruction.args)
                 {
-                    inst.Append(new string(' ', 25 - inst.Length));
+                    inst.Append(new string(' ', (15 * argcount++) - inst.Length));
                     
                     switch (arg)
                     {
@@ -329,8 +330,10 @@ public class ElfBuilder(string pname) : IDisposable {
                             bytes.AddRange(code.LookArray(4));
                             var strptr = code.ReadU32();
                             data.Position = strptr;
-                            var strdata = data.ReadStringUTF8();
-                            inst.Append($"\"{strdata}\"");
+                            var strdata = data.ReadStringUTF8()
+                                .Replace("\n", "\\n").Replace("\r", "\\r")
+                                .Replace("\t", "\\t").Replace("" + char.ConvertFromUtf32(0), "\\0");
+                            inst.Append($"*\"{strdata}\"");
                             break;
 
                         case "reftype" or "reffunc" or "refstatic" or "reffield" or "reflocal":

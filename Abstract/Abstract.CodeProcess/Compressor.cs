@@ -280,7 +280,7 @@ public class Compressor(ErrorHandler errHandler)
         else if (node is StringLiteralNode @strlit)
             builder.WriteOpCode(Base.LdConst, Types.Str, strlit.BuildStringContent());
 
-        else Console.WriteLine("Unhandled exp: " + node.GetType().Name);
+        else throw new NotImplementedException("Unhandled exp: " + node.GetType().Name);
     }
 
 

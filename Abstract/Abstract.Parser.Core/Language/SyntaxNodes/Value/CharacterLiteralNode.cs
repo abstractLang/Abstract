@@ -23,7 +23,7 @@ public class CharacterLiteralNode(Token token, bool insideString = false) : Valu
             "\\\'" => "\'",
             "\\\\" => "\\",
 
-            _ => throw new NotImplementedException()
+            _ => Value
         };
     }
 }
