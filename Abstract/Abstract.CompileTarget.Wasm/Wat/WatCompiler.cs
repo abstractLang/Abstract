@@ -2,11 +2,14 @@ using System.Diagnostics;
 using System.Reflection;
 using Abstract.Binutils.Abs.Elf;
 using Abstract.CompileTarget.Core;
+using Abstract.CompileTarget.Core.Enums;
 
 namespace Abstract.CompileTarget.Wasm.Wat;
 
 public class WatCompiler : CompilerBase
 {
+    public override ExpectedELFFormat ExpectedELFFormat => ExpectedELFFormat.OnePerProgram;
+    
     public override void Compile(string outPath, ElfProgram[] source)
     {
         

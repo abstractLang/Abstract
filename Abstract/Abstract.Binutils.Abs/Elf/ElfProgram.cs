@@ -10,6 +10,10 @@ public class ElfProgram {
     private Directory _root = null!;
     private List<Directory> _allDirectories = [];
 
+    private bool hasentrypoint = false;
+    private bool linkable = false;
+    private bool hasdependence = false;
+
     public string Name => _root.identifier;
     public Directory RootDirectory => _root;
     public Directory[] AllDirectories => [.. _allDirectories];
@@ -99,8 +103,15 @@ public class ElfProgram {
     {
         var str = new StringBuilder();
 
-        str.AppendLine($"Elf {_programName}: {_allDirectories.Count} directories");
+        str.AppendLine("(executable_and_linkable_format");
+
+        str.AppendLine($"(dir_count       {_allDirectories.Count})");
+        str.AppendLine($"(has_entry_point {hasentrypoint})");
+        str.AppendLine($"(linkable        {linkable})");
+        str.AppendLine($"(has_dependency  {hasdependence})");
+
         str.AppendLine(_root.ToString());
+        str.Append(')');
 
         return str.ToString();
     }

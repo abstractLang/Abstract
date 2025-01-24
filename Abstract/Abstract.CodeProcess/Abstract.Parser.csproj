@@ -7,5 +7,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Abstract.Parser.Core\Abstract.Parser.Core.csproj" />
     <ProjectReference Include="..\Abstract.Binutils.Abs\Abstract.Binutils.Abs.csproj" />
+    <ProjectReference Include="..\Abstract.CompileTarget.Core\Abstract.CompileTarget.Core.csproj" />
   </ItemGroup>
 </Project>

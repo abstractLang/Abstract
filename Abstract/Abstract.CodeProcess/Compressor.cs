@@ -1,6 +1,7 @@
 using Abstract.Binutils.Abs.Bytecode;
 using Abstract.Binutils.Abs.Elf;
 using Abstract.Build;
+using Abstract.CompileTarget.Core.Enums;
 using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
 using Abstract.Parser.Core.Language.SyntaxNodes.Statement;
 using Abstract.Parser.Core.Language.SyntaxNodes.Value;
@@ -19,11 +20,11 @@ public class Compressor(ErrorHandler errHandler)
     private Project _currentProject = null!;
     private Dictionary<string,List<Dependence>> _dependences = [];
 
-    public ElfProgram[] DoCompression(ProgramRoot program)
+    public ElfProgram[] DoCompression(ProgramRoot program, ExpectedELFFormat expectedElfFormat)
     {
         List<ElfProgram> elfs = [];
 
-        // Each program should result in one ELF file
+        // Each script should result in one ELF file
         foreach (var i in program.projects)
         {
             using var projectElf = CompressProject(i.Key, i.Value, program);
@@ -31,12 +32,23 @@ public class Compressor(ErrorHandler errHandler)
             elfs.Add(bakedElf);
         }
 
-        return [.. elfs];
+        return LinkProgram([.. elfs], expectedElfFormat);
+    }
+
+
+    public ElfProgram[] LinkProgram(ElfProgram[] elfs, ExpectedELFFormat expectedElfFormat)
+    {
+        if (expectedElfFormat == ExpectedELFFormat.onePerProject) return elfs;
+
+        
+
+        return elfs;
     }
 
 
     private ElfBuilder CompressProject(string projectName, Project project, ProgramRoot program)
     {
+
         var elfBuilder = new ElfBuilder(projectName);
         var dirRoot = elfBuilder.Root;
 

@@ -1,11 +1,14 @@
 using System.Reflection;
 using Abstract.Binutils.Abs.Elf;
 using Abstract.CompileTarget.Core;
+using Abstract.CompileTarget.Core.Enums;
 
 namespace Abstract.CompileTarget.Wasm.Wasm;
 
 public class WasmCompiler : CompilerBase
 {
+    public override ExpectedELFFormat ExpectedELFFormat => ExpectedELFFormat.OnePerProgram;
+
     public override void Compile(string outPath, ElfProgram[] source)
     {
         

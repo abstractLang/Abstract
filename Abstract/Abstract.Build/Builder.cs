@@ -21,6 +21,11 @@ public static class Builder
         Stopwatch entireBuild = new();
         Stopwatch singleStep = new();
 
+        // This needs to be declared here as ´compiler´ has
+        // important data for the entire build
+        var target = _compileTargets[buildOps.Target!];
+        var compiler = target.CompilerInstance;
+
         Console.WriteLine("Initializing build proccess...");
         entireBuild.Start();
         singleStep.Start();
@@ -92,7 +97,7 @@ public static class Builder
             singleStep.Restart();
 
             var compressor = new Compressor(errorHandler);
-            var elfprograms = compressor.DoCompression(progroot);
+            var elfprograms = compressor.DoCompression(progroot, compiler.ExpectedELFFormat);
 
             if (buildOps.DebugOutDirectory != null)
             {
@@ -104,9 +109,6 @@ public static class Builder
 
             Console.WriteLine($"Starting compilation process... (target: {buildOps.Target})");
             singleStep.Restart();
-
-            var target = _compileTargets[buildOps.Target!];
-            var compiler = target.CompilerInstance;
 
             // Skipping std for now as it implementation
             // is target-dependant and the elf is just a

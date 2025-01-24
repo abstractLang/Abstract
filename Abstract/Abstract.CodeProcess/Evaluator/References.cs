@@ -44,6 +44,8 @@ public partial class Evaluator
                 if (func.TryGetAttribute("indexerSetter", out attrib)) ExecuteAttrtribute(func, attrib);
                 if (func.TryGetAttribute("overrideOperator", out attrib)) ExecuteAttrtribute(func, attrib);
                 if (func.TryGetAttribute("implicitConvert", out attrib)) ExecuteAttrtribute(func, attrib);
+
+                if (func.TryGetAttribute("entrypoint", out attrib)) ExecuteAttrtribute(func, attrib);
             }
         }
     }
@@ -205,6 +207,15 @@ public partial class Evaluator
         {
             if (attrib.Arguments.Length == 0) AppendImplicitConversion((Function)member);
             else throw new Exception("TODO no function overload with X arguments");
+        }
+    
+        else if (attrib.Name == "entrypoint")
+        {
+            if (member.ParentProgram!.MainFunction == null)
+            {
+                member.ParentProgram!.MainFunction = (Function)member;
+                member.ParentProgram!.MainProject = member.ParentProject;
+            }
         }
     }
 

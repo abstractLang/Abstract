@@ -8,6 +8,11 @@ public class ElfBuilder(string pname) : IDisposable {
     private DirectoryBuilder _root = new("ROOT", pname);
     public DirectoryBuilder Root => _root;
 
+    public bool hasentrypoint = false;
+    public bool linkable = false;
+    public bool hasdependence = false;
+
+
     #region Directory builders
     public abstract class DirBuilder(string kind, string identifier) : IDisposable {
         public string kind = kind.PadRight(8)[..8].TrimEnd();
@@ -361,7 +366,20 @@ public class ElfBuilder(string pname) : IDisposable {
     }
     #endregion
 
-    public override string ToString() => _root.ToString();
+    public override string ToString() {
+        var str = new StringBuilder();
+
+        str.AppendLine("(executable_and_linkable_format");
+
+        str.AppendLine($"(has_entry_point {hasentrypoint})");
+        str.AppendLine($"(linkable        {linkable})");
+        str.AppendLine($"(has_dependency  {hasdependence})");
+
+        str.Append(_root.ToString());
+        str.Append(')');
+
+        return str.ToString();
+    }
 
 
     public void Dispose()

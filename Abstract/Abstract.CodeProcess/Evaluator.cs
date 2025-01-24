@@ -20,7 +20,7 @@ public partial class Evaluator(ErrorHandler errHandler)
 
     public ProgramRoot EvaluateProgram(ProgramNode programNode)
     {
-        program = new(new("programNode."));
+        program = new(new("Program"));
 
 
         foreach (var i in programNode.Children)
@@ -45,7 +45,6 @@ public partial class Evaluator(ErrorHandler errHandler)
         ScanCodeBlocks();
 
         // Evaluation process ends here
-
 
         // Debuggin shits here
 

@@ -44,17 +44,20 @@ public class Directory {
     {
         var str = new StringBuilder();
 
-        str.Append($"$({index:X}) #{kind} #{identifier} ");
+        str.Append($"({identifier} ({kind}) ({index:X}) ");
 
-        if (content == null) str.AppendLine($"({_children.Count} dirs)");
-        else str.AppendLine($"({content.Length} bytes) {{");
+        if (content == null) str.Append($"({_children.Count} dirs)");
+        else str.Append($"({content.Length} bytes)");
+
+        str.Append(" {" + (_children.Count > 0 || content?.Length > 0 ? "\n" : ""));
 
         if (content == null)
         {
+            
             foreach (var i in _children)
             {
                 var lines = i.ToString().Split(Environment.NewLine)[..^1];
-                foreach (var l in lines) str.AppendLine($"\t{l}");
+                foreach (var l in lines) str.AppendLine($"  {l}");
             }
         }
         else
@@ -79,16 +82,17 @@ public class Directory {
                     str.Append(string.Join(' ', buf.Select(e => $"{e:X2}")).PadRight(47));
                     str.Append("    ");
                     str.Append(string.Join("", buf.Select(e
-                    => !char.IsControl((char)e) ? (char)e : '_')));
+                    => !char.IsControl((char)e) ? (char)e : ' ')));
 
                     str.AppendLine();
                 }
             }
             content.Position = bufOldPos;
 
-            str.AppendLine($"}}");
+            
         }
-
+        
+        str.AppendLine("})");
         return str.ToString();
     }
 

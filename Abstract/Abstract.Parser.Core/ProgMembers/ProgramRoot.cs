@@ -5,6 +5,10 @@ public class ProgramRoot(MemberIdentifier programName) : ProgramMember(null, pro
     public override ProgramRoot? ParentProgram => this;
     public override Project? ParentProject => null!;
 
+    public Project? MainProject { get; set; } = null;
+    public Function? MainFunction { get; set; } = null;
+
+
     #region Reference tables
     private Dictionary<MemberIdentifier, ProgramMember> _globalReferences = [];
     public Dictionary<MemberIdentifier, Project> projects = [];
