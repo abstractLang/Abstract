@@ -49,19 +49,30 @@ public class Directory {
         if (content == null) str.Append($"({_children.Count} dirs)");
         else str.Append($"({content.Length} bytes)");
 
-        str.Append(" {" + (_children.Count > 0 || content?.Length > 0 ? "\n" : ""));
-
         if (content == null)
         {
-            
+            if (kind == "PARAM" && _children.Count == 2)
+            {
+                if (_children[0].kind != "TYPE" || _children[1].kind != "NAME") goto GeneralElse;
+                str.Append($" ({_children[0].identifier}) {_children[1].identifier}");
+            }
+            else goto GeneralElse;
+            goto Return;
+
+            GeneralElse:
+            if (_children.Count > 0) str.AppendLine(" {");
             foreach (var i in _children)
             {
-                var lines = i.ToString().Split(Environment.NewLine)[..^1];
+                var lines = i.ToString().Split(Environment.NewLine)[..];
                 foreach (var l in lines) str.AppendLine($"  {l}");
             }
+            if (_children.Count > 0) str.Append('}');
+
         }
         else
         {
+            if (content.Length > 0) str.AppendLine(" {");
+
             var bufOldPos = content.Position;
             content.Position = 0;
             
@@ -89,10 +100,11 @@ public class Directory {
             }
             content.Position = bufOldPos;
 
-            
+            if (content.Length > 0) str.Append('}');
         }
-        
-        str.AppendLine("})");
+
+        Return:
+        str.Append(')');
         return str.ToString();
     }
 
