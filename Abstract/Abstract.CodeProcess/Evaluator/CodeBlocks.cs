@@ -114,59 +114,70 @@ public partial class Evaluator
 
     private void EvalExpression(ExpressionNode node, ExecutableCodeBlock currblock)
     {
-        if (node is ParenthesisExpressionNode @parenthesisExpression)
+        try
         {
-            EvalExpression(parenthesisExpression.Content, currblock);
-        }
 
-        else if (node is AssignmentExpressionNode @assignmentExpression)
-        {
-            EvalAssiginment(assignmentExpression, currblock);
-        }
-        else if (node is BinaryExpressionNode @binaryExpression)
-        {
-            EvalBinaryOperation(binaryExpression, currblock);
-        }
-        else if (node is UnaryExpressionNode @unaryExpression)
-        {
-            EvalUnaryOperation(unaryExpression, currblock);
-        }
-
-        else if (node is LocalVariableNode @localVariable)
-        {
-            EvalLocal(localVariable, currblock);
-        }
-
-        else if (node is FunctionCallExpressionNode @funcCall)
-        {
-            EvalFunctionCall(funcCall, currblock);
-        }
-        else if (node is IdentifierCollectionNode @identifierCollection)
-        {
-            EvalIdentifier(identifierCollection, currblock);
-        }
-
-        else if (node is StringLiteralNode @stringLit)
-        {
-            if (stringLit.isSimple)
+            if (node is ParenthesisExpressionNode @parenthesisExpression)
             {
-                var idx = currblock.AppendConstantReference(stringLit.RawContent);
-                node.DataReference = new StringConstRef(currblock, idx);
+                EvalExpression(parenthesisExpression.Content, currblock);
             }
-            else
-            {
-                foreach (var i in stringLit.Content)
-                {
-                    if (i is StringInterpolationNode @interpolation)
-                        EvalExpression(interpolation.Expression, currblock);
 
-                    // TODO eval chars
+            else if (node is AssignmentExpressionNode @assignmentExpression)
+            {
+                EvalAssiginment(assignmentExpression, currblock);
+            }
+            else if (node is BinaryExpressionNode @binaryExpression)
+            {
+                EvalBinaryOperation(binaryExpression, currblock);
+            }
+            else if (node is UnaryExpressionNode @unaryExpression)
+            {
+                EvalUnaryOperation(unaryExpression, currblock);
+            }
+
+            else if (node is LocalVariableNode @localVariable)
+            {
+                EvalLocal(localVariable, currblock);
+            }
+
+            else if (node is FunctionCallExpressionNode @funcCall)
+            {
+                EvalFunctionCall(funcCall, currblock);
+            }
+            else if (node is IdentifierCollectionNode @identifierCollection)
+            {
+                EvalIdentifier(identifierCollection, currblock);
+            }
+
+            else if (node is TypeExpressionNode @typeExp)
+            {
+                EvalType(typeExp, currblock);
+            }
+
+            else if (node is StringLiteralNode @stringLit)
+            {
+                if (stringLit.isSimple)
+                {
+                    var idx = currblock.AppendConstantReference(stringLit.RawContent);
+                    node.DataReference = new StringConstRef(currblock, idx);
+                }
+                else
+                {
+                    foreach (var i in stringLit.Content)
+                    {
+                        if (i is StringInterpolationNode @interpolation)
+                            EvalExpression(interpolation.Expression, currblock);
+
+                        // TODO eval chars
+                    }
                 }
             }
-        }
-        else if (node is ValueNode @value) EvalValue(value, currblock);
+            else if (node is ValueNode @value) EvalValue(value, currblock);
 
-        else Console.WriteLine($"expression {node} ({node.GetType().Name})");
+            else Console.WriteLine($"expression {node} ({node.GetType().Name})");
+
+        }
+        catch (SyntaxException e) { _errHandler.RegisterError(e); }
     }
 
     private void EvalAssiginment(AssignmentExpressionNode node, ExecutableCodeBlock currblock)
@@ -252,7 +263,7 @@ public partial class Evaluator
         TypeReference type = GetTypeFromTypeExpressionNode(node.TypedIdentifier.Type, currblock.ProgramMemberParent);
         string name = node.TypedIdentifier.Identifier.Value;
 
-        currblock.AppendLocalVariable(name, type, isConstant);
+        currblock.AppendLocalVariable(name, type, isConstant, node);
         node.DataReference = new LocalDataRef(currblock, name);
 
         node.evaluated = true;
@@ -275,12 +286,13 @@ public partial class Evaluator
 
             if (idReference is FunctionGroupRef @funcGroupRef)
             {
-                // TODO detect the use of generic functions around here
-
                 var functionGroup = funcGroupRef.group;
 
                 Function func = TryGetOveloadDirect(functionGroup, [.. _argTypes]) ??
                 throw new NoOverloadForTypes(node, string.Join(", ", _argTypes.Select(e => e?.ToString() ?? "!nil")));
+
+                // TODO detect the use of generic functions around here
+                if (func.IsGeneric) Console.WriteLine($"Calling generic {func.GlobalReference}");
 
                 node.FunctionTarget = func;
                 node.DataReference = new DynamicDataRef(func.returnType);
@@ -307,6 +319,10 @@ public partial class Evaluator
             node.DataReference = new DataErrorRef();
         }
         node.evaluated = true;
+    }
+    private void EvalType(TypeExpressionNode node, ExecutableCodeBlock currblock)
+    {
+
     }
     private void EvalValue(ValueNode node, ExecutableCodeBlock currblock)
     {

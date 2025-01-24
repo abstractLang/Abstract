@@ -1,3 +1,6 @@
+using Abstract.Build;
+using Abstract.Parser.Core.Exceptions.Evaluation;
+using Abstract.Parser.Core.Language.SyntaxNodes.Statement;
 using Abstract.Parser.Core.ProgData.DataReference;
 using Abstract.Parser.Core.ProgMembers;
 
@@ -23,10 +26,10 @@ public class ExecutableCodeBlock
 
         _scopeParameters.Add(name, ((-_scopeParameters.Count)-1, type));
     }
-    public void AppendLocalVariable(MemberIdentifier name, TypeReference type, bool isConstant)
+    public void AppendLocalVariable(MemberIdentifier name, TypeReference type, bool isConstant, LocalVariableNode node)
     {
         if (_scopeParameters.ContainsKey(name) || _localVariables.ContainsKey(name))
-            throw new Exception("TODO this shit is already registred bruh");
+            throw new LocalAlreadyDeclaratedException(node, name.ToString());
 
         _localVariables.Add(name, (_localVariables.Count, type, isConstant));
     }
