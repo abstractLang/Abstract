@@ -326,8 +326,8 @@ public class Compressor(ErrorHandler errHandler)
                     switch (fref[3..])
                     {
                         case ["ComptimeString", "asstring"]:
-                            var value = (StringLiteralNode)args[0];
-                            builder.WriteOpCode(Base.LdConst, Types.Str, value.RawContent);
+                            var value = ((StringLiteralNode)args[0]).BuildStringContent();
+                            builder.WriteOpCode(Base.LdConst, Types.Str, value);
                             return;
 
                         default: throw new Exception();

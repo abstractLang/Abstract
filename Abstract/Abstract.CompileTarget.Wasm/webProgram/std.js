@@ -50,16 +50,16 @@ function Types_String_concatenate(strptr_a, strptr_b) {
     let str_a = GetStringFromMemory(strptr_a);
     let str_b = GetStringFromMemory(strptr_b);
 
-    console.log(str_a, str_b);
-
     let finalstr = str_a + str_b;
     let strbuffer = new TextEncoder().encode(finalstr);
 
-    memoryView.setUint32(finalptr, strbuffer.length, false);
+    // store index
+    memoryView.setUint32(finalptr, strbuffer.length + 1, false);
 
+    // store string bytes
     for(let i = 0; i < strbuffer.length; i++)
         memoryView.setUint8(finalptr + 4 + i, strbuffer[i]);
-
+    // store null char
     memoryView.setUint8(finalptr + 4 + strbuffer.length + 1, 0);
 
     return finalptr;

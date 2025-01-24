@@ -196,6 +196,11 @@ internal static class Compiler
                         case Types.Str:
                             instructions.Add(new Int32Constant(memoffset + bytecode.ReadU32()));
                             break;
+                        
+                        case Types.i8: instructions.Add(new Int32Constant(bytecode.ReadI8())); break;
+                        case Types.i16: instructions.Add(new Int32Constant(bytecode.ReadI16())); break;
+                        case Types.i32: instructions.Add(new Int32Constant(bytecode.ReadI32())); break;
+                        case Types.i64: instructions.Add(new Int64Constant(bytecode.ReadI64())); break;
 
                         default: throw new Exception();
                     }

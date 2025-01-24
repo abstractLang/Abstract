@@ -37,8 +37,6 @@ function append_stdout(classes, text)
     if (clist.length > 0) newline.classList.add(clist);
     newline.innerHTML = text;
 
-    console.log(oldtext, '\t', text);
-
     stdout.appendChild(newline);
 }
 function allow_stdin(mode)
