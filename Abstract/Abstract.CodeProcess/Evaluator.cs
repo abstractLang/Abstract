@@ -16,7 +16,7 @@ public partial class Evaluator(ErrorHandler errHandler)
     private ProgramRoot program = null!;
 
     // temporary debug shit
-    private StringBuilder typeMatchingLog = new("## Type Matching operations log: #region #\n");
+    private StringBuilder typeMatchingLog = new("## Type Matching operations log #\n\n");
 
     public ProgramRoot EvaluateProgram(ProgramNode programNode)
     {
@@ -54,7 +54,16 @@ public partial class Evaluator(ErrorHandler errHandler)
         refTableStr.AppendLine($"# Namespaces ({program.namespaces.Count}):");
         foreach (var i in program.namespaces.Keys) refTableStr.AppendLine($"\t- {i}");
         refTableStr.AppendLine($"\n# Functions ({program.functions.Count}):");
-        foreach (var i in program.functions.Keys) refTableStr.AppendLine($"\t- {i}");
+        foreach (var i in program.functions)
+        {
+            var concreteCount = 0;
+            var genericCount = 0;
+
+            foreach (var j in i.Value.Overloads)
+                _ = j.IsGeneric ? genericCount++ : concreteCount++;
+
+            refTableStr.AppendLine($"\t- {i.Key} ({concreteCount};{genericCount})");
+        }
         refTableStr.AppendLine($"\n# Types ({program.types.Count}):");
         foreach (var i in program.types.Keys) refTableStr.AppendLine($"\t- {i}");
         refTableStr.AppendLine($"\n# Fields ({program.fields.Count}):");

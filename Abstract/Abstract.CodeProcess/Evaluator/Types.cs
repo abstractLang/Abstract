@@ -62,13 +62,15 @@ public partial class Evaluator
                 * used as the return type.
                 */
 
-                List<(TypeReference, MemberIdentifier)> parameters = [];
+                List<(TypeReference, MemberIdentifier, bool)> parameters = [];
                 for (var j = 0; j < funcNode.ParameterCollection.Items.Length; j++)
                 {
                     var parameter = funcNode.ParameterCollection.Items[j];
 
                     var reference = GetTypeFromTypeExpressionNode(parameter.Type, function);
-                    parameters.Add((reference, parameter.Identifier.ToString()));
+                    var isgeneric = (reference as SolvedTypeReference)?.isGeneric ?? reference is GenericTypeReference;
+
+                    parameters.Add((reference, parameter.Identifier.ToString(), isgeneric));
 
                     if (reference is SolvedTypeReference @solved
                     && solved.structure.GlobalReference == "Std.Types.Type")
@@ -105,7 +107,11 @@ public partial class Evaluator
         if (type.Children[0] is IdentifierCollectionNode @identifier)
         {
             var struc = SearchStructure(identifier.ToString(), parent);
-            if (struc != null) return new SolvedTypeReference(struc);
+            if (struc != null)
+            {
+                var isAnytype = struc.GlobalReference == "Std.Types.AnyType";
+                return new SolvedTypeReference(struc, [], isAnytype);
+            }
             
             if (parent is Function @func)
             {
@@ -124,8 +130,19 @@ public partial class Evaluator
         {
             var child = GetTypeFromTypeExpressionNode(array.Type, parent);
             var arrayStruct = SearchStructure("Std.Types.Collections.Array");
+            var childGeneric = (child as SolvedTypeReference)?.isGeneric ?? false;
 
-            return new SolvedTypeReference(arrayStruct, child);
+            return new SolvedTypeReference(arrayStruct, [child], childGeneric);
+        }
+
+        // failable modifier
+        else if (type.Children[0] is FailableTypeModifierNode @failable)
+        {
+            var child = GetTypeFromTypeExpressionNode(failable.Type, parent);
+            var failableStruct = SearchStructure("Std.Types.Failable");
+            var childGeneric = (child as SolvedTypeReference)?.isGeneric ?? false;
+
+            return new SolvedTypeReference(failableStruct, [child], childGeneric);
         }
 
         var diagnostics = (new System.Diagnostics.StackFrame(0, true));

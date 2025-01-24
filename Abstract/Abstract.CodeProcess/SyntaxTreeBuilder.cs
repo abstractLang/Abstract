@@ -714,7 +714,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
         {
             var failableMod = new FailableTypeModifierNode();
 
-            failableMod.AppendChild(question);
+            failableMod.AppendChild(bang);
             failableMod.AppendChild(ParseType());
             type.AppendChild(failableMod);
         }
@@ -723,7 +723,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
         {
             var refMod = new ReferenceTypeModifierNode();
 
-            refMod.AppendChild(question);
+            refMod.AppendChild(star);
             refMod.AppendChild(ParseType());
             type.AppendChild(refMod);
         }

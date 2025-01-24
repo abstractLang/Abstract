@@ -48,6 +48,10 @@ public class ElfProgram {
         elfProgram._root = new(null!, 0, builder.Root.kind, builder.Root.identifier);
         elfProgram._allDirectories.Add((elfProgram._root));
 
+        elfProgram.hasentrypoint = builder.hasentrypoint;
+        elfProgram.hasdependence = builder.hasdependence;
+        elfProgram.linkable = builder.linkable;
+
         Stack<(Directory curr, Queue<DirBuilder> toBake)> baking
             = new([(elfProgram._root, new(builder.Root.Children))]);
 

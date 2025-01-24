@@ -11,11 +11,12 @@ public class SolvedTypeReference : TypeReference
         isGeneric = false;
         arguments = null!;
     }
-    public SolvedTypeReference(Structure struc, params IGenericExpression[] args)
+    public SolvedTypeReference(Structure struc, IGenericExpression[] args, bool generic = false)
     {
         structure = struc;
         isGeneric = true;
         arguments = args;
+        isGeneric = generic;
     }
 
     public readonly Structure structure;

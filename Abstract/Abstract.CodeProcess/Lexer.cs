@@ -289,26 +289,28 @@ public class Lexer
                                 // interpolation content detection is a little
                                 // raw implemented :p
 
-                                tokens.Add(Tokenize("\\{", TokenType.EscapedLeftBracketChar, i, j));
+                                throw new NotImplementedException();
 
-                                string interpolation = "";
-                                int subscopes = 0;
-                                bool inString = false;
+                                //tokens.Add(Tokenize("\\{", TokenType.EscapedLeftBracketChar, i, j));
 
-                                while (source.Length > j && !(subscopes == 0 && source[j] == '}'))
-                                {
-                                    if (source[j] == '"') inString = !inString;
-                                    else if (source[j] == '{' && inString == false) subscopes++;
-                                    else if (source[j] == '}' && inString == false) subscopes--;
+                                //string interpolation = "";
+                                //int subscopes = 0;
+                                //bool inString = false;
 
-                                    interpolation += source[j];
-                                }
+                                //while (source.Length > j && !(subscopes == 0 && source[j] == '}'))
+                                //{
+                                //    if (source[j] == '"') inString = !inString;
+                                //    else if (source[j] == '{' && inString == false) subscopes++;
+                                //    else if (source[j] == '}' && inString == false) subscopes--;
 
-                                tokens.AddRange(ParseTokens(interpolation));
+                                //    interpolation += source[j];
+                                //}
 
-                                if (source[j] == '}')
-                                    tokens.Add(Tokenize("}", TokenType.RightBracketChar, i, j));
-                                continue;
+                                //tokens.AddRange(ParseTokens(interpolation));
+
+                                //if (source[j] == '}')
+                                //    tokens.Add(Tokenize("}", TokenType.RightBracketChar, i, j));
+                                //continue;
                             }
                             // hexadecimal
                             else if (escapeCode == 'x')

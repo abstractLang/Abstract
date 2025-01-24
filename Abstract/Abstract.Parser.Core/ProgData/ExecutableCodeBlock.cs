@@ -13,7 +13,6 @@ public class ExecutableCodeBlock
     private Dictionary<MemberIdentifier, (int idx, TypeReference type, bool constant)> _localVariables = [];
     private List<dynamic> _localConstants = [];
 
-
     public Dictionary<MemberIdentifier, (int idx, TypeReference type, bool constant)> LocalVariables => _localVariables;
 
 

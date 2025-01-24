@@ -24,7 +24,7 @@ public class Compressor(ErrorHandler errHandler)
     {
         List<ElfProgram> elfs = [];
 
-        // Each script should result in one ELF file
+        // Each project should result in one ELF object
         foreach (var i in program.projects)
         {
             using var projectElf = CompressProject(i.Key, i.Value, program);
@@ -62,6 +62,9 @@ public class Compressor(ErrorHandler errHandler)
         AppendProgramMembers(projectdir, project);
         dirRoot.AppendChild(CompressDependences());
 
+        if (project == program.MainProject) elfBuilder.hasentrypoint = true;
+        if (_dependences.Count > 0) elfBuilder.hasdependence = true;
+
         _currentProject = null!;
 
         return elfBuilder;
@@ -84,7 +87,7 @@ public class Compressor(ErrorHandler errHandler)
                 {
                     for (var k = 0; k < func.parameters.Length; k++)
                     {
-                        var (type, name) = func.parameters[k];
+                        var (type, name, _) = func.parameters[k];
                         var p = new DirectoryBuilder("PARAM", $"{k:X4}");
                         
                         p.AppendChild(new DirectoryBuilder("TYPE", type.ToString()
@@ -167,7 +170,7 @@ public class Compressor(ErrorHandler errHandler)
         {
             var param = new DirectoryBuilder("PARAM", $"{i:X4}");
 
-            var (type, name) = func.parameters[i];
+            var (type, name, _) = func.parameters[i];
             CheckUseOfReference(type);
 
             param.AppendChild(new DirectoryBuilder("TYPE", type.ToString() ?? throw new Exception()));

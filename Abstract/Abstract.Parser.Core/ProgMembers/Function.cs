@@ -13,9 +13,9 @@ public class Function(
     public BlockNode FunctionBodyNode => functionNode.Body!;
 
     public TypeReference returnType = null!;
-    public (TypeReference type, MemberIdentifier name)[] parameters = null!;
+    public (TypeReference type, MemberIdentifier name, bool isGeneric)[] parameters = null!;
 
-    public bool IsGeneric => _generics.Count > 0;
+    public bool IsGeneric => _generics.Count > 0 || parameters.Any(e => e.isGeneric);
     protected Dictionary<MemberIdentifier, TypeReference> _generics = [];
 
     public void AppendGeneric(MemberIdentifier identifier, int idx)

@@ -24,8 +24,18 @@ public partial class Evaluator
         {
             foreach (var function in funcGroup)
             {
-                if (function.FunctionBodyNode == null) continue;
-                if (function.IsGeneric) continue;
+                if (function.FunctionBodyNode == null)
+                {
+                    // TODO check if it is marked as @externInterface
+                    continue;
+                }
+                if (function.IsGeneric)
+                {
+                    // generics are evaluated depending on how
+                    // they are called, so generic functions
+                    // needs to be lazy-evaluated
+                    continue;
+                }
 
                 EvalBlock(function.FunctionBodyNode, function);
             }
@@ -44,7 +54,7 @@ public partial class Evaluator
 
         if (parent is Function @parentFunction)
         {
-            foreach (var (type, name) in parentFunction.parameters)
+            foreach (var (type, name, _) in parentFunction.parameters)
                 block.AppendLocalParameter(name, type);
 
         }
@@ -265,6 +275,8 @@ public partial class Evaluator
 
             if (idReference is FunctionGroupRef @funcGroupRef)
             {
+                // TODO detect the use of generic functions around here
+
                 var functionGroup = funcGroupRef.group;
 
                 Function func = TryGetOveloadDirect(functionGroup, [.. _argTypes]) ??
