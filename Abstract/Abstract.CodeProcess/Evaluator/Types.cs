@@ -16,6 +16,13 @@ public partial class Evaluator
     *   - lumi
     */
 
+    /*
+    *   Yah type matching is so complex that i fucked around with
+    *   everything around here, good luck to understand anything
+    *   because i can't too
+    *   - lumi
+    */
+
     public void ControlLevelMatchTypeReference()
     {
         // Structures scan
