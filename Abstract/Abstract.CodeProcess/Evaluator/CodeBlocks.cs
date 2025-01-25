@@ -1,3 +1,4 @@
+using Abstract.Build.Core.Exceptions;
 using Abstract.Build.Core.Exceptions.Internal;
 using Abstract.Build.Exceptions;
 using Abstract.Parser.Core.Exceptions.Evaluation;
@@ -54,7 +55,7 @@ public partial class Evaluator
 
         if (parent is Function @parentFunction)
         {
-            foreach (var (type, name, _) in parentFunction.parameters)
+            foreach (var (type, name) in parentFunction.parameters)
                 block.AppendLocalParameter(name, type);
 
         }
@@ -76,11 +77,17 @@ public partial class Evaluator
     {
         foreach (var i in blockNode.Children[1..^1])
         {
-            if (i is StatementNode @stat)
-                EvalStatement(stat, block);
+            try {
+                if (i is StatementNode @stat)
+                    EvalStatement(stat, block);
 
-            else if (i is ExpressionNode @exp)
-                EvalExpression(exp, block);
+                else if (i is ExpressionNode @exp)
+                    EvalExpression(exp, block);
+            }
+            catch (SyntaxException ex)
+            { _errHandler.RegisterError(ex); }
+            catch (BuildException ex)
+            { _errHandler.RegisterError(null!, ex); }
         }
     }
 
@@ -196,7 +203,13 @@ public partial class Evaluator
                 node.Left.DataReference.refferToType,
                 out var conversion
             )) node.ConvertRight = conversion;
-            else throw new NotImplementedInternalBuildException();
+            else
+            {
+                Console.WriteLine($"{node.Right.DataReference.refferToType} "
+                + $"is not assigned to {node.Left.DataReference.refferToType}");
+
+                throw new NotImplementedInternalBuildException();
+            }
         }
 
         node.DataReference = node.Left.DataReference;
@@ -218,9 +231,9 @@ public partial class Evaluator
                 var operatorOverloads = baseType.structure.SearchForOperators(node.Operator)
                     ?? throw new InvalidOperatorForTypeException(node, baseType.structure.GlobalReference);
                 
-                TypeReference[] types = [node.Left.DataReference.refferToType, node.Right.DataReference.refferToType];
+                DataRef[] args = [node.Left.DataReference, node.Right.DataReference];
 
-                var (function, toConvert) = TryGetOveloadIndirect(operatorOverloads, types);
+                var (function, toConvert) = TryGetOveloadIndirect(operatorOverloads, args);
 
                 if (function == null)
                 {
@@ -277,25 +290,25 @@ public partial class Evaluator
             var idReference = node.FunctionReference.DataReference;
 
             // Evaluating argument references
-            List<TypeReference> _argTypes = [];
+            List<DataRef> _args = [];
             foreach (var i in node.Arguments)
             {
                 EvalExpression(i, currblock);
-                _argTypes.Add(i.DataReference.refferToType);
+                _args.Add(i.DataReference);
             }
 
             if (idReference is FunctionGroupRef @funcGroupRef)
             {
                 var functionGroup = funcGroupRef.group;
 
-                Function func = TryGetOveloadDirect(functionGroup, [.. _argTypes]) ??
-                throw new NoOverloadForTypes(node, string.Join(", ", _argTypes.Select(e => e?.ToString() ?? "!nil")));
+                Function func = TryGetOveloadDirect(functionGroup, [.. _args]) ??
+                throw new NoOverloadForTypes(node, string.Join(", ", _args.Select(e => e.refferToType?.ToString() ?? "!nil")));
 
                 // TODO detect the use of generic functions around here
                 if (func.IsGeneric) Console.WriteLine($"Calling generic {func.GlobalReference}");
 
                 node.FunctionTarget = func;
-                node.DataReference = new DynamicDataRef(func.returnType);
+                node.DataReference = new DynamicDataRef(GetFunctionReturnType(func, [.. _args]));
             }
             else throw new ReferenceNotCallableException(node);
         }
@@ -322,7 +335,8 @@ public partial class Evaluator
     }
     private void EvalType(TypeExpressionNode node, ExecutableCodeBlock currblock)
     {
-
+        TypeReference type = GetTypeFromTypeExpressionNode(node, currblock.ProgramMemberParent);
+        node.DataReference = new TypeDataRef(type, SearchStructure("Std.Types.Type"));
     }
     private void EvalValue(ValueNode node, ExecutableCodeBlock currblock)
     {

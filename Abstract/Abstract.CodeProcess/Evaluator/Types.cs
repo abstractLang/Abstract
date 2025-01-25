@@ -2,6 +2,7 @@ using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
 using Abstract.Parser.Core.Language.SyntaxNodes.Expression.TypeModifiers;
 using Abstract.Parser.Core.Language.SyntaxNodes.Value;
 using Abstract.Parser.Core.ProgData;
+using Abstract.Parser.Core.ProgData.DataReference;
 using Abstract.Parser.Core.ProgMembers;
 
 namespace Abstract.Parser;
@@ -62,15 +63,12 @@ public partial class Evaluator
                 * used as the return type.
                 */
 
-                List<(TypeReference, MemberIdentifier, bool)> parameters = [];
+                List<(TypeReference, MemberIdentifier)> parameters = [];
                 for (var j = 0; j < funcNode.ParameterCollection.Items.Length; j++)
                 {
                     var parameter = funcNode.ParameterCollection.Items[j];
-
                     var reference = GetTypeFromTypeExpressionNode(parameter.Type, function);
-                    var isgeneric = (reference as SolvedTypeReference)?.isGeneric ?? reference is GenericTypeReference;
-
-                    parameters.Add((reference, parameter.Identifier.ToString(), isgeneric));
+                    parameters.Add((reference, parameter.Identifier.ToString()));
 
                     if (reference is SolvedTypeReference @solved
                     && solved.structure.GlobalReference == "Std.Types.Type")
@@ -184,7 +182,17 @@ public partial class Evaluator
         return member!;
     }
 
-    public (Function? f, Function?[] c) TryGetOveloadIndirect(FunctionGroup funcGroup, TypeReference[] types)
+    // FIXME these 3 next needs a fucking hard rework
+
+    /// <summary>
+    /// Returns a valid function overload for the designed argument
+    /// types
+    /// TODO describle here the diference between direct and indirect
+    /// </summary>
+    /// <param name="funcGroup">The function group</param>
+    /// <param name="types">The argument types</param>
+    /// <returns></returns>
+    public (Function? f, Function?[] c) TryGetOveloadIndirect(FunctionGroup funcGroup, DataRef[] args)
     {
         Function? func = null!;
         Function?[] tconvert = null!;
@@ -193,12 +201,30 @@ public partial class Evaluator
         {
             var parameters = f.parameters;
 
-            if (types.Length != parameters.Length) continue;
+            Dictionary<int, TypeReference> _generics = [];
+
+            if (args.Length != parameters.Length) continue;
 
             List<Function?> toConvert = [];
             for (var i = 0; i < parameters.Length; i++)
             {
-                if (!CanBeAssignedTo(types[i], parameters[i].type, out var cf)) goto Break;
+                if (!CanBeAssignedTo(args[i].refferToType, parameters[i].type, out var cf))
+                    goto Break;
+
+                if (parameters[i].type is GenericTypeReference @generic)
+                {
+                    if (generic.from == f)
+                    {
+                        if (!CanBeDirectlyAssignedTo(args[i].refferToType, 
+                            _generics[generic.parameterIndex]))
+                            goto Break;
+                    }
+                    else throw new NotImplementedException();
+                }
+                
+                if (args[i] is TypeDataRef @typeDataRef)
+                    _generics.Add(i, typeDataRef.type);
+                
                 toConvert.Add(cf);
             }
 
@@ -211,7 +237,15 @@ public partial class Evaluator
 
         return (func, tconvert);
     }
-    public Function? TryGetOveloadDirect(FunctionGroup funcGroup, TypeReference[] types)
+    /// <summary>
+    /// Returns a valid function overload for the designed argument
+    /// types
+    /// TODO describle here the diference between direct and indirect
+    /// </summary>
+    /// <param name="funcGroup">The function group</param>
+    /// <param name="types">The argument types</param>
+    /// <returns></returns>
+    public Function? TryGetOveloadDirect(FunctionGroup funcGroup, DataRef[] args)
     {
         Function? func = null!;
         
@@ -219,10 +253,28 @@ public partial class Evaluator
         {
             var parameters = f.parameters;
 
-            if (types.Length != parameters.Length) continue;
+            Dictionary<int, TypeReference> _generics = [];
+
+            if (args.Length != parameters.Length) continue;
             for (var i = 0; i < parameters.Length; i++)
             {
-                if (!CanBeDirectlyAssignedTo(types[i], parameters[i].type)) goto Break;
+                if (parameters[i].type is SolvedTypeReference &&
+                    !CanBeDirectlyAssignedTo(args[i].refferToType, parameters[i].type))
+                    goto Break;
+                
+                if (parameters[i].type is GenericTypeReference @generic)
+                {
+                    if (generic.from == f)
+                    {
+                        if (!CanBeDirectlyAssignedTo(args[i].refferToType, 
+                            _generics[generic.parameterIndex]))
+                            goto Break;
+                    }
+                    else throw new NotImplementedException();
+                }
+                
+                if (args[i] is TypeDataRef @typeDataRef)
+                    _generics.Add(i, typeDataRef.type);
             }
 
             func = f;
@@ -232,6 +284,18 @@ public partial class Evaluator
         }
 
         return func;
+    }
+    public TypeReference GetFunctionReturnType(Function func, DataRef[] args)
+    {
+        var rtype = func.returnType;
+        if (rtype is SolvedTypeReference) return rtype;
+        else if (rtype is GenericTypeReference @g)
+        {
+            if (g.from == func) return ((TypeDataRef)args[g.parameterIndex]).type;
+            else throw new NotImplementedException();
+        }
+        else throw new NotImplementedException("I don't even remember if this is "
+        + "fucking possible");
     }
 
     public bool CanBeDirectlyAssignedTo(TypeReference b, TypeReference to)

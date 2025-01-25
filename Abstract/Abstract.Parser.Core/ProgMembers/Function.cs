@@ -13,9 +13,16 @@ public class Function(
     public BlockNode FunctionBodyNode => functionNode.Body!;
 
     public TypeReference returnType = null!;
-    public (TypeReference type, MemberIdentifier name, bool isGeneric)[] parameters = null!;
+    public (TypeReference type, MemberIdentifier name)[] parameters = null!;
 
-    public bool IsGeneric => _generics.Count > 0 || parameters.Any(e => e.isGeneric);
+    /*
+        A function can be generic in 2 cases:
+            - if there is any type as it parameter;
+            - if there is any 'anytype' parameter;
+    */
+    public bool IsGeneric => _generics.Count > 0 || parameters.Any(e
+        => (e.type as SolvedTypeReference)?
+        .structure.GlobalReference == "Std.Types.AnyType");
     protected Dictionary<MemberIdentifier, TypeReference> _generics = [];
 
     public void AppendGeneric(MemberIdentifier identifier, int idx)

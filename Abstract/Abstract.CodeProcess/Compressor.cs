@@ -87,7 +87,7 @@ public class Compressor(ErrorHandler errHandler)
                 {
                     for (var k = 0; k < func.parameters.Length; k++)
                     {
-                        var (type, name, _) = func.parameters[k];
+                        var (type, name) = func.parameters[k];
                         var p = new DirectoryBuilder("PARAM", $"{k:X4}");
                         
                         p.AppendChild(new DirectoryBuilder("TYPE", type.ToString()
@@ -170,7 +170,7 @@ public class Compressor(ErrorHandler errHandler)
         {
             var param = new DirectoryBuilder("PARAM", $"{i:X4}");
 
-            var (type, name, _) = func.parameters[i];
+            var (type, name) = func.parameters[i];
             CheckUseOfReference(type);
 
             param.AppendChild(new DirectoryBuilder("TYPE", type.ToString() ?? throw new Exception()));
