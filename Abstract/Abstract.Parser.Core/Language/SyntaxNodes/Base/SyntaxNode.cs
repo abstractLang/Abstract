@@ -6,17 +6,41 @@ namespace Abstract.Parser.Core.Language.SyntaxNodes.Base;
 public abstract class SyntaxNode
 {
     protected SyntaxNode _parent = null!;
-    protected List<SyntaxNode> _children = [];
     public virtual (uint start, uint end) Range => (_children[0].Range.start, _children[^1].Range.end);
 
+    #region Tree related
+    protected List<SyntaxNode> _children = [];
     public SyntaxNode[] Children => [.. _children];
-    public void AppendChild(SyntaxNode node)
+    
+    public void AppendChild(SyntaxNode node, int idx = -1)
     {
         if (node != null) {
             node._parent = this;
-            _children.Add(node);
+            if (idx == -1)
+                _children.Add(node);
+            else
+                _children.Insert(idx, node);
         }
     }
+    public int GetChildIndex(SyntaxNode child)
+    {
+        return _children.IndexOf(child);
+    }
+    public void RemoveChild(SyntaxNode child)
+    {
+        _children.Remove(child);
+    }
+    public void RemoveChild(int childIndex)
+    {
+        _children.RemoveAt(childIndex);
+    }
+    public void ReplaceChild(SyntaxNode target, SyntaxNode replacement)
+    {
+        int idx = GetChildIndex(target);
+        RemoveChild(idx);
+        AppendChild(replacement, idx);
+    }
+    #endregion
 
     public virtual Script GetSourceScript() => _parent.GetSourceScript();
 
