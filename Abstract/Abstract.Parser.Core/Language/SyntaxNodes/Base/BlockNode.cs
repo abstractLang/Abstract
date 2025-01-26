@@ -6,7 +6,7 @@ namespace Abstract.Parser.Core.Language.SyntaxNodes.Control;
 
 public class BlockNode : SyntaxNode
 {
-    public ExecutableCodeBlock EvaluatedData {get; set; } = null!;
+    public ExecutableContext EvaluatedData {get; set; } = null!;
 
     public IEnumerable<SyntaxNode> Content => _children.Count > 2 ? _children[1..^1] : [];
     

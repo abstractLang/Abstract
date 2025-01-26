@@ -46,10 +46,10 @@ public partial class Evaluator
 
     private void EvalBlock(BlockNode blockNode, ProgramMember? parent)
     {
-        var block = new ExecutableCodeBlock()
+        var block = new ExecutableContext()
         {
             ProgramMemberParent = parent,
-            BlockParent = null
+            ParentContext = null
         };
         blockNode.EvaluatedData = block;
 
@@ -62,18 +62,18 @@ public partial class Evaluator
 
         ScanBlock(blockNode, block);
     }
-    private void EvalBlock(BlockNode blockNode, ExecutableCodeBlock parentBlock)
+    private void EvalBlock(BlockNode blockNode, ExecutableContext parentBlock)
     {
-        var block = new ExecutableCodeBlock()
+        var block = new ExecutableContext()
         {
             ProgramMemberParent = parentBlock.ProgramMemberParent,
-            BlockParent = parentBlock
+            ParentContext = parentBlock
         };
         blockNode.EvaluatedData = block;
 
         ScanBlock(blockNode, block);
     }
-    private void ScanBlock(BlockNode blockNode, ExecutableCodeBlock block)
+    private void ScanBlock(BlockNode blockNode, ExecutableContext block)
     {
         foreach (var i in blockNode.Children[1..^1])
         {
@@ -91,7 +91,7 @@ public partial class Evaluator
         }
     }
 
-    private void EvalStatement(StatementNode node, ExecutableCodeBlock currblock)
+    private void EvalStatement(StatementNode node, ExecutableContext currblock)
     {
         if (node is IfStatementNode @ifStatement)
         {
@@ -119,7 +119,7 @@ public partial class Evaluator
         else Console.WriteLine($"statement {node} ({node.GetType().Name})");
     }
 
-    private void EvalExpression(ExpressionNode node, ExecutableCodeBlock currblock)
+    private void EvalExpression(ExpressionNode node, ExecutableContext currblock)
     {
         try
         {
@@ -187,7 +187,7 @@ public partial class Evaluator
         catch (SyntaxException e) { _errHandler.RegisterError(e); }
     }
 
-    private void EvalAssiginment(AssignmentExpressionNode node, ExecutableCodeBlock currblock)
+    private void EvalAssiginment(AssignmentExpressionNode node, ExecutableContext currblock)
     {
         EvalExpression(node.Left, currblock);
         EvalExpression(node.Right, currblock);
@@ -216,7 +216,7 @@ public partial class Evaluator
         node.evaluated = true;
     }
 
-    private void EvalBinaryOperation(BinaryExpressionNode node, ExecutableCodeBlock currblock)
+    private void EvalBinaryOperation(BinaryExpressionNode node, ExecutableContext currblock)
     {
         try {
 
@@ -261,7 +261,7 @@ public partial class Evaluator
         Return:
         node.evaluated = true;
     }
-    private void EvalUnaryOperation(UnaryExpressionNode node, ExecutableCodeBlock currblock)
+    private void EvalUnaryOperation(UnaryExpressionNode node, ExecutableContext currblock)
     {
         EvalExpression(node.Expression, currblock);
         //Console.WriteLine($"unary {node} ({node.GetType().Name})");
@@ -270,7 +270,7 @@ public partial class Evaluator
         //node.evaluated = true;
     }
 
-    private void EvalLocal(LocalVariableNode node, ExecutableCodeBlock currblock)
+    private void EvalLocal(LocalVariableNode node, ExecutableContext currblock)
     {
         bool isConstant = node.IsConstant;
         TypeReference type = GetTypeFromTypeExpressionNode(node.TypedIdentifier.Type, currblock.ProgramMemberParent);
@@ -282,7 +282,7 @@ public partial class Evaluator
         node.evaluated = true;
     }
 
-    private void EvalFunctionCall(FunctionCallExpressionNode node, ExecutableCodeBlock currblock)
+    private void EvalFunctionCall(FunctionCallExpressionNode node, ExecutableContext currblock)
     {
         try {
             // Evaluating called reference
@@ -319,7 +319,7 @@ public partial class Evaluator
         }
         node.evaluated = true;
     }
-    private void EvalIdentifier(IdentifierCollectionNode node, ExecutableCodeBlock currblock)
+    private void EvalIdentifier(IdentifierCollectionNode node, ExecutableContext currblock)
     {
         try
         {
@@ -333,12 +333,12 @@ public partial class Evaluator
         }
         node.evaluated = true;
     }
-    private void EvalType(TypeExpressionNode node, ExecutableCodeBlock currblock)
+    private void EvalType(TypeExpressionNode node, ExecutableContext currblock)
     {
         TypeReference type = GetTypeFromTypeExpressionNode(node, currblock.ProgramMemberParent);
         node.DataReference = new TypeDataRef(type, SearchStructure("Std.Types.Type"));
     }
-    private void EvalValue(ValueNode node, ExecutableCodeBlock currblock)
+    private void EvalValue(ValueNode node, ExecutableContext currblock)
     {
         if (node is IntegerLiteralNode @intl)
         {

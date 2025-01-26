@@ -6,11 +6,11 @@ using Abstract.Parser.Core.ProgMembers;
 
 namespace Abstract.Parser.Core.ProgData;
 
-public class ExecutableCodeBlock
+public class ExecutableContext
 {
     public ProgramMember? ProgramMemberParent { get; set; }
     public Project? ParentProject => ProgramMemberParent?.ParentProject;
-    public ExecutableCodeBlock? BlockParent { get; set; }
+    public ExecutableContext? ParentContext { get; set; }
 
     private Dictionary<MemberIdentifier, (int idx, TypeReference type)> _scopeParameters = [];
     private Dictionary<MemberIdentifier, (int idx, TypeReference type, bool constant)> _localVariables = [];

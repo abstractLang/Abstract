@@ -2,17 +2,17 @@ using Abstract.Parser.Core.ProgMembers;
 
 namespace Abstract.Parser.Core.ProgData.DataReference;
 
-public class LocalDataRef(ExecutableCodeBlock block, MemberIdentifier name) : DataRef
+public class LocalDataRef(ExecutableContext ctx, MemberIdentifier name) : DataRef
 {
 
-    private ExecutableCodeBlock block = block;
+    private ExecutableContext context = ctx;
     private MemberIdentifier name = name;
 
-    public override TypeReference refferToType => block.GetLocalReference(name).type;
-    public int GetIndex => block.GetLocalReference(name).idx;
+    public override TypeReference refferToType => context.GetLocalReference(name).type;
+    public int GetIndex => context.GetLocalReference(name).idx;
 
     public override string ToString() {
-        var (idx, type, isconst) = block.GetLocalReference(name);
+        var (idx, type, isconst) = context.GetLocalReference(name);
         return $"l{idx}(" + (isconst ? "const" : "let" ) + $" {name} -> {type})";
     }
 }

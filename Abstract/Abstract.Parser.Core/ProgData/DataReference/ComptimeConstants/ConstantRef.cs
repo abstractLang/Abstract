@@ -1,9 +1,9 @@
 namespace Abstract.Parser.Core.ProgData.DataReference.ComptimeConstants;
 
-public abstract class ConstantRef<T>(ExecutableCodeBlock block, int index) : DataRef
+public abstract class ConstantRef<T>(ExecutableContext ctx, int index) : DataRef
 {
-    protected ExecutableCodeBlock block = block;
+    protected ExecutableContext ctx = ctx;
     protected int index = index;
 
-    public T GetData() => (T)block.GetConstantReference(index);
+    public T GetData() => (T)ctx.GetConstantReference(index);
 }
