@@ -1,16 +1,20 @@
 using Abstract.Build;
 using Abstract.Parser.Core.Exceptions.Evaluation;
+using Abstract.Parser.Core.Language.SyntaxNodes.Base;
 using Abstract.Parser.Core.Language.SyntaxNodes.Statement;
 using Abstract.Parser.Core.ProgData.DataReference;
 using Abstract.Parser.Core.ProgMembers;
 
 namespace Abstract.Parser.Core.ProgData;
 
-public class ExecutableContext
+public class ExecutableContext(SyntaxNode implementation, ExecutableContext? parentContext)
 {
+    public readonly ExecutableContext? parentContext = parentContext;
+    public readonly SyntaxNode implementationNode = implementation;
+
     public ProgramMember? ProgramMemberParent { get; set; }
     public Project? ParentProject => ProgramMemberParent?.ParentProject;
-    public ExecutableContext? ParentContext { get; set; }
+
 
     private Dictionary<MemberIdentifier, (int idx, TypeReference type)> _scopeParameters = [];
     private Dictionary<MemberIdentifier, (int idx, TypeReference type, bool constant)> _localVariables = [];

@@ -7,6 +7,7 @@ using Abstract.Parser.Core.Language.SyntaxNodes.Statement;
 using Abstract.Parser.Core.Language.SyntaxNodes.Value;
 using Abstract.Parser.Core.ProgData;
 using Abstract.Parser.Core.ProgData.DataReference;
+using Abstract.Parser.Core.ProgData.FunctionExecution;
 using Abstract.Parser.Core.ProgMembers;
 using static Abstract.Binutils.Abs.Elf.ElfBuilder;
 
@@ -85,9 +86,9 @@ public class Compressor(ErrorHandler errHandler)
 
                 if (j.source is Function @func)
                 {
-                    for (var k = 0; k < func.parameters.Length; k++)
+                    for (var k = 0; k < func.baseParameters.Length; k++)
                     {
-                        var (type, name) = func.parameters[k];
+                        var (type, name) = func.baseParameters[k];
                         var p = new DirectoryBuilder("PARAM", $"{k:X4}");
                         
                         p.AppendChild(new DirectoryBuilder("TYPE", type.ToString()
@@ -98,8 +99,7 @@ public class Compressor(ErrorHandler errHandler)
 
                     }
                  
-                    parent.AppendChild(new DirectoryBuilder("RET", func.returnType.ToString()
-                        ?? throw new Exception()));
+                    parent.AppendChild(new DirectoryBuilder("RET", func.baseReturnType.ToString() ?? throw new Exception()));
                 }
             }
 
@@ -166,11 +166,11 @@ public class Compressor(ErrorHandler errHandler)
 
         var attrb = new LumpBuilder("META", "attrb");
         
-        for(var i = 0; i < func.parameters.Length; i++)
+        for(var i = 0; i < func.baseParameters.Length; i++)
         {
             var param = new DirectoryBuilder("PARAM", $"{i:X4}");
 
-            var (type, name) = func.parameters[i];
+            var (type, name) = func.baseParameters[i];
             CheckUseOfReference(type);
 
             param.AppendChild(new DirectoryBuilder("TYPE", type.ToString() ?? throw new Exception()));
@@ -178,16 +178,16 @@ public class Compressor(ErrorHandler errHandler)
 
             builder.AppendChild(param);
         }
-        if (func.returnType != null)
-            builder.AppendChild(new DirectoryBuilder("RET", func.returnType.ToString() ?? throw new Exception()));
+        if (func.baseReturnType != null)
+            builder.AppendChild(new DirectoryBuilder("RET", func.baseReturnType.ToString() ?? throw new Exception()));
         else Console.WriteLine($"{func} returning type was null");
 
         builder.AppendChild(attrb);
 
         // Code block
-        if (func.FunctionBodyNode?.EvaluatedData != null)
+        if (func.HasAnyImplementation())
         {
-            var bodyMeta = func.FunctionBodyNode.EvaluatedData;
+            var bodyMeta = func.GetImplementation([.. func.baseParameters.Select(e => e.type)]).ctx;
             var body = func.FunctionBodyNode;
 
             var code = new CodeBuilder("main");
@@ -215,7 +215,6 @@ public class Compressor(ErrorHandler errHandler)
 
             code.Bake();
         }
-        
     }
 
     private void AppendProgramMembers(DirectoryBuilder builder, ProgramMember member)
@@ -275,7 +274,7 @@ public class Compressor(ErrorHandler errHandler)
 
         else if (node is FunctionCallExpressionNode @funcCall)
         {
-            AssembleCall(builder, funcCall.FunctionTarget, funcCall.Arguments);
+            AssembleCall(builder, (AbstractCallable)funcCall.FunctionTarget, funcCall.Arguments);
         }
 
 
@@ -295,12 +294,20 @@ public class Compressor(ErrorHandler errHandler)
         else if (node is StringLiteralNode @strlit)
             builder.WriteOpCode(Base.LdConst, Types.Str, strlit.BuildStringContent());
 
+        else if (node is IntegerLiteralNode @interLit)
+            builder.WriteOpCode(Base.LdConst, Types.i64, (long)interLit.Value);
+
+        else if (node is TypeExpressionNode @typeExp)
+            return;
+
         else throw new NotImplementedException("Unhandled exp: " + node.GetType().Name);
     }
 
 
-    private void AssembleCall(CodeBuilder builder, Function target, ExpressionNode[] args)
+    private void AssembleCall(CodeBuilder builder, AbstractCallable callable, ExpressionNode[] args)
     {
+        var target = callable.target;
+
         // Check if it is a hardcoded call
         var fref = target.GlobalReference.tokens;
         if (fref[0] == "Std")
@@ -356,11 +363,11 @@ public class Compressor(ErrorHandler errHandler)
                 {
                     if ((fref[3].StartsWith("cast_i")
                         || fref[3].StartsWith("cast_u"))
-                        && target.parameters.Length == 1)
+                        && target.baseParameters.Length == 1)
                     {
                         builder.WriteOpCode(Base.Conv,
                             GetAsmType(args[0].DataReference.refferToType),
-                            GetAsmType(target.returnType));
+                            GetAsmType(target.baseReturnType));
                         
                         return;
                     }
@@ -373,8 +380,8 @@ public class Compressor(ErrorHandler errHandler)
         foreach (var i in args ?? []) AssembleExpression(builder, i);
         // Invoke the function
         CheckUseOfReference(target);
-        builder.WriteOpCode(Base.Call, GetAsmType(target.returnType),
-            $"{target.GlobalReference}({string.Join(", ", target.parameters.Select(e => e.type))})");
+        builder.WriteOpCode(Base.Call, GetAsmType(target.baseReturnType),
+            $"{target.GlobalReference}({string.Join(", ", target.baseParameters.Select(e => e.type))})");
 
     }
 
@@ -461,7 +468,7 @@ public class Compressor(ErrorHandler errHandler)
         if (member is Function @func)
         {
             return ("FUNC", $"{func.GlobalReference}({string
-            .Join(", ", func.parameters.Select(e => e.type))})");
+            .Join(", ", func.baseParameters.Select(e => e.type))})");
         }
 
         else if (member is Structure @struc)

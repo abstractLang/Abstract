@@ -7,7 +7,7 @@ public class InvalidOperatorForTypeException(BinaryExpressionNode call, string t
 : SyntaxException(
     call.GetSourceScript(),
     call.Range,
-    $"type {type} does not have the operator {call.Operator} used in \"{call}\""
+    $"type {type} does not have the operator {call.Operator} used in '{call}'"
 )
 {
 }

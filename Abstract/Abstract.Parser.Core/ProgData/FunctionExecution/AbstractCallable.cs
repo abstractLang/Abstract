@@ -11,4 +11,7 @@ public class AbstractCallable(Function target) : ICallable
     {
         throw new NotImplementedException();
     }
+
+
+    public static implicit operator AbstractCallable(Function target) => new(target);
 }

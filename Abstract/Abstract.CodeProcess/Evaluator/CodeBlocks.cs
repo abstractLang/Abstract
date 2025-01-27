@@ -10,13 +10,13 @@ using Abstract.Parser.Core.Language.SyntaxNodes.Value;
 using Abstract.Parser.Core.ProgData;
 using Abstract.Parser.Core.ProgData.DataReference;
 using Abstract.Parser.Core.ProgData.DataReference.ComptimeConstants;
+using Abstract.Parser.Core.ProgData.FunctionExecution;
 using Abstract.Parser.Core.ProgMembers;
 
 namespace Abstract.Parser;
 
 public partial class Evaluator
 {
-
     private void ScanCodeBlocks()
     {
         typeMatchingLog.AppendLine("\n# Processing code blocks #\n");
@@ -44,32 +44,31 @@ public partial class Evaluator
 
     }
 
-    private void EvalBlock(BlockNode blockNode, ProgramMember? parent)
+    private void EvalBlock(BlockNode blockNode, Function function)
     {
-        var block = new ExecutableContext()
+        var block = new ExecutableContext(blockNode, null)
         {
-            ProgramMemberParent = parent,
-            ParentContext = null
+            ProgramMemberParent = function
         };
-        blockNode.EvaluatedData = block;
 
-        if (parent is Function @parentFunction)
+        List<TypeReference> argTypes = [];
+        foreach (var (type, name) in function.baseParameters)
         {
-            foreach (var (type, name) in parentFunction.parameters)
-                block.AppendLocalParameter(name, type);
-
+            block.AppendLocalParameter(name, type);
+            argTypes.Add(type);
         }
+        
+        // Appending base implementation
+        function.AppendImplementation([.. argTypes], block, function.baseReturnType);
 
         ScanBlock(blockNode, block);
     }
     private void EvalBlock(BlockNode blockNode, ExecutableContext parentBlock)
     {
-        var block = new ExecutableContext()
+        var block = new ExecutableContext(blockNode, parentBlock)
         {
-            ProgramMemberParent = parentBlock.ProgramMemberParent,
-            ParentContext = parentBlock
+            ProgramMemberParent = parentBlock.ProgramMemberParent
         };
-        blockNode.EvaluatedData = block;
 
         ScanBlock(blockNode, block);
     }
@@ -245,7 +244,7 @@ public partial class Evaluator
                 node.ConvertRight = toConvert[1];
                 node.Operate = function;
 
-                node.DataReference = new DynamicDataRef(function.returnType);
+                node.DataReference = new DynamicDataRef(GetFunctionReturnType(function, args));
 
                 goto Return;
             }
@@ -272,12 +271,20 @@ public partial class Evaluator
 
     private void EvalLocal(LocalVariableNode node, ExecutableContext currblock)
     {
-        bool isConstant = node.IsConstant;
-        TypeReference type = GetTypeFromTypeExpressionNode(node.TypedIdentifier.Type, currblock.ProgramMemberParent);
-        string name = node.TypedIdentifier.Identifier.Value;
+        try
+        {
+            bool isConstant = node.IsConstant;
+            TypeReference type = GetTypeFromTypeExpressionNode(node.TypedIdentifier.Type, currblock.ProgramMemberParent);
+            string name = node.TypedIdentifier.Identifier.Value;
 
-        currblock.AppendLocalVariable(name, type, isConstant, node);
-        node.DataReference = new LocalDataRef(currblock, name);
+            currblock.AppendLocalVariable(name, type, isConstant, node);
+            node.DataReference = new LocalDataRef(currblock, name);
+        }
+        catch (SyntaxException ex)
+        {
+            _errHandler.RegisterError(ex);
+            node.DataReference = new DataErrorRef();
+        }
 
         node.evaluated = true;
     }
@@ -301,13 +308,14 @@ public partial class Evaluator
             {
                 var functionGroup = funcGroupRef.group;
 
-                Function func = TryGetOveloadDirect(functionGroup, [.. _args]) ??
-                throw new NoOverloadForTypes(node, string.Join(", ", _args.Select(e => e.refferToType?.ToString() ?? "!nil")));
+                (Function? func, Function?[] casts) = TryGetOveloadIndirect(functionGroup, [.. _args]);
+                if (func is null)
+                    throw new NoOverloadForTypes(node, string.Join(", ", _args.Select(e => e.refferToType?.ToString() ?? "!nil")));
 
                 // TODO detect the use of generic functions around here
-                if (func.IsGeneric) Console.WriteLine($"Calling generic {func.GlobalReference}");
+                if (func.IsGeneric) Console.WriteLine($"\tCalling generic {func.GlobalReference}");
 
-                node.FunctionTarget = func;
+                node.FunctionTarget = (AbstractCallable)func;
                 node.DataReference = new DynamicDataRef(GetFunctionReturnType(func, [.. _args]));
             }
             else throw new ReferenceNotCallableException(node);
