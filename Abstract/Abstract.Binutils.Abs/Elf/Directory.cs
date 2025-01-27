@@ -130,7 +130,7 @@ public class Directory {
             int argsCount = 0;
             foreach (var arg in instruction.args)
             {
-                inst.Append(new string(' ',Math.Max(1, 25 + (15 * argsCount++) - inst.Length) + '\t'));
+                inst.Append(new string(' ',Math.Max(0, 25 + (15 * argsCount++) - inst.Length) + '\t'));
                 
                 switch (arg)
                 {
@@ -198,7 +198,7 @@ public class Directory {
                     or "reflocal":
                         bytes.AddRange(code.LookArray(4));
                         var index = code.ReadU32();
-                        inst.Append($"${index}");
+                        inst.Append($"${index:X}");
                         break;
 
                     default:
