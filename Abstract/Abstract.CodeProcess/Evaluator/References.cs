@@ -234,9 +234,9 @@ public partial class Evaluator
     {
         if (func.parent is not Structure @parent)
             throw new Exception($"TODO function parent must be a structure!");
-        if (func.parameters[0].type is not SolvedTypeReference @solvedP1)
+        if (func.baseParameters[0].type is not SolvedTypeReference @solvedP1)
             throw new Exception($"TODO unable to solve parameter 1 type!");
-        if (func.returnType is not SolvedTypeReference @solvedrt)
+        if (func.baseReturnType is not SolvedTypeReference @solvedrt)
             throw new Exception($"TODO unable to solve returning type!");
 
         var p1 = solvedP1.structure;

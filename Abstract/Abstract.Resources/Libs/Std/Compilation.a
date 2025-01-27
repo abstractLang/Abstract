@@ -24,18 +24,21 @@ namespace Compilation {
 
             @comptime @inline
             @overrideOperator("+") @public @static func string concatenate(ComptimeString left, string right) {
-                # return string.concatenate(asstring(left), right);
                 return asstring(left) + right;
             }
             @comptime @inline
             @overrideOperator("+") @public @static func string concatenate(ComptimeString base, char character) {
-                # return string.concatenate(asstring(left), character);
                 return asstring(base) + character;
             }
             @comptime @inline
             @overrideOperator("+") @public @static func string concatenate(ComptimeString base, []char characters) {
-                # return string.concatenate(asstring(left), characters);
                 return asstring(base) + characters;
+            }
+
+            # FIXME anytype is not so much specific here
+            @comptime @inline
+            @overrideOperator("+") @public @static func string concatenate(ComptimeString base, anytype value) {
+                return asstring(base) + value;
             }
 
             @overrideOperator("+") @comptime @inline

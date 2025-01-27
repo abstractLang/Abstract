@@ -6,8 +6,6 @@ namespace Abstract.Parser.Core.Language.SyntaxNodes.Control;
 
 public class BlockNode : SyntaxNode
 {
-    public ExecutableContext EvaluatedData {get; set; } = null!;
-
     public IEnumerable<SyntaxNode> Content => _children.Count > 2 ? _children[1..^1] : [];
     
     public override string ToString()

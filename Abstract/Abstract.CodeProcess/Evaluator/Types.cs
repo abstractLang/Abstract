@@ -77,16 +77,18 @@ public partial class Evaluator
                     var reference = GetTypeFromTypeExpressionNode(parameter.Type, function);
                     parameters.Add((reference, parameter.Identifier.ToString()));
 
-                    if (reference is SolvedTypeReference @solved
-                    && solved.structure.GlobalReference == "Std.Types.Type")
+                    if (reference is SolvedTypeReference @solved &&
+                    // Check if it's generic
+                    (solved.structure.GlobalReference == "Std.Types.Type" ||
+                    solved.structure.GlobalReference == "Std.Types.AnyType"))
                     {
-                        // is of type "type" (bruh)
                         function.AppendGeneric(parameter.Identifier.ToString(), j);
                     }
+
                 }
                 
-                function.parameters = [.. parameters];
-                function.returnType = GetTypeFromTypeExpressionNode(funcNode.ReturnType, function);
+                function.baseParameters = [.. parameters];
+                function.baseReturnType = GetTypeFromTypeExpressionNode(funcNode.ReturnType, function);
                 
             }
         }
@@ -190,11 +192,9 @@ public partial class Evaluator
     }
 
     // FIXME these 3 next needs a fucking hard rework
-
     /// <summary>
     /// Returns a valid function overload for the designed argument
-    /// types
-    /// TODO describle here the diference between direct and indirect
+    /// types, alowing type cast
     /// </summary>
     /// <param name="funcGroup">The function group</param>
     /// <param name="types">The argument types</param>
@@ -206,7 +206,7 @@ public partial class Evaluator
         
         foreach (var f in funcGroup)
         {
-            var parameters = f.parameters;
+            var parameters = f.baseParameters;
 
             Dictionary<int, TypeReference> _generics = [];
 
@@ -215,24 +215,27 @@ public partial class Evaluator
             List<Function?> toConvert = [];
             for (var i = 0; i < parameters.Length; i++)
             {
-                if (!CanBeAssignedTo(args[i].refferToType, parameters[i].type, out var cf))
-                    goto Break;
-
                 if (parameters[i].type is GenericTypeReference @generic)
                 {
                     if (generic.from == f)
                     {
-                        if (!CanBeDirectlyAssignedTo(args[i].refferToType, 
-                            _generics[generic.parameterIndex]))
+                        if (!CanBeAssignedTo(args[i].refferToType, _generics[generic.parameterIndex], out var cf))
                             goto Break;
+                        else toConvert.Add(cf);
                     }
                     else throw new NotImplementedException();
                 }
-                
+
+                else if (!CanBeAssignedTo(args[i].refferToType, parameters[i].type, out var cf))
+                    goto Break;
+                else toConvert.Add(cf);
+
                 if (args[i] is TypeDataRef @typeDataRef)
+                {
                     _generics.Add(i, typeDataRef.type);
+                    continue;
+                }
                 
-                toConvert.Add(cf);
             }
 
             func = f;
@@ -246,63 +249,29 @@ public partial class Evaluator
     }
     /// <summary>
     /// Returns a valid function overload for the designed argument
-    /// types
-    /// TODO describle here the diference between direct and indirect
+    /// types, not allowing type cast
     /// </summary>
     /// <param name="funcGroup">The function group</param>
     /// <param name="types">The argument types</param>
     /// <returns></returns>
     public Function? TryGetOveloadDirect(FunctionGroup funcGroup, DataRef[] args)
     {
-        Function? func = null!;
-        
-        foreach (var f in funcGroup)
-        {
-            var parameters = f.parameters;
-
-            Dictionary<int, TypeReference> _generics = [];
-
-            if (args.Length != parameters.Length) continue;
-            for (var i = 0; i < parameters.Length; i++)
-            {
-                if (parameters[i].type is SolvedTypeReference &&
-                    !CanBeDirectlyAssignedTo(args[i].refferToType, parameters[i].type))
-                    goto Break;
-                
-                if (parameters[i].type is GenericTypeReference @generic)
-                {
-                    if (generic.from == f)
-                    {
-                        if (!CanBeDirectlyAssignedTo(args[i].refferToType, 
-                            _generics[generic.parameterIndex]))
-                            goto Break;
-                    }
-                    else throw new NotImplementedException();
-                }
-                
-                if (args[i] is TypeDataRef @typeDataRef)
-                    _generics.Add(i, typeDataRef.type);
-            }
-
-            func = f;
-            break;
-
-            Break: continue;
-        }
-
-        return func;
+        var (f, c) = TryGetOveloadIndirect(funcGroup, args);
+        if (c.Any(e => e == null)) return null;
+        return f;
     }
     public TypeReference GetFunctionReturnType(Function func, DataRef[] args)
     {
-        var rtype = func.returnType;
+        var rtype = func.baseReturnType;
         if (rtype is SolvedTypeReference) return rtype;
+
         else if (rtype is GenericTypeReference @g)
         {
             if (g.from == func) return ((TypeDataRef)args[g.parameterIndex]).type;
             else throw new NotImplementedException();
         }
-        else throw new NotImplementedException("I don't even remember if this is "
-        + "fucking possible");
+        
+        else throw new NotImplementedException("I don't even remember if this is fucking possible");
     }
 
     public bool CanBeDirectlyAssignedTo(TypeReference b, TypeReference to)

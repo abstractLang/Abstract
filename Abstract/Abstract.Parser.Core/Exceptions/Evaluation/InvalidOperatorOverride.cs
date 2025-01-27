@@ -7,8 +7,8 @@ public class InvalidOperatorOverloadException(BinaryExpressionNode call, string 
 : SyntaxException(
     call.GetSourceScript(),
     call.Range,
-    $"type {type} does not have the operator {call.Operator}"
-    + "for the thesired type as used in \"{call}\""
+    $"type {type} does not have the operator {call.Operator} "
+    + $"for the desired type as used in '{call}'"
 )
 {
 }
