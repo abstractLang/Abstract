@@ -55,7 +55,8 @@ public class ElfProgram {
         Stack<(Directory curr, Queue<DirBuilder> toBake)> baking
             = new([(elfProgram._root, new(builder.Root.Children))]);
 
-        Queue<(LumpBuilder, Stream)> _toSolveReferences = [];
+        Queue<(LumpBuilder, Stream)> _lumpsToBake = [];
+        Dictionary<DirBuilder, List<(uint dirID, long ptr)>> _refsToSolve = [];
 
         while(baking.Count > 0)
         {
@@ -70,12 +71,19 @@ public class ElfProgram {
                 lump.Content.Position = 0;
                 lump.Content.CopyTo(data);
 
-                dir = new(curr, elfProgram._allDirectories.Count, next.kind, next.identifier, data);
-                _toSolveReferences.Enqueue((lump, data));
+                dir = new(curr, (uint)elfProgram._allDirectories.Count, next.kind, next.identifier, data);
+                _lumpsToBake.Enqueue((lump, data));
             }
             else
-                dir = new(curr, elfProgram._allDirectories.Count, next.kind, next.identifier, null);
+                dir = new(curr, (uint)elfProgram._allDirectories.Count, next.kind, next.identifier, null);
             elfProgram._allDirectories.Add(dir);
+
+            foreach (var r in next._externReferences)
+            {
+                if (_refsToSolve.TryGetValue(r.lump, out var values))
+                    values.Add((dir.index, r.ptr));
+                else _refsToSolve.Add(r.lump, [(dir.index, r.ptr)]);
+            }
 
             if (next.ChildrenCount > 0)
             {
@@ -84,18 +92,15 @@ public class ElfProgram {
             }
         }
 
-        while (_toSolveReferences.Count > 0)
+        while(_lumpsToBake.Count > 0)
         {
-            var (curr, data) = _toSolveReferences.Dequeue();
+            var (lump, stream) = _lumpsToBake.Dequeue();
+            if (!_refsToSolve.TryGetValue(lump, out var deps)) continue;
 
-            if (curr is CodeBuilder @code)
+            foreach (var (reference, ptr) in deps)
             {
-                foreach (var (ptr, r) in code.RefsAndDeps)
-                {
-                    var dir = elfProgram._allDirectories.Find(e => e.identifier == r)!;
-                    data.Position = ptr;
-                    data.WriteU32((uint)dir.index);
-                }
+                stream.Position = ptr;
+                stream.WriteDirectoryPtr(reference);
             }
         }
 

@@ -179,145 +179,18 @@ internal static class Compiler
         bytecode.Position = 0;
         while (bytecode.Position < bytecode.Length)
         {
-            var instruction = Instructions.Get(bytecode.ReadU8());
+            var instruction = bytecode.ReadU8();
 
-            switch (instruction.b)
-            {
-                case Base.Nop: instructions.Add(new NoOperation()); break;
+            // TODO
 
-                case Base.Illegal
-                or Base.Invalid: instructions.Add(new Unreachable()); break;
-
-
-                case Base.LdConst:
-
-                    switch (instruction.t)
-                    {
-                        case Types.Str:
-                            instructions.Add(new Int32Constant(memoffset + bytecode.ReadU32()));
-                            break;
-                        
-                        case Types.i8: instructions.Add(new Int32Constant(bytecode.ReadI8())); break;
-                        case Types.i16: instructions.Add(new Int32Constant(bytecode.ReadI16())); break;
-                        case Types.i32: instructions.Add(new Int32Constant(bytecode.ReadI32())); break;
-                        case Types.i64: instructions.Add(new Int64Constant(bytecode.ReadI64())); break;
-
-                        default: throw new Exception();
-                    }
-
-                    break;
-                case Base.LdType:
-                    stack.PushU32(bytecode.ReadU32());
-                    break;
-                case Base.LdPType:
-                    stack.PushU8(bytecode.ReadU8());
-                    break;
-
-                case Base.LdLocal:
-                    instructions.Add(new LocalGet(bytecode.ReadU16()));
-                    break;
-
-                case Base.SetLocal:
-                    instructions.Add(new LocalSet(bytecode.ReadU16()));
-                    break;
-
-
-                case Base.EnterFrame:
-                    // order:
-                    //  primities first
-                    //  structures seccond
-
-                    var arg1 = bytecode.ReadU16();
-                    var arg2 = bytecode.ReadU16();
-
-                    List<Types> buildinTypes = [];
-                    List<uint> structTypes = [];
-
-                    for (var i = 0; i < arg2; i++)
-                        structTypes.Add(stack.PopU32());
-                    for (var i = 0; i < arg1; i++)
-                        buildinTypes.Add((Types)stack.PopU8());
-                    
-                    // POP returns things in the reverse order
-                    // reversing manually here!
-                    buildinTypes.Reverse();
-                    structTypes.Reverse();
-
-                    // FIXME Let's ignore structs for now hehe :3
-
-                    foreach (var i in buildinTypes)
-                    {
-                        locals.Add(i switch {
-                            Types.i8 or Types.u8 or
-                            Types.i16 or Types.u16 or
-                            Types.i32 or Types.u32 =>
-                                new Local { Type = WasmValueType.Int32, Count = 1 },
-                            
-                            Types.i64 or Types.u64 =>
-                                new Local { Type = WasmValueType.Int64, Count = 1 },
-
-                            Types.i128 or Types.u128 =>
-                                new Local { Type = WasmValueType.Int64, Count = 2 },
-
-                            Types.f32 => new Local { Type = WasmValueType.Float32, Count = 1 },
-                            Types.f64 => new Local { Type = WasmValueType.Float64, Count = 1 },
-
-                            Types.Bool => new Local { Type = WasmValueType.Int32, Count = 1 },
-                            Types.Char => new Local { Type = WasmValueType.Int32, Count = 1 },
-
-                            Types.Str or // Pointers in general
-                            Types.Arr or
-                            Types.Struct => new Local { Type = WasmValueType.Int32, Count = 1 },
-
-                            _ => throw new Exception()
-                        });
-                    }
-
-                    break;
-                case Base.LeaveFrame: /* TODO leaveFrame instruction */ break;
-
-                case Base.Call:
-                    var funcref = bytecode.ReadU32();
-                    var func = program.AllDirectories[funcref];
-
-                    if (func.kind == "FUNC")
-                        throw new Exception();
-                        //instructions.Add(new Call(importMap[funcref]));
-
-                    else if (func.kind == "IFUNC")
-                        instructions.Add(new Call(importMap[funcref]));
-
-                    break;
-
-                case Base.Ret: instructions.Add(new End()); break;
-
-                default: throw new NotImplementedException($"Unhandled: {instruction}");
-            }
+            throw new NotImplementedException($"Unhandled: {instruction}");
         }
 
+        instructions.Add(new End());
         return (locals, instructions);
     }
 
-    private static WasmValueType[] Abs2WasmType(Types t) => t switch {
-        Types.Void => [],
-        Types.Null => [WasmValueType.Int32],
-
-        Types.i8 or Types.i16 or Types.i32 or 
-        Types.u8 or Types.u16 or Types.u32 => [WasmValueType.Int32],
-        Types.i64 or Types.u64 => [WasmValueType.Int64],
-
-        Types.i128 or Types.u128 => [WasmValueType.Int64, WasmValueType.Int64],
-
-        Types.f32 => [WasmValueType.Float32],
-        Types.f64 => [WasmValueType.Float64],
-
-        Types.Bool => [WasmValueType.Int32],
-        Types.Char => [WasmValueType.Int32],
-        Types.Str => [WasmValueType.Int32],
-        Types.Struct => [WasmValueType.Int32],
-
-        _ => throw new Exception()
-    };
+    // FIXME based on alliginment and not in structure itself
     private static WasmValueType[] Struct2WasmType(string structName) => structName switch {
         "Std.Types.Void" => [],
 
@@ -365,7 +238,6 @@ internal static class Compiler
             _data.Push(b[1]);
             _data.Push(b[0]);
         }
-
 
         public byte PopU8() => _data.Pop();
         public ushort PopU16() => BitConverter.ToUInt16([_data.Pop(), _data.Pop()]);

@@ -33,6 +33,9 @@ public static class ExStream {
     public static ulong ReadU64(this Stream stream) => BinaryPrimitives.ReadUInt64BigEndian(stream.ReadArray(8));
     public static UInt128 ReadU128(this Stream stream) => BinaryPrimitives.ReadUInt128BigEndian(stream.ReadArray(8));
 
+    public static uint ReadDirectoryPtr(this Stream stream) => BinaryPrimitives.ReadUInt32LittleEndian(stream.ReadArray(8));
+
+
     public static string ReadStringUTF8(this Stream stream) {
         var length = stream.ReadU32();
         return Encoding.UTF8.GetString(stream.ReadArray(length-1));
@@ -113,6 +116,13 @@ public static class ExStream {
     public static uint WriteBool(this Stream stream, bool value) { 
         stream.WriteByte((byte)(value ? 1 : 0));
         return (uint)(stream.Position - 1);
+    }
+
+    public static uint WriteDirectoryPtr(this Stream stream, uint ptr) {
+        Span<byte> buf = new(new byte[4]);
+        BinaryPrimitives.WriteUInt32LittleEndian(buf, ptr);
+        stream.Write(buf);
+        return (uint)(stream.Position - 4);
     }
 
     public static uint WriteStringUTF8(this Stream stream, string value) {

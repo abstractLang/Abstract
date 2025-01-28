@@ -23,6 +23,8 @@ public class ElfBuilder(string pname) : IDisposable {
         public DirBuilder[] Children => [.. _children];
         public int ChildrenCount => _children.Count;
 
+        public List<(LumpBuilder lump, long ptr)> _externReferences = [];
+
         public void AppendChild(params DirBuilder[] nodes)
         {
             foreach (var child in nodes)
@@ -142,103 +144,7 @@ public class ElfBuilder(string pname) : IDisposable {
     {
         public LumpBuilder DataLump => (_parent.GetChild("DATA", identifier) as LumpBuilder)!;
         public bool HasDataLump => DataLump != null;
-        private bool _baked = false;
 
-        private List<(long ptr, string r)> _refsAndDeps = [];
-        public (long ptr, string r)[] RefsAndDeps => [.. _refsAndDeps];
-
-        public void WriteOpCode(Base opcode, Types type = Types.Unspecified) => WriteOpCode(Instructions.Get(opcode, type), []);
-        public void WriteOpCode(Base opcode, Types type, params dynamic?[] values) => WriteOpCode(Instructions.Get(opcode, type), values);
-        public void WriteOpCode(Base opcode, params dynamic?[] values) => WriteOpCode(Instructions.Get(opcode), values);
-        public void WriteOpCode(InstructionInfo instruction) => WriteOpCode(instruction, []);
-        public void WriteOpCode(InstructionInfo instruction, params dynamic?[] values)
-        {
-            if (_baked) throw new Exception();
-
-            if (instruction.args != null && values.Length != instruction.args.Length)
-                throw new Exception($"instruction \"{instruction}\" expects {instruction.args.Length},"
-                + $" found {values.Length}");
-            
-            Content.WriteU8(instruction.opcode);
-
-            for (var i = 0; i < values.Length; i++)
-            {
-                var argType = instruction.args![i];
-                var argValue = values[i];
-
-                switch (argType)
-                {
-                    case "immi8": if (argValue is not sbyte) goto Invalid; break;
-                    case "immi16": if (argValue is not short) goto Invalid; break;
-                    case "immi32": if (argValue is not int) goto Invalid; break;
-                    case "immi64": if (argValue is not long) goto Invalid; break;
-                    case "immi128": if (argValue is not Int128) goto Invalid; break;
-
-                    case "immu8": if (argValue is not byte) goto Invalid; break;
-                    case "immu16": if (argValue is not ushort) goto Invalid; break;
-                    case "immu32": if (argValue is not uint) goto Invalid; break;
-                    case "immu64": if (argValue is not ulong) goto Invalid; break;
-                    case "immu128": if (argValue is not UInt128) goto Invalid; break;
-
-                    case "immtype": if (argValue is not Types) goto Invalid; break;
-
-                    
-
-                    case "refstr"
-
-                    or "reftype"
-                    or "reffunc"
-
-                    or "refstatic"
-                    or "reffield"
-                    or "reflocal":
-                        if (argValue is not string) goto Invalid; break;
-
-                    default:
-                        throw new NotImplementedException(
-                            $"immediate of type \"{argType}\" not implemented!");
-                }
-
-                goto Ok;
-                Invalid: 
-                throw new Exception($"value of type {argValue?.GetType().Name ?? "nil"} is not"
-                    + $" assiginabble to {argType}");
-
-                Ok:
-                if (argValue is sbyte @v1) Content.WriteI8(v1);
-                else if (argValue is short @v2) Content.WriteI16(v2);
-                else if (argValue is int @v3) Content.WriteI32(v3);
-                else if (argValue is long @v4) Content.WriteI64(v4);
-                else if (argValue is Int128 @v5) Content.WriteI128(v5);
-
-                else if (argValue is byte @v6) Content.WriteU8(v6);
-                else if (argValue is ushort @v7) Content.WriteU16(v7);
-                else if (argValue is uint @v8) Content.WriteU32(v8);
-                else if (argValue is ulong @v9) Content.WriteU64(v9);
-                else if (argValue is UInt128 @vA) Content.WriteU128(vA);
-
-                else if (argValue is Types @vB) Content.WriteU8((byte)vB);
-
-                else if (argValue is string @str)
-                {
-                    if (argType == "refstr")
-                    {
-                        var ptr = DataLump.Content.WriteStringUTF8(str);
-                        Content.WriteU32(ptr);
-                    }
-
-                    else if (argType is "reftype" or "reffunc" or "refstatic" or "reffield" or "reflocal")
-                    {
-                        _refsAndDeps.Add((Content.Position, str));
-                        Content.WriteU32((uint)(_refsAndDeps.Count - 1));
-                    }
-                }
-
-            }
-            
-        }
-
-        public void Bake() => _baked = true;
         public override string ToString()
         {
             var str = new StringBuilder();
@@ -250,7 +156,7 @@ public class ElfBuilder(string pname) : IDisposable {
 
             str.AppendLine($"\t{new string('_', 20)}");
             while (Content.Position < Content.Length)
-                DecodeOpcode(Content, DataLump.Content, _refsAndDeps, str);
+                DecodeOpcode(Content, DataLump.Content, str);
             str.AppendLine($"\t{new string('_', 20)}");
 
             Content.Position = oldpos;
@@ -258,105 +164,17 @@ public class ElfBuilder(string pname) : IDisposable {
             return str.ToString();
         }
     
-        private static void DecodeOpcode(Stream code, Stream data, List<(long, string)> rds, StringBuilder buf)
+
+        private static void DecodeOpcode(Stream code, Stream data, StringBuilder buf)
         {
             var inst = new StringBuilder();
 
             List<byte> bytes = [];
             bytes.AddRange(code.LookArray(1));
-            var instruction = Instructions.Get(code.ReadU8());
             
             buf.Append($"\t${code.Position:X6}:\t");
-            inst.Append($"{instruction.b}");
             
-            if (instruction.t != Types.Unspecified)
-            {
-                inst.Append(new string(' ', 10 - inst.Length));
-                inst.Append($"\t{instruction.t.ToString().ToLower()}");
-            }
-
-            if (instruction.args != null && instruction.args.Length > 0)
-            {
-                int argcount = 1;
-                foreach (var arg in instruction.args)
-                {
-                    inst.Append(new string(' ', (15 * argcount++) - inst.Length));
-                    
-                    switch (arg)
-                    {
-                        case "immi8":
-                            bytes.AddRange(code.LookArray(1));
-                            inst.Append(code.ReadI8());
-                            break;
-                        case "immi16":
-                            bytes.AddRange(code.LookArray(2));
-                            inst.Append(code.ReadI16());
-                            break;
-                        case "immi32":
-                            bytes.AddRange(code.LookArray(4));
-                            inst.Append(code.ReadI32());
-                            break;
-                        case "immi64":
-                            bytes.AddRange(code.LookArray(8));
-                            inst.Append(code.ReadI64());
-                            break;
-                        case "immi128":
-                            bytes.AddRange(code.LookArray(16));
-                            inst.Append(code.ReadI128());
-                            break;
-
-                        case "immu8":
-                            bytes.AddRange(code.LookArray(1));
-                            inst.Append(code.ReadU8());
-                            break;
-                        case "immu16":
-                            bytes.AddRange(code.LookArray(2));
-                            inst.Append(code.ReadU16());
-                            break;
-                        case "immu32":
-                            bytes.AddRange(code.LookArray(4));
-                            inst.Append(code.ReadU32());
-                            break;
-                        case "immu64":
-                            bytes.AddRange(code.LookArray(8));
-                            inst.Append(code.ReadU64());
-                            break;
-                        case "immu128":
-                            bytes.AddRange(code.LookArray(16));
-                            inst.Append(code.ReadU128());
-                            break;
-                        
-                        case "immtype":
-                            bytes.AddRange(code.LookArray(1));
-                            inst.Append(((Types)code.ReadU8()).ToString());
-                            break;
-
-                        case "refstr":
-                            bytes.AddRange(code.LookArray(4));
-                            var strptr = code.ReadU32();
-                            data.Position = strptr;
-                            var strdata = data.ReadStringUTF8()
-                                .Replace("\n", "\\n").Replace("\r", "\\r")
-                                .Replace("\t", "\\t").Replace("" + char.ConvertFromUtf32(0), "\\0");
-                            inst.Append($"*\"{strdata}\"");
-                            break;
-
-                        case "reftype" or "reffunc" or "refstatic" or "reffield" or "reflocal":
-                            bytes.AddRange([255, 255, 255, 255]);
-                            var index = code.ReadU32();
-                            inst.Append($"${rds[(int)index].Item2}");
-                            break;
-
-                        default:
-                            inst.Append($"[{arg} not handled]");
-                            break;
-                    }
-                }
-            }
-
-            
-            buf.Append(string.Join(' ', bytes.Select(e => $"{e:X2}")).PadRight(30));
-            buf.AppendLine("\t:\t" + inst.ToString());
+            // TODO
         }
     }
     

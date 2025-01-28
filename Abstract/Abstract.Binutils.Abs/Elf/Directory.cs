@@ -6,7 +6,7 @@ namespace Abstract.Binutils.Abs.Elf;
 
 public class Directory {
 
-    internal Directory(Directory parent, long index, string kind, string identifier, Stream? content = null)
+    internal Directory(Directory parent, uint index, string kind, string identifier, Stream? content = null)
     {
         _parent = parent!;
         this.kind = kind;
@@ -18,7 +18,7 @@ public class Directory {
 
     private readonly Directory _parent;
 
-    public readonly long index;
+    public readonly uint index;
     public readonly string kind;
     public readonly string identifier;
     public readonly Stream? content = null;
@@ -114,103 +114,10 @@ public class Directory {
 
         List<byte> bytes = [];
         bytes.AddRange(code.LookArray(1));
-        var instruction = Instructions.Get(code.ReadU8());
         
         buf.Append($"\t${code.Position:X4}:\t");
-        inst.Append($"{instruction.b}");
         
-        if (instruction.t != Types.Unspecified)
-        {
-            inst.Append(new string(' ', 10 - inst.Length));
-            inst.Append($"\t{instruction.t.ToString().ToLower()}");
-        }
-
-        if (instruction.args != null && instruction.args.Length > 0)
-        {
-            int argsCount = 0;
-            foreach (var arg in instruction.args)
-            {
-                inst.Append(new string(' ',Math.Max(0, 25 + (15 * argsCount++) - inst.Length) + '\t'));
-                
-                switch (arg)
-                {
-                    case "immi8":
-                        bytes.AddRange(code.LookArray(1));
-                        inst.Append(code.ReadI8());
-                        break;
-                    case "immi16":
-                        bytes.AddRange(code.LookArray(2));
-                        inst.Append(code.ReadI16());
-                        break;
-                    case "immi32":
-                        bytes.AddRange(code.LookArray(4));
-                        inst.Append(code.ReadI32());
-                        break;
-                    case "immi64":
-                        bytes.AddRange(code.LookArray(8));
-                        inst.Append(code.ReadI64());
-                        break;
-                    case "immi128":
-                        bytes.AddRange(code.LookArray(16));
-                        inst.Append(code.ReadI128());
-                        break;
-
-                    case "immu8":
-                        bytes.AddRange(code.LookArray(1));
-                        inst.Append(code.ReadU8());
-                        break;
-                    case "immu16":
-                        bytes.AddRange(code.LookArray(2));
-                        inst.Append(code.ReadU16());
-                        break;
-                    case "immu32":
-                        bytes.AddRange(code.LookArray(4));
-                        inst.Append(code.ReadU32());
-                        break;
-                    case "immu64":
-                        bytes.AddRange(code.LookArray(8));
-                        inst.Append(code.ReadU64());
-                        break;
-                    case "immu128":
-                        bytes.AddRange(code.LookArray(16));
-                        inst.Append(code.ReadU128());
-                        break;
-                    
-                    case "immtype":
-                        bytes.AddRange(code.LookArray(1));
-                        inst.Append(((Types)code.ReadU8()).ToString());
-                        break;
-
-                    case "refstr":
-                        bytes.AddRange(code.LookArray(4));
-                        var strptr = code.ReadU32();
-                        data.Position = strptr;
-                        var strdata = data.ReadStringUTF8()
-                            .Replace("\n", "\\n").Replace("\r", "\\r")
-                            .Replace("\t", "\\t").Replace("" + char.ConvertFromUtf32(0), "\\0"); ;
-                        inst.Append($"* -> \"{strdata}\"");
-                        break;
-
-                    case "reftype"
-                    or "reffunc"
-                    or "refstatic"
-                    or "reffield"
-                    or "reflocal":
-                        bytes.AddRange(code.LookArray(4));
-                        var index = code.ReadU32();
-                        inst.Append($"${index:X}");
-                        break;
-
-                    default:
-                        inst.Append($"[{arg} not handled]");
-                        break;
-                }
-            }
-        }
-
-        
-        buf.Append(string.Join(' ', bytes.Select(e => $"{e:X2}")).PadRight(30));
-        buf.AppendLine("\t:\t" + inst.ToString());
+        // TODO
     }
 
 }
