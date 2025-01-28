@@ -45,9 +45,10 @@ public partial class Evaluator
                 paramTypes.Add(reference);
 
                 if (reference is SolvedTypeReference @solved
-                && solved.structure.GlobalReference == "Std.Types.Type")
+                // Check if it's generic
+                && (solved.structure.GlobalReference == "Std.Types.Type"
+                || solved.structure.GlobalReference == "Std.Types.AnyType"))
                 {
-                    // is of type "type" (bruh)
                     i.AppendGeneric(parameter.Identifier.ToString(), j);
                 }
             }
@@ -79,8 +80,8 @@ public partial class Evaluator
 
                     if (reference is SolvedTypeReference @solved &&
                     // Check if it's generic
-                    (solved.structure.GlobalReference == "Std.Types.Type" ||
-                    solved.structure.GlobalReference == "Std.Types.AnyType"))
+                    (solved.structure.GlobalReference == "Std.Types.Type"
+                    || solved.structure.GlobalReference == "Std.Types.AnyType"))
                     {
                         function.AppendGeneric(parameter.Identifier.ToString(), j);
                     }

@@ -112,15 +112,19 @@ public class ElfProgram {
     {
         var str = new StringBuilder();
 
-        str.AppendLine("(executable_and_linkable_format");
+        str.AppendLine("(elf");
 
-        str.AppendLine($"(dir_count       {_allDirectories.Count})");
-        str.AppendLine($"(has_entry_point {hasentrypoint})");
-        str.AppendLine($"(linkable        {linkable})");
-        str.AppendLine($"(has_dependency  {hasdependence})");
+        str.AppendLine($"  (;directory count: {_allDirectories.Count};)");
+        str.AppendLine($"  (flag \"has_entry_point\" ({hasentrypoint}))");
+        str.AppendLine($"  (flag \"linkable\"        ({linkable}))");
+        str.AppendLine($"  (flag \"has_dependency\"  ({hasdependence}))");
 
-        str.AppendLine(_root.ToString());
-        str.Append(')');
+        str.AppendLine();
+
+        var lines = _root.ToString().Split(Environment.NewLine);
+        foreach (var i in lines) str.AppendLine($"  {i}");
+        if (lines.Length > 0) str.Remove(str.Length-Environment.NewLine.Length, Environment.NewLine.Length);
+        str.AppendLine(")");
 
         return str.ToString();
     }

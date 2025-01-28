@@ -44,7 +44,7 @@ public class Directory {
     {
         var str = new StringBuilder();
 
-        str.Append($"({identifier} ({kind}) ({index:X}) ");
+        str.Append($"({kind} \"{identifier}\" (;{index:X};) ");
 
         if (content == null) str.Append($"({_children.Count} dirs)");
         else str.Append($"({content.Length} bytes)");

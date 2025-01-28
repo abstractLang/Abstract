@@ -1,4 +1,3 @@
-using Abstract.Build.Core.Sources;
 using Abstract.Parser.Core.ProgData;
 
 namespace Abstract.Parser.Core.ProgMembers;
@@ -30,8 +29,6 @@ public abstract class ProgramMember(ProgramMember? parent, MemberIdentifier iden
     public virtual MemberIdentifier GlobalReference
         => parent != null ? parent.GlobalReference + identifier : identifier;
 
-    // FIXME Fix this reference
-    public object? DirectoryBuilder { get; set; } = null!;
 
     #region tree
     public void AppendChild(ProgramMember child)
