@@ -70,16 +70,19 @@ internal static class Compiler
         foreach (var i in elfFuncs)
         {
             var codeLump = i.GetChild("CODE", "main")!;
-            var dataLump = i.GetChild("DATA", "main")!;
+            var dataLump = i.GetChild("DATA", "main");
 
             var memoffset = memoryPtr;
 
             // Append data lump
-            module.Data.Add(new Data {
-                RawData = ((MemoryStream)dataLump.content!).GetBuffer()[.. (int)dataLump.content.Length],
-                InitializerExpression = [ new Int32Constant(memoryPtr), new End() ]
-            });
-            memoryPtr += (uint)dataLump.content.Length;
+            if (dataLump != null)
+            {
+                module.Data.Add(new Data {
+                    RawData = ((MemoryStream)dataLump.content!).GetBuffer()[.. (int)dataLump.content.Length],
+                    InitializerExpression = [ new Int32Constant(memoryPtr), new End() ]
+                });
+                memoryPtr += (uint)dataLump.content.Length;
+            }
 
             // create type
             List<WasmValueType> returns = [];
@@ -187,6 +190,7 @@ internal static class Compiler
         }
 
         instructions.Add(new End());
+
         return (locals, instructions);
     }
 
