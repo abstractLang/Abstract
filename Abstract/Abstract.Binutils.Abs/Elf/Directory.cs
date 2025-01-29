@@ -60,18 +60,19 @@ public class Directory {
             goto Return;
 
             GeneralElse:
-            if (_children.Count > 0) str.AppendLine(" {");
+            if (_children.Count > 0)  str.AppendLine();
             foreach (var i in _children)
             {
                 var lines = i.ToString().Split(Environment.NewLine)[..];
                 foreach (var l in lines) str.AppendLine($"  {l}");
             }
-            if (_children.Count > 0) str.Append('}');
+            if (_children.Count > 0)
+                str.Remove(str.Length-Environment.NewLine.Length, Environment.NewLine.Length);
 
         }
         else
         {
-            if (content.Length > 0) str.AppendLine(" {");
+            if (content.Length > 0) str.AppendLine();
 
             var bufOldPos = content.Position;
             content.Position = 0;
@@ -100,7 +101,8 @@ public class Directory {
             }
             content.Position = bufOldPos;
 
-            if (content.Length > 0) str.Append('}');
+            if (content.Length > 0) 
+                str.Remove(str.Length-Environment.NewLine.Length, Environment.NewLine.Length);
         }
 
         Return:

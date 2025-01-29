@@ -312,8 +312,8 @@ public partial class Evaluator
                 if (func is null)
                     throw new NoOverloadForTypes(node, string.Join(", ", _args.Select(e => e.refferToType?.ToString() ?? "!nil")));
 
-                // TODO detect the use of generic functions around here
-                if (func.IsGeneric) Console.WriteLine($"\tCalling generic {func.GlobalReference}");
+                if (func.IsGeneric)
+                { /* TODO implement some logic to mark an generic use and implementation */ }
 
                 node.FunctionTarget = (AbstractCallable)func;
                 node.DataReference = new DynamicDataRef(GetFunctionReturnType(func, [.. _args]));
