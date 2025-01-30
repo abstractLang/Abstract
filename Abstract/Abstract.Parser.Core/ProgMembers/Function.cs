@@ -23,7 +23,7 @@ public class Function(
     public bool IsGeneric => _generics.Count > 0;
     protected Dictionary<MemberIdentifier, TypeReference> _generics = [];
 
-    protected List<(TypeReference[] key, (ExecutableContext ctx, TypeReference returnType) value)> _implementations = [];
+    public List<(TypeReference[] key, (ExecutableContext ctx, TypeReference returnType) value)> implementations = [];
 
     public void AppendGeneric(MemberIdentifier identifier, int idx)
     {
@@ -32,17 +32,17 @@ public class Function(
     
     public void AppendImplementation(TypeReference[] argumentTypes, ExecutableContext context, TypeReference returns)
     {
-        _implementations.Add((argumentTypes, (context, returns)));
+        implementations.Add((argumentTypes, (context, returns)));
     }
     public (ExecutableContext ctx, TypeReference returnType) GetImplementation(TypeReference[] types)
     {
-        return _implementations.Find(e => Enumerable.SequenceEqual(e.key, types)).value;
+        return implementations.Find(e => Enumerable.SequenceEqual(e.key, types)).value;
     }
     public bool HasImplementation(TypeReference[] types)
     {
-        return _implementations.Any((e => Enumerable.SequenceEqual(e.key, types)));
+        return implementations.Any((e => Enumerable.SequenceEqual(e.key, types)));
     }
-    public bool HasAnyImplementation() => _implementations.Count > 0;
+    public bool HasAnyImplementation() => implementations.Count > 0;
 
     public override ProgramMember? SearchForChild(MemberIdentifier identifier)
     {

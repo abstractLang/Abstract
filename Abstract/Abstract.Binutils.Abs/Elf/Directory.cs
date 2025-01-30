@@ -70,12 +70,12 @@ public class Directory {
             
             if (kind == "CODE")
             {
-                if (content.Length > 0) str.AppendLine();
+                str.AppendLine();
 
                 var datalump = _parent.GetChild("DATA", identifier);
 
                 while (content.Position < content.Length)
-                    DecodeOpcode(content, datalump!.content!, str);
+                    DecodeOpcode(content, datalump?.content!, str);
             }
             else if (kind == "PARAM")
             {
@@ -139,7 +139,8 @@ public class Directory {
         bytes.AddRange(code.LookArray(1));
         
         buf.Append($"(;${code.Position:X4};)");
-        
+
+        code.ReadByte();
         // TODO
     }
 
