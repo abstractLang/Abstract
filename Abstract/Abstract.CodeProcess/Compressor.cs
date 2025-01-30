@@ -81,6 +81,7 @@ public class Compressor(ErrorHandler errHandler)
         var header = new DirectoryBuilder("NMSP", member.identifier);
         _memberDirectoryMap.Add(member, header);
 
+        AppendGlobal(member, header);
         ScanAllChildren(member, header);
 
         parent.AppendChild(header);
@@ -89,6 +90,8 @@ public class Compressor(ErrorHandler errHandler)
     {
         var header = new DirectoryBuilder("FIELD", member.identifier);
         _memberDirectoryMap.Add(member, header);
+
+        AppendGlobal(member, header);
 
         parent.AppendChild(header);
     }
@@ -115,14 +118,17 @@ public class Compressor(ErrorHandler errHandler)
             overloadIdx >= 0 ? $"#{overloadIdx:X}" : member.identifier);
         _memberDirectoryMap.Add(member, header);
 
+        AppendGlobal(member, header);
+
         parent.AppendChild(header);
     }
     private void ScanStructure(Structure member, DirBuilder parent)
     {
         var header = new DirectoryBuilder("TYPE", member.identifier);
-
-        ScanAllChildren(member, header);
         _memberDirectoryMap.Add(member, header);
+
+        AppendGlobal(member, header);
+        ScanAllChildren(member, header);
 
         parent.AppendChild(header);
     }
@@ -130,6 +136,8 @@ public class Compressor(ErrorHandler errHandler)
     {
         var header = new DirectoryBuilder("ENUM", member.identifier);
         _memberDirectoryMap.Add(member, header);
+
+        AppendGlobal(member, header);
 
         parent.AppendChild(header);
     }
@@ -149,24 +157,21 @@ public class Compressor(ErrorHandler errHandler)
         }
     }
 
-    // These two are really basic lol
+    // Nothing to do here (i think) lol
     private void CompressNamespace(Namespace member, DirBuilder dir)
     {
-        AppendGlobal(member, dir);
     }
     private void CompressFunctionGroup(FunctionGroup member, DirBuilder dir)
     {
-        AppendGlobal(member, dir);
     }
 
     // Complex things after here
     private void CompressField(Field member, DirBuilder dir)
     {
-        AppendGlobal(member, dir);
+        
     }
     private void CompressFunction(Function member, DirBuilder dir)
     {
-        AppendGlobal(member, dir);
         var paramsLump = new DirectoryBuilder("META", "parameters");
 
         foreach (var i in member.baseParameters)
@@ -192,7 +197,6 @@ public class Compressor(ErrorHandler errHandler)
     }
     private void CompressStructure(Structure member, DirBuilder dir)
     {
-        AppendGlobal(member, dir);
         var headerLump = new LumpBuilder("META", "structheader");
 
         headerLump.Content.WriteU32((uint)Math.Max(member.bitsize, member.aligin));
@@ -201,15 +205,15 @@ public class Compressor(ErrorHandler errHandler)
     }
     private void CompressEnum(Enumerator member, DirBuilder dir)
     {
-        AppendGlobal(member, dir);
+
     }
+    #endregion
 
     private void AppendGlobal(ProgramMember member, DirBuilder dir)
     {
         var global = new DirectoryBuilder("GLOBAL", member.GlobalReference);
         dir.AppendChild(global);
     }
-    #endregion
 
     private enum ParameterTypes: byte
     {
