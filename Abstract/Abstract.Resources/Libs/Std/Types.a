@@ -35,7 +35,7 @@ namespace Types {
 
     }
 
-    @defineGlobal("i8") @public @final struct SignedInteger8 extends Integer {
+    @aligin(8) @defineGlobal("i8") @public @final struct SignedInteger8 extends Integer {
 
         @public @static const i8 minValue
         @public @static const i8 maxValue
@@ -103,7 +103,7 @@ namespace Types {
         @overrideOperator("-") @externInterface @public @static func i8 negate(i8 a)
 
     }
-    @defineGlobal("i16") @public @final struct SignedInteger16 extends Integer {
+    @aligin(16) @defineGlobal("i16") @public @final struct SignedInteger16 extends Integer {
 
         @public @static const i16 minValue
         @public @static const i16 maxValue
@@ -169,7 +169,7 @@ namespace Types {
 
         @overrideOperator("-") @externInterface @public @static func i16 negate(i16 a)
     }
-    @defineGlobal("i32") @public @final struct SignedInteger32 extends Integer {
+    @aligin(32) @defineGlobal("i32") @public @final struct SignedInteger32 extends Integer {
 
         @public @static const i32 minValue
         @public @static const i32 maxValue
@@ -235,7 +235,7 @@ namespace Types {
         @overrideOperator("-") @externInterface @public @static func i32 negate(i32 a)
 
     }
-    @defineGlobal("i64") @public @final struct SignedInteger64 extends Integer {
+    @aligin(64) @defineGlobal("i64") @public @final struct SignedInteger64 extends Integer {
 
         @public @static const i64 minValue
         @public @static const i64 maxValue
@@ -299,7 +299,7 @@ namespace Types {
         
         @overrideOperator("-") @externInterface @public @static func i64 negate(i64 a)
     }
-    @defineGlobal("i128") @public @final struct SignedInteger128 extends Integer {
+    @aligin(128) @defineGlobal("i128") @public @final struct SignedInteger128 extends Integer {
 
         @public @static const i128 minValue
         @public @static const i128 maxValue
@@ -362,7 +362,7 @@ namespace Types {
         @overrideOperator("-") @externInterface @public @static func i128 negate(i128 a)
     }
     
-    @defineGlobal(["u8", "byte"]) @public @final struct UnsignedInteger8 extends Integer {
+    @aligin(8) @defineGlobal(["u8", "byte"]) @public @final struct UnsignedInteger8 extends Integer {
 
         @public @static const u8 minValue
         @public @static const u8 maxValue
@@ -432,7 +432,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u8 a, u128 b)
 
     }
-    @defineGlobal("u16") @public @final struct UnsignedInteger16 extends Integer {
+    @aligin(16) @defineGlobal("u16") @public @final struct UnsignedInteger16 extends Integer {
 
         @public @static const u16 minValue
         @public @static const u16 maxValue
@@ -499,7 +499,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u16 a, u64 b)
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u16 a, u128 b)
     }
-    @defineGlobal("u32") @public @final struct UnsignedInteger32 extends Integer {
+    @aligin(32) @defineGlobal("u32") @public @final struct UnsignedInteger32 extends Integer {
 
         @public @static const u32 minValue
         @public @static const u32 maxValue
@@ -565,7 +565,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u32 a, u128 b)
 
     }
-    @defineGlobal("u64") @public @final struct UnsignedInteger64 extends Integer {
+    @aligin(64) @defineGlobal("u64") @public @final struct UnsignedInteger64 extends Integer {
 
         @public @static const u64 minValue
         @public @static const u64 maxValue
@@ -629,7 +629,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u64 a, u128 b)
 
     }
-    @defineGlobal("u128") @public @final struct UnsignedInteger128 extends Integer {
+    @aligin(128) @defineGlobal("u128") @public @final struct UnsignedInteger128 extends Integer {
 
         @public @static const u128 minValue
         @public @static const u128 maxValue
@@ -691,10 +691,10 @@ namespace Types {
 
     }
 
-    @defineGlobal(["f32", "float"]) @public @final struct Single {}
-    @defineGlobal(["f64", "double"]) @public @final struct Double {}
+    @aligin(32) @defineGlobal(["f32", "float"]) @public @final struct Single {}
+    @aligin(64) @defineGlobal(["f64", "double"]) @public @final struct Double {}
 
-    @defineGlobal("bool") @public @valueOnly @final struct Boolean {}
+    @aligin(1) @defineGlobal("bool") @public @valueOnly @final struct Boolean {}
 
     @defineGlobal("string") @public @valueOnly @final struct String {
 
@@ -720,7 +720,7 @@ namespace Types {
         
     }
 
-    @defineGlobal("char") @public @valueOnly @final struct Character {}
+    @aligin(32) @defineGlobal("char") @public @valueOnly @final struct Character {}
 
     @defineGlobal("void") @public @abstract @final struct Void {}
     @defineGlobal("noreturn") @public @abstract @final struct NoReturn {}

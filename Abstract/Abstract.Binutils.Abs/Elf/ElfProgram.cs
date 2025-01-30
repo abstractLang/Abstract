@@ -45,7 +45,7 @@ public class ElfProgram {
         ElfProgram elfProgram = new();
 
         elfProgram._programName = builder.Root.identifier;
-        elfProgram._root = new(null!, 0, builder.Root.kind, builder.Root.identifier);
+        elfProgram._root = new(elfProgram, null!, 0, builder.Root.kind, builder.Root.identifier);
         elfProgram._allDirectories.Add((elfProgram._root));
 
         elfProgram.hasentrypoint = builder.hasentrypoint;
@@ -71,11 +71,11 @@ public class ElfProgram {
                 lump.Content.Position = 0;
                 lump.Content.CopyTo(data);
 
-                dir = new(curr, (uint)elfProgram._allDirectories.Count, next.kind, next.identifier, data);
+                dir = new(elfProgram, curr, (uint)elfProgram._allDirectories.Count, next.kind, next.identifier, data);
                 _lumpsToBake.Enqueue((lump, data));
             }
             else
-                dir = new(curr, (uint)elfProgram._allDirectories.Count, next.kind, next.identifier, null);
+                dir = new(elfProgram, curr, (uint)elfProgram._allDirectories.Count, next.kind, next.identifier, null);
             elfProgram._allDirectories.Add(dir);
 
             foreach (var r in next._externReferences)

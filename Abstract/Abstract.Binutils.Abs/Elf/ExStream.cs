@@ -33,7 +33,7 @@ public static class ExStream {
     public static ulong ReadU64(this Stream stream) => BinaryPrimitives.ReadUInt64BigEndian(stream.ReadArray(8));
     public static UInt128 ReadU128(this Stream stream) => BinaryPrimitives.ReadUInt128BigEndian(stream.ReadArray(8));
 
-    public static uint ReadDirectoryPtr(this Stream stream) => BinaryPrimitives.ReadUInt32LittleEndian(stream.ReadArray(8));
+    public static uint ReadDirectoryPtr(this Stream stream) => BinaryPrimitives.ReadUInt32LittleEndian(stream.ReadArray(4));
 
 
     public static string ReadStringUTF8(this Stream stream) {

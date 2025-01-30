@@ -18,6 +18,9 @@ public class Structure(StructureDeclarationNode node, ProgramMember? parent, Mem
 
     public Structure extends = null!;
 
+    public int bitsize = 0;
+    public int aligin = -1; // -1 means not specified
+
     public void AppendGeneric(MemberIdentifier identifier, int idx)
     {
         _generics.Add(identifier, new GenericTypeReference(this, idx));

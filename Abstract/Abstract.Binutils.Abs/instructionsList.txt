@@ -1,61 +1,61 @@
 00 Nop
 01 Illegal
-02 LdConst      i8          <immi8>
-03 LdConst      i16         <immi16>
-04 LdConst      i32         <immi32>
-05 LdConst      i64         <immi64>
-06 LdConst      i128        <immi128>
-07 LdConst      iptr        <immiptr>
-08 LdConst      i<immu8>    <immi$(arg0)>
-09 LdConst      struct      <immref>        <immbuffer>
-0A LdField      <immref>
-0B LdLocal      <immu8>
-0C LdLocal      <immu16>
-0D LdType       <immref>
-0E SetField     <immref>
-0F SetLocal     <immu8>
-10 SetLocal     <immu16>
-11 GetType
-12 New
-13 Destroy
-14 Pop
-15 Dup
-16 Call         void        <immref>
-17 Call         i8          <immref>
-18 Call         i16         <immref>
-19 Call         i32         <immref>
-1A Call         i64         <immref>
-1B Call         i128        <immref>
-1C Call         iptr        <immref>
-1D Call         i<immu8>    <immref>
-1E Call         struct      <immref>
-1F Conv         <immu8>     <immu8>
-20 Add
-21 Sub
-22 Mul
-23 Mul.u
-24 Div
-25 Div.u
-26 Rem
-27 Rem.u
-28 Abs
-29 Or
-2A And
-2B Not
-2C Xor
-2D Nand
-2E Shiftl
-2F Shiftl.u
-30 Shiftr
-31 Shiftr.u
-32 Cmp
-33 Jmp          <immu32>
-34 Jmp.Zero     <immu32>
-35 Jmp.NotZero  <immu32>
-36 Jmp.Great    <immu32>
-37 Jmp.GreatEq  <immu32>
-38 Jmp.Less     <immu32>
-39 Jmp.LessEq   <immu32>
+02 LdConst      nullptr
+03 LdConst      i1          <immi8>
+04 LdConst      i8          <immi8>
+05 LdConst      i16         <immi16>
+06 LdConst      i32         <immi32>
+07 LdConst      i64         <immi64>
+08 LdConst      i128        <immi128>
+09 LdConst      iptr        <immiptr>
+0A LdConst      i<immu8>    <immi$(arg0)>
+0B LdConst      struct      <immref>        <immbuffer>
+0C LdField      <immref>
+0D LdLocal      <immu8>
+0E LdLocal      <immu16>
+0F LdType       <immref>
+10 SetField     <immref>
+11 SetLocal     <immu8>
+12 SetLocal     <immu16>
+13 GetType
+14 New
+15 Destroy
+16 Pop
+17 Dup
+18 Call         void        <immref>
+19 Call         i1          <immref>
+1A Call         i8          <immref>
+1B Call         i16         <immref>
+1C Call         i32         <immref>
+1D Call         i64         <immref>
+1E Call         i128        <immref>
+1F Call         iptr        <immref>
+20 Call         i<immu8>    <immref>
+21 Call         struct      <immref>
+22 Conv         <immu8>     <immu8>
+23 Add
+24 Sub
+25 Mul
+26 Mul.u
+27 Div
+28 Div.u
+29 Rem
+2A Rem.u
+2B Abs
+2C Or
+2D And
+2E Not
+2F Xor
+30 Nand
+31 Shiftl
+32 Shiftl.u
+33 Shiftr
+34 Shiftr.u
+35 Cmp     <immu8>
+36 Jmp     <immu8> <immu32>
+37 If      <immu8> <immu32>
+38 Else
+39 EndIf
 3A EnterFrame   <immu16>
 3B LeaveFrame
 3C Throw

@@ -184,6 +184,8 @@ public class Compressor(ErrorHandler errHandler)
                 param.DirectoryReference(_memberDirectoryMap[generic.from]);
                 param.Content.WriteU16((ushort)generic.parameterIndex);
             }
+            
+            paramsLump.AppendChild(param);
         }
 
         dir.AppendChild(paramsLump);
@@ -191,6 +193,11 @@ public class Compressor(ErrorHandler errHandler)
     private void CompressStructure(Structure member, DirBuilder dir)
     {
         AppendGlobal(member, dir);
+        var headerLump = new LumpBuilder("META", "structheader");
+
+        headerLump.Content.WriteU32((uint)Math.Max(member.bitsize, member.aligin));
+
+        dir.AppendChild(headerLump);
     }
     private void CompressEnum(Enumerator member, DirBuilder dir)
     {
