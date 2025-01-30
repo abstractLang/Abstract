@@ -1,6 +1,8 @@
+using Abstract.Binutils.Abs.Bytecode;
 using Abstract.Binutils.Abs.Elf;
 using Abstract.Build;
 using Abstract.CompileTarget.Core.Enums;
+using Abstract.Parser.Core.ProgData;
 using Abstract.Parser.Core.ProgMembers;
 using static Abstract.Binutils.Abs.Elf.ElfBuilder;
 
@@ -165,6 +167,26 @@ public class Compressor(ErrorHandler errHandler)
     private void CompressFunction(Function member, DirBuilder dir)
     {
         AppendGlobal(member, dir);
+        var paramsLump = new DirectoryBuilder("META", "parameters");
+
+        foreach (var i in member.baseParameters)
+        {
+            var param = new LumpBuilder("PARAM", i.name);
+
+            if (i.type is SolvedTypeReference @solved)
+            {
+                param.Content.WriteByte((byte)ParameterTypes.solved);
+                param.DirectoryReference(_memberDirectoryMap[solved.structure]);
+            }
+            else if (i.type is GenericTypeReference @generic)
+            {
+                param.Content.WriteByte((byte)ParameterTypes.generic);
+                param.DirectoryReference(_memberDirectoryMap[generic.from]);
+                param.Content.WriteU16((ushort)generic.parameterIndex);
+            }
+        }
+
+        dir.AppendChild(paramsLump);
     }
     private void CompressStructure(Structure member, DirBuilder dir)
     {
@@ -181,4 +203,10 @@ public class Compressor(ErrorHandler errHandler)
         dir.AppendChild(global);
     }
     #endregion
+
+    private enum ParameterTypes: byte
+    {
+        solved = 0,
+        generic = 1
+    }
 }
