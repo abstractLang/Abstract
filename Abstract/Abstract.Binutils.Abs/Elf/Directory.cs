@@ -74,7 +74,10 @@ public class Directory {
                 var datalump = _parent.GetChild("DATA", identifier);
 
                 while (content.Position < content.Length)
+                {
+                    str.Append("  ");
                     DecodeOpcode(content, datalump?.content!, str);
+                }
             }
             else if (kind == "PARAM")
             {
@@ -157,43 +160,23 @@ public class Directory {
                 break;
             case 0x0B /* LdConst struct */ :
                 var dptr = code.ReadDirectoryPtr();
-                var dir = _parent.Children[dptr];
-                var dirglobal = dir.GetChild("GLOBAL");
 
-                inst.Append($"LdConst struct " + (dirglobal != null ? $"${dirglobal.identifier}" : $"${dptr:X}"));
+                inst.Append($"LdConst struct {GetDirName(dptr)}");
 
                 // FIXME shit that i do not want to do now
                 // discover the aligin of `dir` and read
                 // this number in bytes
                 break;
 
-            case 0x0C /* LdField */ :
-                dptr = code.ReadDirectoryPtr();
-                dir = _parent.Children[dptr];
-                dirglobal = dir.GetChild("GLOBAL");
+            case 0x0C /* LdField */ :          inst.Append($"LdField     {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x0D /* LdLocal  immu8 */ :   inst.Append($"LdLocal     {code.ReadI8()}"); break;
+            case 0x0E /* LdLocal  immu16 */ :  inst.Append($"LdLocal     {code.ReadI16()}"); break;
 
-                inst.Append($"LdField " + (dirglobal != null ? $"${dirglobal.identifier}" : $"${dptr:X}"));
-                break;
-            case 0x0D /* LdLocal  immu8 */ :   inst.Append($"LdLocal {code.ReadI8()}"); break;
-            case 0x0E /* LdLocal  immu16 */ :  inst.Append($"LdLocal {code.ReadI16()}"); break;
+            case 0x0F /* LdType */ :           inst.Append($"LdType      {GetDirName(code.ReadDirectoryPtr())}"); break;
 
-            case 0x0F /* LdType */ :
-                dptr = code.ReadDirectoryPtr();
-                dir = _parent.Children[dptr];
-                dirglobal = dir.GetChild("GLOBAL");
-
-                inst.Append($"LdType  " + (dirglobal != null ? $"${dirglobal.identifier}" : $"${dptr:X}"));
-                break;
-
-            case 0x10 /* SetField */ :
-                dptr = code.ReadDirectoryPtr();
-                dir = _parent.Children[dptr];
-                dirglobal = dir.GetChild("GLOBAL");
-
-                inst.Append($"SetField " + (dirglobal != null ? $"${dirglobal.identifier}" : $"${dptr:X}"));
-                break;
-            case 0x11 /* SetLocal immu8 */ :  inst.Append($"SetLocal {code.ReadI8()}"); break;
-            case 0x12 /* SetLocal immu16 */ : inst.Append($"SetLocal {code.ReadI16()}"); break;
+            case 0x10 /* SetField */ :        inst.Append($"SetField     {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x11 /* SetLocal immu8 */ :  inst.Append($"SetLocal     {code.ReadI8()}"); break;
+            case 0x12 /* SetLocal immu16 */ : inst.Append($"SetLocal     {code.ReadI16()}"); break;
 
             case 0x13 /* GetType */ :         inst.Append($"GetType"); break;
 
@@ -205,18 +188,18 @@ public class Directory {
 
             // aaaaaaaaa someone help me this is a fucking hell
 
-            case 0x18: inst.Append($"Call void   ${code.ReadDirectoryPtr()}"); break;
-            case 0x19: inst.Append($"Call i1     ${code.ReadDirectoryPtr()}"); break;
-            case 0x1A: inst.Append($"Call i8     ${code.ReadDirectoryPtr()}"); break;
-            case 0x1B: inst.Append($"Call i16    ${code.ReadDirectoryPtr()}"); break;
-            case 0x1C: inst.Append($"Call i32    ${code.ReadDirectoryPtr()}"); break;
-            case 0x1D: inst.Append($"Call i64    ${code.ReadDirectoryPtr()}"); break;
-            case 0x1E: inst.Append($"Call i128   ${code.ReadDirectoryPtr()}"); break;
-            case 0x1F: inst.Append($"Call iptr   ${code.ReadDirectoryPtr()}"); break;
+            case 0x18: inst.Append($"Call void   {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x19: inst.Append($"Call i1     {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1A: inst.Append($"Call i8     {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1B: inst.Append($"Call i16    {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1C: inst.Append($"Call i32    {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1D: inst.Append($"Call i64    {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1E: inst.Append($"Call i128   {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1F: inst.Append($"Call iptr   {GetDirName(code.ReadDirectoryPtr())}"); break;
             case 0x20:
                 c = code.ReadByte();
-                inst.Append($"Call i{c:,6}  ${code.ReadDirectoryPtr()}"); break;
-            case 0x21: inst.Append($"Call struct ${code.ReadDirectoryPtr()}"); break;
+                inst.Append($"Call i{c:,6}  ${GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x21: inst.Append($"Call struct ${GetDirName(code.ReadDirectoryPtr())}"); break;
 
             case 0x22: inst.Append($"Conv i{code.ReadByte()} i{code.ReadByte()}"); break;
 
@@ -248,6 +231,14 @@ public class Directory {
         //code.Position = endpos;
 
         buf.AppendLine($"{inst.ToString()}");
+    }
+    private string GetDirName(uint ptr)
+    {
+        var dir = _program.AllDirectories[ptr];
+        var dirglobal = dir.GetChild("GLOBAL");
+
+        if (dirglobal == null) return $"${ptr:X}";
+        else return $"${dirglobal.identifier}";
     }
 
 }

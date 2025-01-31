@@ -51,7 +51,7 @@ public class Compressor(ErrorHandler errHandler)
 
     public ElfProgram[] LinkProgram(ElfProgram[] elfs, ExpectedELFFormat expectedElfFormat)
     {
-        if (expectedElfFormat == ExpectedELFFormat.onePerProject) return elfs;
+        //if (expectedElfFormat == ExpectedELFFormat.single) return elfs;
 
         
 

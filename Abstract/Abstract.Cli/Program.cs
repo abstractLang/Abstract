@@ -14,7 +14,7 @@ public class Program
         return ProcessCommand([
             "compile", "MyProgram",
 
-            "-t", "wasm-text",
+            "-t", "elf",
 
             "-p", "Std",
                 "Libs/Std/Compilation.a",
@@ -26,7 +26,6 @@ public class Program
                 "Libs/Std/System.a",
                 "Libs/Std/Types.a",
 
-            "-p", "MyProgram",
                 "../../../../test-code/main.a",
 
             "-o", "../../../../test-code/bin/",

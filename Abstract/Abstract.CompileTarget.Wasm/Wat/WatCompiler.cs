@@ -8,7 +8,7 @@ namespace Abstract.CompileTarget.Wasm.Wat;
 
 public class WatCompiler : CompilerBase
 {
-    public override ExpectedELFFormat ExpectedELFFormat => ExpectedELFFormat.OnePerProgram;
+    public override ExpectedELFFormat ExpectedELFFormat => ExpectedELFFormat.single;
     
     public override void Compile(string outPath, ElfProgram[] source)
     {

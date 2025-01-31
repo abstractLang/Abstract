@@ -7,7 +7,7 @@ namespace Abstract.CompileTarget.Wasm.Wasm;
 
 public class WasmCompiler : CompilerBase
 {
-    public override ExpectedELFFormat ExpectedELFFormat => ExpectedELFFormat.OnePerProgram;
+    public override ExpectedELFFormat ExpectedELFFormat => ExpectedELFFormat.single;
 
     public override void Compile(string outPath, ElfProgram[] source)
     {
