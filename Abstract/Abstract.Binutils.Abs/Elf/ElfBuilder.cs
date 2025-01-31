@@ -156,7 +156,7 @@ public class ElfBuilder(string pname) : IDisposable {
 
             str.AppendLine($"\t{new string('_', 20)}");
             while (Content.Position < Content.Length)
-                DecodeOpcode(Content, DataLump.Content, str);
+                DecodeOpcode(Content, DataLump?.Content!, str);
             str.AppendLine($"\t{new string('_', 20)}");
 
             Content.Position = oldpos;
@@ -173,7 +173,8 @@ public class ElfBuilder(string pname) : IDisposable {
             bytes.AddRange(code.LookArray(1));
             
             buf.Append($"\t${code.Position:X6}:\t");
-            
+
+            code.ReadByte();
             // TODO
         }
     }

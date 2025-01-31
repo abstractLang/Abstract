@@ -211,6 +211,7 @@ public class Compressor(ErrorHandler errHandler)
             dir.AppendChild(code);
             if (data.Content.Length > 0) dir.AppendChild(data);
         }
+
     }
     private void CompressStructure(Structure member, DirBuilder dir)
     {
