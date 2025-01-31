@@ -1,5 +1,4 @@
 using System.Text;
-using Abstract.Binutils.Abs.Bytecode;
 
 namespace Abstract.Binutils.Abs.Elf;
 
@@ -135,8 +134,7 @@ public class Directory {
     {
         var inst = new StringBuilder();
 
-        var startpos = code.Position;
-        buf.Append($"(;${code.Position:X4}");
+        //var startpos = code.Position;
 
         switch (code.ReadByte())
         {
@@ -241,14 +239,15 @@ public class Directory {
 
             default: inst.Append("Invalid"); break; 
         }
-        var endpos = code.Position;
-        var ilength = endpos - startpos;
+        
+        //var endpos = code.Position;
+        //var ilength = endpos - startpos;
 
-        code.Position = startpos;
-        buf.Append($" {string.Join(" ", code.ReadArray(ilength).Select(e => $"{e:X2}"))};)");
-        code.Position = endpos;
+        //code.Position = startpos;
+        //buf.AppendLine($"(;${code.Position:X4} {string.Join(" ", code.ReadArray(ilength).Select(e => $"{e:X2}"))};)");
+        //code.Position = endpos;
 
-        buf.AppendLine($" {inst.ToString()}");
+        buf.AppendLine($"{inst.ToString()}");
     }
 
 }

@@ -90,12 +90,12 @@ public static class Instructions
         immref._externReferences.Add((l, l.Content.Position));
         l.Content.Write([0, 0, 0, 0]); // ptr offset
     }
-    public static void LdLocal(this Lump l, byte immu8) {
-        l.Content.Write([0x0D, immu8]);
+    public static void LdLocal(this Lump l, sbyte immu8) {
+        l.Content.Write([0x0D, (byte)immu8]);
     }
-    public static void LdLocal(this Lump l, ushort immu16) {
+    public static void LdLocal(this Lump l, short immu16) {
         var buf = new byte[2];
-        BinaryPrimitives.WriteUInt16BigEndian(buf, immu16);
+        BinaryPrimitives.WriteInt16BigEndian(buf, immu16);
         l.Content.Write([0x0E, ..buf]);
     }
 

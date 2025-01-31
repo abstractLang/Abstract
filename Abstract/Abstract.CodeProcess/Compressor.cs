@@ -6,6 +6,7 @@ using Abstract.Parser.Core.Language.SyntaxNodes.Control;
 using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
 using Abstract.Parser.Core.Language.SyntaxNodes.Statement;
 using Abstract.Parser.Core.ProgData;
+using Abstract.Parser.Core.ProgData.DataReference;
 using Abstract.Parser.Core.ProgData.FunctionExecution;
 using Abstract.Parser.Core.ProgMembers;
 using static Abstract.Binutils.Abs.Elf.ElfBuilder;
@@ -286,6 +287,20 @@ public class Compressor(ErrorHandler errHandler)
             if (binexp.ConvertRight != null) ParseCall(binexp.ConvertRight, binexp.ConvertRight.baseReturnType, code, data);
         }
 
+        else if (node is IdentifierCollectionNode @identifier)
+        {
+            var dataref = identifier.DataReference;
+
+            if (dataref is LocalDataRef @local)
+            {
+                if (local.GetIndex > sbyte.MaxValue || local.GetIndex < sbyte.MinValue)
+                    code.LdLocal((short)local.GetIndex);
+                else code.LdLocal((sbyte)local.GetIndex);
+            }
+
+            else Console.WriteLine($"unhandled dataref {dataref} ({dataref.GetType().Name})");
+        }
+
         else Console.WriteLine($"Unhandled expression {node} ({node.GetType().Name})");
     }
     private void ParseStatement(StatementNode node, CodeBuilder code, LumpBuilder data)
@@ -296,6 +311,7 @@ public class Compressor(ErrorHandler errHandler)
         }
         else Console.WriteLine($"Unhandled statement {node} ({node.GetType().Name})");
     }
+
 
     private void ParseCall(Function target, TypeReference returntype, CodeBuilder code, LumpBuilder data)
     {
