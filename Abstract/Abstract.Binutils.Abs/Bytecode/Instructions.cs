@@ -137,37 +137,37 @@ public static class Instructions
         l.Content.Write([0, 0, 0, 0]); // ptr offset
     }
     public static void Call_i8(this Lump l, ElfBuilder.DirBuilder immref) {
-        l.Content.WriteByte(0x20);
+        l.Content.WriteByte(0x1A);
         immref._externReferences.Add((l, l.Content.Position));
         l.Content.Write([0, 0, 0, 0]); // ptr offset
     }
     public static void Call_i16(this Lump l, ElfBuilder.DirBuilder immref) {
-        l.Content.WriteByte(0x2A);
+        l.Content.WriteByte(0x1B);
         immref._externReferences.Add((l, l.Content.Position));
         l.Content.Write([0, 0, 0, 0]); // ptr offset
     }
     public static void Call_i32(this Lump l, ElfBuilder.DirBuilder immref) {
-        l.Content.WriteByte(0x2B);
+        l.Content.WriteByte(0x1C);
         immref._externReferences.Add((l, l.Content.Position));
         l.Content.Write([0, 0, 0, 0]); // ptr offset
     }
     public static void Call_i64(this Lump l, ElfBuilder.DirBuilder immref) {
-        l.Content.WriteByte(0x2C);
+        l.Content.WriteByte(0x1D);
         immref._externReferences.Add((l, l.Content.Position));
         l.Content.Write([0, 0, 0, 0]); // ptr offset
     }
     public static void Call_i128(this Lump l, ElfBuilder.DirBuilder immref) {
-        l.Content.WriteByte(0x2D);
+        l.Content.WriteByte(0x1E);
         immref._externReferences.Add((l, l.Content.Position));
         l.Content.Write([0, 0, 0, 0]); // ptr offset
     }
     public static void Call_iptr(this Lump l, ElfBuilder.DirBuilder immref) {
-        l.Content.WriteByte(0x2E);
+        l.Content.WriteByte(0x1F);
         immref._externReferences.Add((l, l.Content.Position));
         l.Content.Write([0, 0, 0, 0]); // ptr offset
     }
     public static void Call_i_immu8(this Lump l, byte i_immu8, ElfBuilder.DirBuilder immref) {
-        l.Content.Write([0x2F, i_immu8]);
+        l.Content.Write([0x20, i_immu8]);
         immref._externReferences.Add((l, l.Content.Position));
         l.Content.Write([0, 0, 0, 0]); // ptr offset
     }

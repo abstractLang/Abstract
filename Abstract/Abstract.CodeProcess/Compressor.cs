@@ -22,18 +22,27 @@ public class Compressor(ErrorHandler errHandler)
 
     public ElfProgram[] DoCompression(ProgramRoot program, ExpectedELFFormat expectedElfFormat)
     {
+        Queue<ElfBuilder> elfbuilders = [];
         List<ElfProgram> elfs = [];
         _memberDirectoryMap = [];
 
         // Each project should result in one ELF object
         foreach (var i in program.projects)
         {
-            using var projectElf = CompressProject(i.Key, i.Value, program);
-            var bakedElf = ElfProgram.BakeBuilder(projectElf);
-            elfs.Add(bakedElf);
+            elfbuilders.Enqueue(CompressProject(i.Key, i.Value, program));
         }
 
         CompressAllMembers();
+
+        while (elfbuilders.Count > 0)
+        {
+            var c = elfbuilders.Dequeue();
+
+            var bakedElf = ElfProgram.BakeBuilder(c);
+            c.Dispose();
+
+            elfs.Add(bakedElf);
+        }
 
         _memberDirectoryMap = null!;
         return LinkProgram([.. elfs], expectedElfFormat);
@@ -264,25 +273,35 @@ public class Compressor(ErrorHandler errHandler)
 
     private void LoadExpression(ExpressionNode node, CodeBuilder code, LumpBuilder data)
     {
-        if (node is FunctionCallExpressionNode @call) ParseCall(call, code, data);
+        if (node is FunctionCallExpressionNode @call)
+        {
+            foreach (var i in call.Arguments) LoadExpression(i, code, data);
+            ParseCall(((AbstractCallable)call.FunctionTarget).target, call.DataReference.refferToType, code, data);
+        }
 
-        else Console.WriteLine($"Unhandled expression {node}");
+        else if (node is BinaryExpressionNode @binexp)
+        {
+            LoadExpression(binexp.Left, code, data);
+            if (binexp.ConvertLeft != null) ParseCall(binexp.ConvertLeft, binexp.ConvertLeft.baseReturnType, code, data);
+            if (binexp.ConvertRight != null) ParseCall(binexp.ConvertRight, binexp.ConvertRight.baseReturnType, code, data);
+        }
+
+        else Console.WriteLine($"Unhandled expression {node} ({node.GetType().Name})");
     }
     private void ParseStatement(StatementNode node, CodeBuilder code, LumpBuilder data)
     {
-        Console.WriteLine($"Unhandled statement {node}");
+        if (node is ReturnStatementNode @ret)
+        {
+            if (ret.HasExpression) LoadExpression(ret.Expression!, code, data);
+        }
+        else Console.WriteLine($"Unhandled statement {node} ({node.GetType().Name})");
     }
 
-    private void ParseCall(FunctionCallExpressionNode node, CodeBuilder code, LumpBuilder data)
+    private void ParseCall(Function target, TypeReference returntype, CodeBuilder code, LumpBuilder data)
     {
         // FIXME handle better all these exceptions
 
-        var target = ((AbstractCallable)node.FunctionTarget).target;
-        var returntype = node.DataReference.refferToType;
         Structure returnstruct = null!;
-
-        foreach (var i in node.Arguments)
-            LoadExpression(i, code, data);
 
         if (returntype is SolvedTypeReference @solved)
             returnstruct = solved.structure;

@@ -65,6 +65,7 @@ public class ElfProgram {
             var next = toBake.Dequeue();
             
             Directory dir;
+
             if (next is LumpBuilder @lump)
             {
                 var data = new MemoryStream();
