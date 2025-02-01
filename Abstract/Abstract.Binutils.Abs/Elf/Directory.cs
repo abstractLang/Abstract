@@ -112,11 +112,11 @@ public class Directory {
                 {
                     var buf = content.ReadArray((int)Math.Min(16, content.Length - i));
 
-                    str.Append($"(;${i:X8};)");
+                    str.Append($"  (;${i:X8};) ");
                     str.Append(string.Join(' ', buf.Select(e => $"{e:X2}")).PadRight(47));
                     str.Append("    ");
-                    str.Append("(;" + string.Join("", buf.Select(e
-                    => !char.IsControl((char)e) ? (char)e : ' ')) + ";)");
+                    str.Append("(;| " + string.Join("", buf.Select(e
+                    => !char.IsControl((char)e) ? (char)e : ' ')) + " |;)");
 
                     str.AppendLine();
                 }
@@ -168,11 +168,11 @@ public class Directory {
                 // this number in bytes
                 break;
 
-            case 0x0C /* LdField */ :          inst.Append($"LdField     {GetDirName(code.ReadDirectoryPtr())}"); break;
-            case 0x0D /* LdLocal  immu8 */ :   inst.Append($"LdLocal     {code.ReadI8()}"); break;
-            case 0x0E /* LdLocal  immu16 */ :  inst.Append($"LdLocal     {code.ReadI16()}"); break;
+            case 0x0C /* LdField */ :         inst.Append($"LdField      {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x0D /* LdLocal  immu8 */ :  inst.Append($"LdLocal      {code.ReadI8()}"); break;
+            case 0x0E /* LdLocal  immu16 */ : inst.Append($"LdLocal      {code.ReadI16()}"); break;
 
-            case 0x0F /* LdType */ :           inst.Append($"LdType      {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x0F /* LdType */ :          inst.Append($"LdType       {GetDirName(code.ReadDirectoryPtr())}"); break;
 
             case 0x10 /* SetField */ :        inst.Append($"SetField     {GetDirName(code.ReadDirectoryPtr())}"); break;
             case 0x11 /* SetLocal immu8 */ :  inst.Append($"SetLocal     {code.ReadI8()}"); break;
@@ -188,14 +188,14 @@ public class Directory {
 
             // aaaaaaaaa someone help me this is a fucking hell
 
-            case 0x18: inst.Append($"Call void   {GetDirName(code.ReadDirectoryPtr())}"); break;
-            case 0x19: inst.Append($"Call i1     {GetDirName(code.ReadDirectoryPtr())}"); break;
-            case 0x1A: inst.Append($"Call i8     {GetDirName(code.ReadDirectoryPtr())}"); break;
-            case 0x1B: inst.Append($"Call i16    {GetDirName(code.ReadDirectoryPtr())}"); break;
-            case 0x1C: inst.Append($"Call i32    {GetDirName(code.ReadDirectoryPtr())}"); break;
-            case 0x1D: inst.Append($"Call i64    {GetDirName(code.ReadDirectoryPtr())}"); break;
-            case 0x1E: inst.Append($"Call i128   {GetDirName(code.ReadDirectoryPtr())}"); break;
-            case 0x1F: inst.Append($"Call iptr   {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x18: inst.Append($"Call void    {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x19: inst.Append($"Call i1      {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1A: inst.Append($"Call i8      {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1B: inst.Append($"Call i16     {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1C: inst.Append($"Call i32     {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1D: inst.Append($"Call i64     {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1E: inst.Append($"Call i128    {GetDirName(code.ReadDirectoryPtr())}"); break;
+            case 0x1F: inst.Append($"Call iptr    {GetDirName(code.ReadDirectoryPtr())}"); break;
             case 0x20:
                 c = code.ReadByte();
                 inst.Append($"Call i{c:,6}  ${GetDirName(code.ReadDirectoryPtr())}"); break;

@@ -5,6 +5,7 @@ using Abstract.CompileTarget.Core.Enums;
 using Abstract.Parser.Core.Language.SyntaxNodes.Control;
 using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
 using Abstract.Parser.Core.Language.SyntaxNodes.Statement;
+using Abstract.Parser.Core.Language.SyntaxNodes.Value;
 using Abstract.Parser.Core.ProgData;
 using Abstract.Parser.Core.ProgData.DataReference;
 using Abstract.Parser.Core.ProgData.FunctionExecution;
@@ -299,6 +300,14 @@ public class Compressor(ErrorHandler errHandler)
             }
 
             else Console.WriteLine($"unhandled dataref {dataref} ({dataref.GetType().Name})");
+        }
+
+        else if (node is StringLiteralNode @stringlit)
+        {
+            // TODO see a way to do not repeat strings in static memory
+            var stringValue = stringlit.BuildStringContent();
+            var ptr = data.Content.WriteStringUTF8(stringValue);
+            code.LdConst_i32(ptr);
         }
 
         else Console.WriteLine($"Unhandled expression {node} ({node.GetType().Name})");
