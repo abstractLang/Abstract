@@ -58,8 +58,8 @@
 39 EndIf
 3A EnterFrame   <immu16>
 3B LeaveFrame
-3C Throw
-3D 
+3C Throw                        ; FIXME after here is done later
+3D LdConst      str         <immdptr>
 3E 
 3F 
 40 
