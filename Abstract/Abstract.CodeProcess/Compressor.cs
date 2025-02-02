@@ -281,11 +281,29 @@ public class Compressor(ErrorHandler errHandler)
             ParseCall(((AbstractCallable)call.FunctionTarget).target, call.DataReference.refferToType, code, data);
         }
 
+        else if (node is AssignmentExpressionNode @assigin)
+        {
+            LoadExpression(assigin.Right, code, data);
+
+            var dataref = assigin.Left.DataReference;
+
+            if (dataref is LocalDataRef @local)
+            {
+                if (local.GetIndex > sbyte.MaxValue || local.GetIndex < sbyte.MinValue)
+                    code.SetLocal((short)local.GetIndex);
+                else code.SetLocal((sbyte)local.GetIndex);
+            }
+
+            else Console.WriteLine($"unhandled dataref {dataref} ({dataref.GetType().Name})");
+        }
+
         else if (node is BinaryExpressionNode @binexp)
         {
             LoadExpression(binexp.Left, code, data);
             if (binexp.ConvertLeft != null) ParseCall(binexp.ConvertLeft, binexp.ConvertLeft.baseReturnType, code, data);
+            LoadExpression(binexp.Right, code, data);
             if (binexp.ConvertRight != null) ParseCall(binexp.ConvertRight, binexp.ConvertRight.baseReturnType, code, data);
+            ParseCall(binexp.Operate, binexp.Operate.baseReturnType, code, data);
         }
 
         else if (node is IdentifierCollectionNode @identifier)
@@ -308,6 +326,12 @@ public class Compressor(ErrorHandler errHandler)
             var stringValue = stringlit.BuildStringContent();
             var ptr = data.Content.WriteStringUTF8(stringValue);
             code.LdConst_i32(ptr);
+        }
+        else if (node is IntegerLiteralNode @intlit)
+        {
+            // FIXME IntegerLiteralNode needs to be converted
+            // to a valid runtime integer
+            //code.Nop();
         }
 
         else Console.WriteLine($"Unhandled expression {node} ({node.GetType().Name})");
