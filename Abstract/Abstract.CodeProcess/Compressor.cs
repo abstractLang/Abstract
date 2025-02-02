@@ -331,7 +331,13 @@ public class Compressor(ErrorHandler errHandler)
         {
             // FIXME IntegerLiteralNode needs to be converted
             // to a valid runtime integer
-            //code.Nop();
+            code.LdConst_iptr((long)intlit.Value);
+        }
+
+        else if (node is TypeExpressionNode @typeExpression)
+        {
+            // FIXME remove this placeholder and implement it
+            code.Nop();
         }
 
         else Console.WriteLine($"Unhandled expression {node} ({node.GetType().Name})");
