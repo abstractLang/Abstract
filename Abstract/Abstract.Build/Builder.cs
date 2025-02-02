@@ -110,14 +110,9 @@ public static class Builder
             Console.WriteLine($"Starting compilation process... (target: {buildOps.Target})");
             singleStep.Restart();
 
-            // Skipping std for now as it implementation
-            // is target-dependant and the elf is just a
-            // interface.
-
             var path = buildOps.OutputDirectory;
-            var elfs = elfprograms.Where(e => e.Name != "Std").ToArray();
 
-            compiler.Compile(path, elfs);
+            compiler.Compile(path, elfprograms);
 
             compiler.Dispose();
 

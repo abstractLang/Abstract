@@ -21,6 +21,9 @@ class Compiler : CompilerBase
 
     public override void Compile(string outPath, ElfProgram[] source)
     {
-        
+        foreach (var i in source)
+        {
+            File.WriteAllBytes($"{outPath}/{i.Name}.elf", i.Emit());
+        }
     }
 }

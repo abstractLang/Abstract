@@ -131,11 +131,18 @@ public static class ExStream {
         stream.Write(buf);
         return (uint)(stream.Position - buf.Length - 4);
     }
-    public static uint WriteStringASCII(this Stream stream, string value) {
-        byte[] buf = [.. Encoding.ASCII.GetBytes(value), 0];
-        stream.WriteU32((uint)buf.Length);
+    public static uint WriteFixedStringASCII(this Stream stream, string value, int maxlen) {
+        byte[] buf = Encoding.ASCII.GetBytes(value);
+        Array.Resize(ref buf, maxlen);
         stream.Write(buf);
-        return (uint)(stream.Position - buf.Length - 4);
+        return (uint)(stream.Position - maxlen);
+    }
+    public static uint WriteRawStringASCII(this Stream stream, string value, bool nullterminator = true) {
+        // TODO fix bad performance here
+        List<byte> buf = [.. Encoding.ASCII.GetBytes(value)];
+        if (nullterminator) buf.Add(0);
+        stream.Write([.. buf]);
+        return (uint)(stream.Position - buf.Count);
     }
 
 }

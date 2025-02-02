@@ -109,6 +109,62 @@ public class ElfProgram {
     }
 
 
+    public byte[] Emit()
+    {
+        using MemoryStream buffer = new();
+
+        List<string> dirKinds = [];
+        Dictionary<uint, string> dirNames = [];
+        Dictionary<uint, Stream> lumps = [];
+
+        // Header
+        buffer.Position = 0;
+        buffer.Write([0x7f, 0x41, 0x42, 0x53]); // magic ("\0x7fABS")
+        buffer.WriteByte(0); // TODO flags
+
+        // Directories
+        buffer.Position = 16;
+
+        foreach (var i in AllDirectories)
+        {
+            var idx = dirKinds.IndexOf(i.kind);
+            if (idx == -1)
+            {
+                idx = dirKinds.Count;
+                dirKinds.Add(i.kind);
+            }
+
+            buffer.WriteByte((byte)idx);
+            dirNames.Add(buffer.WriteU32(0), i.identifier);
+
+            if (i.content != null) // lump directory
+            {
+                buffer.WriteU32((uint)i.content.Length);
+                lumps.Add(buffer.WriteU32(0), i.content);
+            }
+        }
+
+        // Text & Data
+        foreach (var i in lumps)
+        {
+            // TODO do something bruh idk
+        }
+
+        // Identifiers
+        foreach (var i in dirKinds)
+            buffer.WriteFixedStringASCII(i, 8);
+        
+        foreach (var i in dirNames)
+        {
+            var idptr = buffer.WriteRawStringASCII(i.Value);
+            var baseptr = buffer.Position;
+            buffer.Position = i.Key;
+            buffer.WriteU32(idptr);
+            buffer.Position = baseptr;
+        }
+
+        return buffer.ToArray();
+    }
     public override string ToString()
     {
         var str = new StringBuilder();
