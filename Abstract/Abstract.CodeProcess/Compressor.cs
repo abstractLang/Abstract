@@ -325,7 +325,7 @@ public class Compressor(ErrorHandler errHandler)
             // TODO see a way to do not repeat strings in static memory
             var stringValue = stringlit.BuildStringContent();
             var ptr = data.Content.WriteStringUTF8(stringValue);
-            code.LdConst_i32(ptr);
+            code.LdConst_str(ptr);
         }
         else if (node is IntegerLiteralNode @intlit)
         {

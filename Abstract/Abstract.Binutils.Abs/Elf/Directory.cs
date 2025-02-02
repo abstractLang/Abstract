@@ -220,6 +220,15 @@ public class Directory {
 
             // aaaaaaaaa someone help me this is a fucking hell x2
 
+            // FIXME added later. see it in the future
+            case 0x3D:
+                data.Position = code.ReadU32();
+                var str = data.ReadStringUTF8()
+                    .Replace("\n", "\\n").Replace("\t", "\\t")
+                    .Replace("\r", "\\r").Replace("\"", "\\\"");
+                inst.Append($"LdConst str  *\"{str}\"");
+                break;
+
             default: inst.Append("Invalid"); break; 
         }
         

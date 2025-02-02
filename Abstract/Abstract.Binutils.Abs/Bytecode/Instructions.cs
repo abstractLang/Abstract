@@ -219,4 +219,12 @@ public static class Instructions
     public static void LeaveFrame(this Lump l) => l.Content.WriteByte(0x3B);
     
     public static void Throw(this Lump l) => l.Content.WriteByte(0x3C);
+
+
+    // FIXME after here is done later
+    public static void LdConst_str(this Lump l, uint immptr)
+    {
+        l.Content.WriteByte(0x3D);
+        l.Content.WriteU32(immptr);
+    }
 }
