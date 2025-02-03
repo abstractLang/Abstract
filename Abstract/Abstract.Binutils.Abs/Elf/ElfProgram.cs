@@ -122,8 +122,12 @@ public class ElfProgram {
         buffer.Write([0x7f, 0x41, 0x42, 0x53]); // magic ("\0x7fABS")
         buffer.WriteByte(0); // TODO flags
 
+        var directoryPtr = buffer.WriteU32(uint.MaxValue);
+        var textdataPtr = buffer.WriteU32(uint.MaxValue);
+        var metadataPtr = buffer.WriteU32(uint.MaxValue);
+
         // Directories
-        buffer.Position = 16;
+        buffer.Position = 32;
 
         foreach (var i in AllDirectories)
         {
