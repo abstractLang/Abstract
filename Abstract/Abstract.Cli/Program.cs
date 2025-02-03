@@ -16,17 +16,25 @@ public class Program
 
             "-t", "elf",
 
-            "-p", "Std",
-                "Compilation.a",  //Libs/Std/
-                "Console.a",  //Libs/Std/
-                "Math.a",  //Libs/Std/
-                "Memory.a",  //Libs/Std/
-                "Meta.a",  //Libs/Std/
-                "Process.a",  //Libs/Std/
-                "System.a",  //Libs/Std/
-                "Types.a", //Libs/Std/
+            // FIXME
+            // The std lib needs to be included as
+            // part of the src for now :p
 
+            // The project needs to be named as "Std"
+            // to be able to match the std lib main
+            // references
+
+            "-p", "Std",
                 "../../../../test-code/main.a",
+
+                "Libs/Std/Compilation.a",  //Libs/Std/
+                "Libs/Std/Console.a",  //Libs/Std/
+                "Libs/Std/Math.a",  //Libs/Std/
+                "Libs/Std/Memory.a",  //Libs/Std/
+                "Libs/Std/Meta.a",  //Libs/Std/
+                "Libs/Std/Process.a",  //Libs/Std/
+                "Libs/Std/System.a",  //Libs/Std/
+                "Libs/Std/Types.a", //Libs/Std/
 
             "-o", "../../../../test-code/bin/",
             "-d", "../../../../test-code/dbg/"
