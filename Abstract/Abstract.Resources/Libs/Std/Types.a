@@ -10,7 +10,7 @@ namespace Types {
     @public @comptime func i32 bitSizeOf(type t) {}
     @public @comptime func i32 bitSizeOf(anytype value) {}
 
-    # Primitive and base types
+    # Primitive and base types 
 
     @defineGlobal("type") @public @abstract struct Type {}
     @defineGlobal("anytype") @public @abstract struct AnyType {}
@@ -720,6 +720,8 @@ namespace Types {
         @explicitConvert @public @static func u64 parse_u64(string value)
         @explicitConvert @public @static func u128 parse_u128(string value)
         
+        @overrideOperator("+")
+        @externInterface @public @static func string concatenate(string left, Std.Compilation.Types.ComptimeString right)
         @overrideOperator("+")
         @externInterface @public @static func string concatenate(string left, string right)
         @overrideOperator("+")
