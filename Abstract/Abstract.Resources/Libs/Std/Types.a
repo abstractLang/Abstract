@@ -101,7 +101,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func i128 reminder(i8 a, u128 b)
 
         @overrideOperator("-") @externInterface @public @static func i8 negate(i8 a)
-
+        @overrideOperator("+") @externInterface @public @static func string stringConcat(i8 a, string b)
     }
     @aligin(16) @defineGlobal("i16") @public @final struct SignedInteger16 extends Integer {
 
@@ -168,6 +168,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func i128 reminder(i16 a, u128 b)
 
         @overrideOperator("-") @externInterface @public @static func i16 negate(i16 a)
+        @overrideOperator("+") @externInterface @public @static func string stringConcat(i16 a, string b)
     }
     @aligin(32) @defineGlobal("i32") @public @final struct SignedInteger32 extends Integer {
 
@@ -233,6 +234,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func i128 reminder(i32 a, u128 b)
 
         @overrideOperator("-") @externInterface @public @static func i32 negate(i32 a)
+        @overrideOperator("+") @externInterface @public @static func string stringConcat(i32 a, string b)
 
     }
     @aligin(64) @defineGlobal("i64") @public @final struct SignedInteger64 extends Integer {
@@ -298,6 +300,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func i128 reminder(i64 a, u128 b)
         
         @overrideOperator("-") @externInterface @public @static func i64 negate(i64 a)
+        @overrideOperator("+") @externInterface @public @static func string stringConcat(i64 a, string b)
     }
     @aligin(128) @defineGlobal("i128") @public @final struct SignedInteger128 extends Integer {
 
@@ -360,6 +363,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func i128 reminder(i128 a, u128 b)
 
         @overrideOperator("-") @externInterface @public @static func i128 negate(i128 a)
+        @overrideOperator("+") @externInterface @public @static func string stringConcat(i128 a, string b)
     }
     
     @aligin(8) @defineGlobal(["u8", "byte"]) @public @final struct UnsignedInteger8 extends Integer {
@@ -431,6 +435,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u8 a, u64 b)
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u8 a, u128 b)
 
+        @overrideOperator("+") @externInterface @public @static func string stringConcat(u8 a, string b)
     }
     @aligin(16) @defineGlobal("u16") @public @final struct UnsignedInteger16 extends Integer {
 
@@ -498,6 +503,8 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func u64 reminder(u16 a, u32 b)
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u16 a, u64 b)
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u16 a, u128 b)
+
+        @overrideOperator("+") @externInterface @public @static func string stringConcat(u16 a, string b)
     }
     @aligin(32) @defineGlobal("u32") @public @final struct UnsignedInteger32 extends Integer {
 
@@ -564,6 +571,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func u64 reminder(u32 a, u64 b)
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u32 a, u128 b)
 
+        @overrideOperator("+") @externInterface @public @static func string stringConcat(u32 a, string b)
     }
     @aligin(64) @defineGlobal("u64") @public @final struct UnsignedInteger64 extends Integer {
 
@@ -628,6 +636,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func u64 reminder(u64 a, u64 b)
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u64 a, u128 b)
 
+        @overrideOperator("+") @externInterface @public @static func string stringConcat(u64 a, string b)
     }
     @aligin(128) @defineGlobal("u128") @public @final struct UnsignedInteger128 extends Integer {
 
@@ -689,6 +698,7 @@ namespace Types {
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, u64 b)
         @overrideOperator("%") @externInterface @public @static func u128 reminder(u128 a, u128 b)
 
+        @overrideOperator("+") @externInterface @public @static func string stringConcat(u128 a, string b)
     }
 
     @aligin(32) @defineGlobal(["f32", "float"]) @public @final struct Single {}
@@ -698,17 +708,17 @@ namespace Types {
 
     @defineGlobal("string") @public @valueOnly @final struct String {
 
-        @implicitConvert @public @static func i8 parse_i8(string value)
-        @implicitConvert @public @static func i16 parse_i16(string value)
-        @implicitConvert @public @static func i32 parse_i32(string value)
-        @implicitConvert @public @static func i64 parse_i64(string value)
-        @implicitConvert @public @static func i128 parse_i128(string value)
+        @explicitConvert @public @static func i8 parse_i8(string value)
+        @explicitConvert @public @static func i16 parse_i16(string value)
+        @explicitConvert @public @static func i32 parse_i32(string value)
+        @explicitConvert @public @static func i64 parse_i64(string value)
+        @explicitConvert @public @static func i128 parse_i128(string value)
 
-        @implicitConvert @public @static func u8 parse_u8(string value)
-        @implicitConvert @public @static func u16 parse_u16(string value)
-        @implicitConvert @public @static func u32 parse_u32(string value)
-        @implicitConvert @public @static func u64 parse_u64(string value)
-        @implicitConvert @public @static func u128 parse_u128(string value)
+        @explicitConvert @public @static func u8 parse_u8(string value)
+        @explicitConvert @public @static func u16 parse_u16(string value)
+        @explicitConvert @public @static func u32 parse_u32(string value)
+        @explicitConvert @public @static func u64 parse_u64(string value)
+        @explicitConvert @public @static func u128 parse_u128(string value)
         
         @overrideOperator("+")
         @externInterface @public @static func string concatenate(string left, string right)
