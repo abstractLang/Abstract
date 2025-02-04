@@ -6,7 +6,15 @@ namespace Abstract.Parser.Core.Language.SyntaxNodes.Base;
 public abstract class SyntaxNode
 {
     protected SyntaxNode _parent = null!;
-    public virtual (uint start, uint end) Range => (_children[0].Range.start, _children[^1].Range.end);
+
+    public SyntaxNode Parent => _parent;
+    public virtual (uint start, uint end) Range => OverrideRange.HasValue
+        ? OverrideRange!.Value
+        : (_children[0].Range.start, _children[^1].Range.end);
+    public (uint start, uint end)? OverrideRange { get; set; } = null;
+    public string? OverrideToString { get; set; } = null;
+
+
 
     #region Tree related
     protected List<SyntaxNode> _children = [];
@@ -44,9 +52,7 @@ public abstract class SyntaxNode
 
     public virtual Script GetSourceScript() => _parent.GetSourceScript();
 
-    public override string ToString() => $"{string.Join(" ", _children)}";
-    public virtual string ToFancyString() => $"{string.Join(" ", _children.Select(e => e.ToFancyString()))}";
-    
+    public override string ToString() => string.IsNullOrEmpty(OverrideToString) ? $"{string.Join(" ", _children)}" : OverrideToString;
     public virtual string ToTree()
     {
         var buf = new StringBuilder();

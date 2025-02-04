@@ -24,9 +24,10 @@ public class Program
             // to be able to match the std lib main
             // references
 
-            "-p", "Std",
+            "-p", "MyProgram",
                 "../../../../test-code/main.a",
 
+            "-p", "Std",
                 "Libs/Std/Compilation.a",
                 "Libs/Std/Console.a",
                 "Libs/Std/Math.a",

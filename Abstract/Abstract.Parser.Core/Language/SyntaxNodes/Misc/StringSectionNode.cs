@@ -4,6 +4,6 @@ namespace Abstract.Parser.Core.Language.SyntaxNodes.Misc;
 
 public class StringSectionNode(Token tkn) : ValueNode(tkn)
 {
-    public string Value => tkn.value;
+    public string Value => token.value;
     public override string ToString() => Value;
 }

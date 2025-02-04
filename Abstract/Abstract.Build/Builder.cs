@@ -88,45 +88,47 @@ public static class Builder
 
         // DEBUG
         if (buildOps.DebugOutDirectory != null) File.WriteAllText($"{buildOps.DebugOutDirectory}/tree.txt", program.ToTree());
-        if (buildOps.DebugOutDirectory != null) File.WriteAllText($"{buildOps.DebugOutDirectory}/program.txt", program.ToFancyString());
-
-        if (errorHandler.ErrorCount == 0)
-        {
-
-            Console.WriteLine("Starting compression proccess...");
-            singleStep.Restart();
-
-            var compressor = new Compressor(errorHandler);
-            var elfprograms = compressor.DoCompression(progroot, compiler.ExpectedELFFormat);
-
-            if (buildOps.DebugOutDirectory != null)
-            {
-                foreach (var i in elfprograms)
-                    File.WriteAllText($"{buildOps.DebugOutDirectory}/{i.Name}.txt", i.ToString());
-            }
-
-            Console.WriteLine($"Compression finished. ({singleStep.Elapsed})");
-
-            Console.WriteLine($"Starting compilation process... (target: {buildOps.Target})");
-            singleStep.Restart();
-
-            var path = buildOps.OutputDirectory;
-
-            compiler.Compile(path, elfprograms);
-
-            compiler.Dispose();
-
-            Console.WriteLine($"Compilation finished. ({singleStep.Elapsed})");
-
-            Console.WriteLine($"Build finished! ({entireBuild.Elapsed})");
-        }
-        else
-        {
-            Console.WriteLine($"Build failed! ({entireBuild.Elapsed})");
-            errorHandler.Dump();
-        }
+        if (buildOps.DebugOutDirectory != null) File.WriteAllText($"{buildOps.DebugOutDirectory}/program.txt", program.ToString());
 
         return errorHandler.ErrorCount;
+
+        // if (errorHandler.ErrorCount == 0)
+        // {
+
+        //     Console.WriteLine("Starting compression proccess...");
+        //     singleStep.Restart();
+
+        //     var compressor = new Compressor(errorHandler);
+        //     var elfprograms = compressor.DoCompression(progroot, compiler.ExpectedELFFormat);
+
+        //     if (buildOps.DebugOutDirectory != null)
+        //     {
+        //         foreach (var i in elfprograms)
+        //             File.WriteAllText($"{buildOps.DebugOutDirectory}/{i.Name}.txt", i.ToString());
+        //     }
+
+        //     Console.WriteLine($"Compression finished. ({singleStep.Elapsed})");
+
+        //     Console.WriteLine($"Starting compilation process... (target: {buildOps.Target})");
+        //     singleStep.Restart();
+
+        //     var path = buildOps.OutputDirectory;
+
+        //     compiler.Compile(path, elfprograms);
+
+        //     compiler.Dispose();
+
+        //     Console.WriteLine($"Compilation finished. ({singleStep.Elapsed})");
+
+        //     Console.WriteLine($"Build finished! ({entireBuild.Elapsed})");
+        // }
+        // else
+        // {
+        //     Console.WriteLine($"Build failed! ({entireBuild.Elapsed})");
+        //     errorHandler.Dump();
+        // }
+
+        // return errorHandler.ErrorCount;
     }
 
     private static int ValidadeBuildOptions(BuildOptions buildOps, ErrorHandler err)

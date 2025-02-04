@@ -11,7 +11,7 @@ public class ProgramNode : ControlNode
 
     public override Script GetSourceScript() => null!;
 
-    public override string ToFancyString()
+    public override string ToString()
     {
         StringBuilder str = new();
 
@@ -28,7 +28,7 @@ public class ProgramNode : ControlNode
             try
             {
 
-                var lines = proj.ToFancyString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+                var lines = proj.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
                 foreach (var line in lines) str.AppendLine($"\t{line}");
 
             }
