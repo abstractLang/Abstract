@@ -11,8 +11,10 @@ public class FunctionCallExpressionNode : ExpressionNode
     public ExpressionNode[] Arguments => EvalArguments ?? ((ArgumentCollectionNode)_children[1]).Arguments;
 
     // post-evaluated data
-    public ICallable FunctionTarget { get; set; } = null!;
+    public Function Target { get; set; } = null!;
     public ExpressionNode[] EvalArguments { get; set; } = null!;
 
-    public override string ToString() => $"{_children[0]}{_children[1]}";
+    public override string ToString() => (Target != null && EvalArguments != null)
+    ? $"{Target.GlobalReference}({string.Join(", ", (object[])EvalArguments)})"
+    : $"{_children[0]}{_children[1]}";
 }

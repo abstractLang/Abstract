@@ -278,7 +278,7 @@ public class Compressor(ErrorHandler errHandler)
         if (node is FunctionCallExpressionNode @call)
         {
             foreach (var i in call.Arguments) LoadExpression(i, code, data);
-            ParseCall(((AbstractCallable)call.FunctionTarget).target, call.DataReference.refferToType, code, data);
+            ParseCall(call.Target, call.DataReference.refferToType, code, data);
         }
 
         else if (node is AssignmentExpressionNode @assigin)
@@ -297,14 +297,7 @@ public class Compressor(ErrorHandler errHandler)
             else Console.WriteLine($"unhandled dataref {dataref} ({dataref.GetType().Name})");
         }
 
-        else if (node is BinaryExpressionNode @binexp)
-        {
-            LoadExpression(binexp.Left, code, data);
-            if (binexp.ConvertLeft != null) ParseCall(binexp.ConvertLeft, binexp.ConvertLeft.baseReturnType, code, data);
-            LoadExpression(binexp.Right, code, data);
-            if (binexp.ConvertRight != null) ParseCall(binexp.ConvertRight, binexp.ConvertRight.baseReturnType, code, data);
-            ParseCall(binexp.Operate, binexp.Operate.baseReturnType, code, data);
-        }
+        // no binary expressions needed lol
 
         else if (node is IdentifierCollectionNode @identifier)
         {

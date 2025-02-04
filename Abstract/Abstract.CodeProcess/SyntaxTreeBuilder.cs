@@ -516,7 +516,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
                     }
 
                     else if (Taste(TokenType.CharacterLiteral))
-                        node.AppendChild(new CharacterLiteralNode(Eat()));
+                        node.AppendChild(new CharacterLiteralNode(Eat()) { insideString = true });
 
                     else if (Taste(TokenType.DoubleQuotes)) break;
 

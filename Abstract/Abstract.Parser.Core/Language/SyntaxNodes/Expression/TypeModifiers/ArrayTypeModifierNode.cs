@@ -4,7 +4,8 @@ namespace Abstract.Parser.Core.Language.SyntaxNodes.Expression.TypeModifiers;
 
 public class ArrayTypeModifierNode : ExpressionNode
 {
-    private int LeftBraketIndex => _children.FindIndex((e) => e is TokenNode @token && token.Value == "]");
+    private int RightBraketIndex => _children.FindIndex((e) => e is TokenNode @token && token.Value == "]");
 
-    public TypeExpressionNode Type => (TypeExpressionNode)_children[LeftBraketIndex + 1];
+    public TypeExpressionNode Type => (TypeExpressionNode)_children[RightBraketIndex + 1];
+    public override string ToString() => string.Join("", _children);
 }

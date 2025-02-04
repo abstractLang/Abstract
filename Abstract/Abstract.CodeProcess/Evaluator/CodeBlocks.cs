@@ -118,47 +118,31 @@ public partial class Evaluator
         else Console.WriteLine($"statement {node} ({node.GetType().Name})");
     }
 
-    private void EvalExpression(ExpressionNode node, ExecutableContext currblock)
+    private ExpressionNode EvalExpression(ExpressionNode node, ExecutableContext currblock)
     {
         try
         {
 
             if (node is ParenthesisExpressionNode @parenthesisExpression)
-            {
-                EvalExpression(parenthesisExpression.Content, currblock);
-            }
+                return EvalExpression(parenthesisExpression.Content, currblock);
 
             else if (node is AssignmentExpressionNode @assignmentExpression)
-            {
-                EvalAssiginment(assignmentExpression, currblock);
-            }
+                return EvalAssiginment(assignmentExpression, currblock);
             else if (node is BinaryExpressionNode @binaryExpression)
-            {
-                EvalBinaryOperation(binaryExpression, currblock);
-            }
+                return EvalBinaryOperation(binaryExpression, currblock);
             else if (node is UnaryExpressionNode @unaryExpression)
-            {
-                EvalUnaryOperation(unaryExpression, currblock);
-            }
+                return EvalUnaryOperation(unaryExpression, currblock);
 
             else if (node is LocalVariableNode @localVariable)
-            {
-                EvalLocal(localVariable, currblock);
-            }
+                return EvalLocal(localVariable, currblock);
 
             else if (node is FunctionCallExpressionNode @funcCall)
-            {
-                EvalFunctionCall(funcCall, currblock);
-            }
+                return EvalFunctionCall(funcCall, currblock);
             else if (node is IdentifierCollectionNode @identifierCollection)
-            {
-                EvalIdentifier(identifierCollection, currblock);
-            }
+                return EvalIdentifier(identifierCollection, currblock);
 
             else if (node is TypeExpressionNode @typeExp)
-            {
-                EvalType(typeExp, currblock);
-            }
+                return EvalType(typeExp, currblock);
 
             else if (node is StringLiteralNode @stringLit)
             {
@@ -177,16 +161,18 @@ public partial class Evaluator
                         // TODO eval chars
                     }
                 }
+                return node;
             }
-            else if (node is ValueNode @value) EvalValue(value, currblock);
+            else if (node is ValueNode @value)
+                return EvalValue(value, currblock);
 
-            else Console.WriteLine($"expression {node} ({node.GetType().Name})");
-
+            Console.WriteLine($"expression {node} ({node.GetType().Name})");
         }
         catch (SyntaxException e) { _errHandler.RegisterError(e); }
+        return null!;
     }
 
-    private void EvalAssiginment(AssignmentExpressionNode node, ExecutableContext currblock)
+    private FunctionCallExpressionNode EvalAssiginment(AssignmentExpressionNode node, ExecutableContext currblock)
     {
         EvalExpression(node.Left, currblock);
         EvalExpression(node.Right, currblock);
@@ -197,25 +183,27 @@ public partial class Evaluator
         }
         else
         {
-            if (CanBeAssignedTo(
-                node.Right.DataReference.refferToType,
-                node.Left.DataReference.refferToType,
-                out var conversion
-            )) node.ConvertRight = conversion;
-            else
-            {
-                Console.WriteLine($"{node.Right.DataReference.refferToType} "
-                + $"is not assigned to {node.Left.DataReference.refferToType}");
+            // FIXME
+            // if (CanBeAssignedTo(
+            //     node.Right.DataReference.refferToType,
+            //     node.Left.DataReference.refferToType,
+            //     out var conversion
+            // )) node.ConvertRight = conversion;
+            // else
+            // {
+            //     Console.WriteLine($"{node.Right.DataReference.refferToType} "
+            //     + $"is not assigned to {node.Left.DataReference.refferToType}");
 
-                throw new NotImplementedInternalBuildException();
-            }
+            //     throw new NotImplementedInternalBuildException();
+            // }
         }
 
         node.DataReference = node.Left.DataReference;
         node.evaluated = true;
+        return null!;
     }
 
-    private void EvalBinaryOperation(BinaryExpressionNode node, ExecutableContext currblock)
+    private FunctionCallExpressionNode EvalBinaryOperation(BinaryExpressionNode node, ExecutableContext currblock)
     {
         try {
 
@@ -240,13 +228,51 @@ public partial class Evaluator
                         baseType.structure.GlobalReference);
                 }
 
-                node.ConvertLeft = toConvert[0];
-                node.ConvertRight = toConvert[1];
-                node.Operate = function;
+                // select and wrap left expression
+                var expLeft = node.Left;
+                if (toConvert[0] != null)
+                {
+                    var wraper = new FunctionCallExpressionNode();
+                    wraper.OverrideRange = expLeft.Range;
+                    wraper.Target = toConvert[0]!;
 
-                node.DataReference = new DynamicDataRef(GetFunctionReturnType(function, args));
+                    var temp = expLeft;
+                    node.RemoveChild(expLeft);
+                    wraper.AppendChild(temp);
+                    wraper.EvalArguments = [temp];
+                    wraper.DataReference = temp.DataReference;
 
-                goto Return;
+                    expLeft = wraper;
+                }
+                
+                // select and wrap right expression
+                var expRight = node.Right;
+                if (toConvert[1] != null)
+                {
+                    var wraper = new FunctionCallExpressionNode();
+                    wraper.OverrideRange = expRight.Range;
+                    wraper.Target = toConvert[1]!;
+
+                    var temp = expRight;
+                    node.RemoveChild(expRight);
+                    wraper.AppendChild(temp);
+                    wraper.EvalArguments = [temp];
+                    wraper.DataReference = temp.DataReference;
+
+                    expRight = wraper;
+                }
+
+                // wrap the entire expression
+                var wraper2 = new FunctionCallExpressionNode();
+                wraper2.OverrideRange = node.Range;
+                wraper2.Target = function;
+                wraper2.EvalArguments = [expLeft, expRight];
+                node.Parent.ReplaceChild(node, wraper2);
+
+                wraper2.DataReference = new DynamicDataRef(GetFunctionReturnType(function, args));
+
+                wraper2.evaluated = true;
+                return wraper2;
             }
 
             node.DataReference = new DataErrorRef();
@@ -257,19 +283,19 @@ public partial class Evaluator
             node.DataReference = new DataErrorRef();
         }
 
-        Return:
-        node.evaluated = true;
+        return null!;
     }
-    private void EvalUnaryOperation(UnaryExpressionNode node, ExecutableContext currblock)
+    private UnaryExpressionNode EvalUnaryOperation(UnaryExpressionNode node, ExecutableContext currblock)
     {
         EvalExpression(node.Expression, currblock);
         //Console.WriteLine($"unary {node} ({node.GetType().Name})");
         // TODO eval unary operators
 
         //node.evaluated = true;
+        return node;
     }
 
-    private void EvalLocal(LocalVariableNode node, ExecutableContext currblock)
+    private LocalVariableNode EvalLocal(LocalVariableNode node, ExecutableContext currblock)
     {
         try
         {
@@ -287,9 +313,10 @@ public partial class Evaluator
         }
 
         node.evaluated = true;
+        return node;
     }
 
-    private void EvalFunctionCall(FunctionCallExpressionNode node, ExecutableContext currblock)
+    private FunctionCallExpressionNode EvalFunctionCall(FunctionCallExpressionNode node, ExecutableContext currblock)
     {
         try {
             // Evaluating called reference
@@ -298,11 +325,14 @@ public partial class Evaluator
 
             // Evaluating argument references
             List<DataRef> _args = [];
+            List<ExpressionNode> _evaluated = [];
             foreach (var i in node.Arguments)
             {
-                EvalExpression(i, currblock);
-                _args.Add(i.DataReference);
+                var j = EvalExpression(i, currblock);
+                _evaluated.Add(j);
+                _args.Add(j.DataReference);
             }
+            node.EvalArguments = [.. _evaluated];
 
             if (idReference is FunctionGroupRef @funcGroupRef)
             {
@@ -315,7 +345,7 @@ public partial class Evaluator
                 if (func.IsGeneric)
                 { /* TODO implement some logic to mark an generic use and implementation */ }
 
-                node.FunctionTarget = (AbstractCallable)func;
+                node.Target = func;
                 node.DataReference = new DynamicDataRef(GetFunctionReturnType(func, [.. _args]));
             }
             else throw new ReferenceNotCallableException(node);
@@ -325,9 +355,11 @@ public partial class Evaluator
             _errHandler.RegisterError(ex);
             node.DataReference = new DataErrorRef();
         }
+
         node.evaluated = true;
+        return node;
     }
-    private void EvalIdentifier(IdentifierCollectionNode node, ExecutableContext currblock)
+    private IdentifierCollectionNode EvalIdentifier(IdentifierCollectionNode node, ExecutableContext currblock)
     {
         try
         {
@@ -340,13 +372,17 @@ public partial class Evaluator
             node.DataReference = new DataErrorRef();
         }
         node.evaluated = true;
+
+        return node;
     }
-    private void EvalType(TypeExpressionNode node, ExecutableContext currblock)
+    private TypeExpressionNode EvalType(TypeExpressionNode node, ExecutableContext currblock)
     {
         TypeReference type = GetTypeFromTypeExpressionNode(node, currblock.ProgramMemberParent);
         node.DataReference = new TypeDataRef(type, SearchStructure("Std.Types.Type"));
+
+        return node;
     }
-    private void EvalValue(ValueNode node, ExecutableContext currblock)
+    private ValueNode EvalValue(ValueNode node, ExecutableContext currblock)
     {
         if (node is IntegerLiteralNode @intl)
         {
@@ -365,5 +401,7 @@ public partial class Evaluator
         }
     
         else Console.WriteLine($"value {node} ({node.GetType().Name})");
+
+        return node;
     }
 }
