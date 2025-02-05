@@ -172,7 +172,7 @@ public partial class Evaluator
         return null!;
     }
 
-    private FunctionCallExpressionNode EvalAssiginment(AssignmentExpressionNode node, ExecutableContext currblock)
+    private ExpressionNode EvalAssiginment(AssignmentExpressionNode node, ExecutableContext currblock)
     {
         EvalExpression(node.Left, currblock);
         EvalExpression(node.Right, currblock);
@@ -183,24 +183,35 @@ public partial class Evaluator
         }
         else
         {
-            // FIXME
-            // if (CanBeAssignedTo(
-            //     node.Right.DataReference.refferToType,
-            //     node.Left.DataReference.refferToType,
-            //     out var conversion
-            // )) node.ConvertRight = conversion;
-            // else
-            // {
-            //     Console.WriteLine($"{node.Right.DataReference.refferToType} "
-            //     + $"is not assigned to {node.Left.DataReference.refferToType}");
+            if (CanBeAssignedTo(
+                node.Right.DataReference.refferToType,
+                node.Left.DataReference.refferToType,
+                out var conversion
+            )) {
+                if (conversion != null)
+                {
+                    var convert = new FunctionCallExpressionNode();
 
-            //     throw new NotImplementedInternalBuildException();
-            // }
+                    convert.OverrideRange = node.Right.Range;
+                    convert.Target = conversion;
+
+                    var temp = node.Right;
+                    node.ReplaceChild(node.Right, convert);
+                    convert.EvalArguments = [temp];
+                }
+            }
+            else
+            {
+                Console.WriteLine($"{node.Right.DataReference.refferToType} "
+                + $"is not assigned to {node.Left.DataReference.refferToType}");
+
+                throw new NotImplementedInternalBuildException();
+            }
         }
 
         node.DataReference = node.Left.DataReference;
         node.evaluated = true;
-        return null!;
+        return node;
     }
 
     private FunctionCallExpressionNode EvalBinaryOperation(BinaryExpressionNode node, ExecutableContext currblock)
