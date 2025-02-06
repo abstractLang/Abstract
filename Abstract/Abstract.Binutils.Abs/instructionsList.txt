@@ -1,65 +1,65 @@
-00 Nop
-01 Illegal
-02 LdConst      nullptr
-03 LdConst      i1          <immi8>
-04 LdConst      i8          <immi8>
-05 LdConst      i16         <immi16>
-06 LdConst      i32         <immi32>
-07 LdConst      i64         <immi64>
-08 LdConst      i128        <immi128>
-09 LdConst      iptr        <immiptr>
-0A LdConst      i<immu8>    <immi$(arg0)>
-0B LdConst      struct      <immref>        <immbuffer>
-0C LdField      <immref>
-0D LdLocal      <immu8>
-0E LdLocal      <immu16>
-0F LdType       <immref>
-10 SetField     <immref>
-11 SetLocal     <immu8>
-12 SetLocal     <immu16>
-13 GetType
-14 New
-15 Destroy
-16 Pop
-17 Dup
-18 Call         void        <immref>
-19 Call         i1          <immref>
-1A Call         i8          <immref>
-1B Call         i16         <immref>
-1C Call         i32         <immref>
-1D Call         i64         <immref>
-1E Call         i128        <immref>
-1F Call         iptr        <immref>
-20 Call         i<immu8>    <immref>
-21 Call         struct      <immref>
-22 Conv         <immu8>     <immu8>
-23 Add
-24 Sub
-25 Mul
-26 Mul.u
-27 Div
-28 Div.u
-29 Rem
-2A Rem.u
-2B Abs
-2C Or
-2D And
-2E Not
-2F Xor
-30 Nand
-31 Shiftl
-32 Shiftl.u
-33 Shiftr
-34 Shiftr.u
-35 Cmp     <immu8>
-36 Jmp     <immu8> <immu32>
-37 If      <immu8> <immu32>
-38 Else
-39 EndIf
-3A EnterFrame   <immu16>
-3B LeaveFrame
-3C Throw                        ; FIXME after here is done later
-3D LdConst      str         <immdptr>
+00 nop
+01 invalid
+02 const nullptr
+03 const	i1			<immbool>
+04 const	i8			<immi8>
+05 const	i16			<immi16>
+06 const	i32			<immi32>
+07 const	i64			<immi64>
+08 const	i128		<immi128>
+09 const	iptr		<immi64>
+0A const	i<immu8>	<immvar>
+0B const	struct		<struct>	<immbuffer>
+0C const	str			<immptr>
+0D field	<field>
+0E local	<immu8>
+0F local	<immu16>
+10 type		<struct>
+11 set		<field>
+12 set		<immu8>
+13 set		<immu16>
+14 self
+15 new
+16 destroy
+17 
+18 
+19 
+1A 
+1B 
+1C 
+1D 
+1E 
+1F 
+20 
+21 
+22 
+23 
+24 
+25 
+26 
+27 
+28 
+29 
+2A 
+2B 
+2C 
+2D 
+2E 
+2F 
+30 
+31 
+32 
+33 
+34 
+35 
+36 
+37 
+38 
+39 
+3A 
+3B 
+3C 
+3D 
 3E 
 3F 
 40 
