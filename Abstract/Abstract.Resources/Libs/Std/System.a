@@ -54,19 +54,15 @@ namespace System {
     }
 
     namespace x86 {
-
     }
 
     namespace x86_64 {
-
     }
 
     namespace AArch64 {
-
     }
 
     namespace RISK_V {
-
     }
 
 
@@ -76,13 +72,16 @@ namespace System {
         aarch64,
         risc_v
     }
-
     @public enum HostSystem {
         windows,
         linux,
 
         uefi,
         bios
+    }
+    @public enum Endiannes {
+        big,
+        little
     }
 
 }
