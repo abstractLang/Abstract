@@ -79,16 +79,27 @@ namespace Compilation {
     }
 
     @public namespace Attributes {
-        @defineAttribute("public")
-        func 
+
+        ### Attributes that i think it's better being
+        implemented by the compiler instead of inside the
+        language (so they should not be implemented here):
+            - @defineAttribute;
+            - @defineGlobal;
+            - @public;
+            - @private;
+            - @protected;
+            - @hardinline;
+            - @extenalInteface
+        ###
+
     }
 
     @public namespace Expressions {
 
-        @public @externalInterface
+        @public @hardInline @externalInterface
         func Types.ComptimeInteger performOperation(Operator operator, Types.ComptimeInteger left, Types.ComptimeInteger right)
         
-        @public @externalInterface
+        @public @hardInline @externalInterface
         func Types.ComptimeString performConcatenation(Types.ComptimeString left, Types.ComptimeString right)
 
         @public enum Operator {

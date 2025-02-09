@@ -36,9 +36,13 @@ namespace Types {
             
         }
         @overrideOperator("<=")
-        @public @static func bool isLesserEquals(Integer a, Integer b)
+        @public @static func bool isLesserEquals(Integer a, Integer b) {
+
+        }
         @overrideOperator(">=")
-        @public @static func bool isGreaterEquals(Integer a, Integer b)
+        @public @static func bool isGreaterEquals(Integer a, Integer b) {
+            
+        }
 
         # TODO other integer binary operations
 
