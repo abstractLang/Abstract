@@ -8,13 +8,13 @@ namespace Compilation {
     @public @comptime @externInterface const string currentSource
     @public @comptime @externInterface const string functionName
 
-    namespace Link {
+    @public namespace Link {
 
         @public @comptime @externalInterface func void DefineEntryPoint()
 
     }
     
-    namespace Types {
+    @public namespace Types {
 
         @public @abstract @comptimeOnly @valueOnly @final struct ComptimeString {
 
@@ -39,8 +39,10 @@ namespace Compilation {
                 return asstring(base) + value;
             }
 
-            @overrideOperator("+") @comptime @inline
-            @externInterface @public @static func string comptimeConcatenate(ComptimeString left, ComptimeString right)
+            @overrideOperator("+") @comptime @hardInline
+            @externInterface @public @static func ComptimeString comptimeConcatenate(ComptimeString left, ComptimeString right) {
+                return Expressions.performConcatenation(left, right);
+            }
         }
 
         @public @abstract @comptimeOnly @valueOnly @final struct ComptimeInteger {
@@ -75,26 +77,41 @@ namespace Compilation {
         }
 
     }
+
+    @public namespace Attributes {
+        @defineAttribute("public")
+        func 
+    }
+
+    @public namespace Expressions {
+
+        @public @externalInterface
+        func Types.ComptimeInteger performOperation(Operator operator, Types.ComptimeInteger left, Types.ComptimeInteger right)
+        
+        @public @externalInterface
+        func Types.ComptimeString performConcatenation(Types.ComptimeString left, Types.ComptimeString right)
+
+        @public enum Operator {
+            # assign and reading operators
+            assign,
+            read,
+
+            # Binary math operators
+            addition,
+            subtraction,
+            multiplication,
+            division,
+            remainder,
+
+            # Binary boolean operators
+            equals,
+            notEquals,
+            lesserThan,
+            greaterThan,
+            lesserEqualThan,
+            greaterEqualThan
+        }
     
-    @public enum Operator {
-        # assign and reading operators
-        assign,
-        read,
-
-        # Binary math operators
-        addition,
-        subtraction,
-        multiplication,
-        division,
-        remainder,
-
-        # Binary boolean operators
-        equals,
-        notEquals,
-        lesserThan,
-        greaterThan,
-        lesserEqualThan,
-        greaterEqualThan
     }
 
 }
