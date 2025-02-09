@@ -50,6 +50,7 @@ namespace System {
             }
             ###
         }
+        
         namespace UEFI {}
     }
 
@@ -64,7 +65,6 @@ namespace System {
 
     namespace RISK_V {
     }
-
 
     @public enum Archtecture {
         x86,

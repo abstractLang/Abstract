@@ -2,6 +2,8 @@
 
 namespace Process {
 
-    @public func noreturn exit(uptr statusCode)
+    @public func noreturn exit(uptr statusCode) {
+    
+    }
 
 }
