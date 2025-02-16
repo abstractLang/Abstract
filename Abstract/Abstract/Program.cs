@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 
 int consoleWidth = Console.WindowWidth;
@@ -15,7 +16,6 @@ If you spot a error, please help us to improve reporting it on:
 
 ".Trim(), consoleWidth));
 Console.WriteLine(new string('-', consoleWidth));
-
 
 static string PadCenterAndWrap(string source, int length)
 {

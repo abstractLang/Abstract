@@ -11,6 +11,7 @@ public class AbstractNamespaceAttribute : Attribute
 
 }
 
+
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
 public class AbstractStructAttribute : Attribute
 {
