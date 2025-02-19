@@ -33,10 +33,11 @@ public static class Builder
         exe.Build();
         buildExeNode.Done();
 
-        var installNode = progress.Branch("Installing Artifact", 999999999);
+        var installNode = progress.Branch("Installing Artifact", 1);
         InstallArtifact(exe);
-        for (var i = 0; i < 999999999; i++) installNode.CompleteOne();
         installNode.Done();
+
+        progress.Done();
 
         console.Stop();
         return 0;
@@ -73,6 +74,7 @@ public static class Builder
         public void Done()
         {
             done = true;
+            _children.Clear();
         }
         public void SetCompleted(int value) => completed = value;
         public void SetTotal(int value) => total = value;
@@ -110,7 +112,7 @@ public static class Builder
 
         public void Reset()
         {
-            _cursorRoot = Console.GetCursorPosition().Top;
+            _cursorRoot = Console.GetCursorPosition().Top + 1;
         }
     
         public void Start()
@@ -210,4 +212,5 @@ public static class Builder
     {
 
     }
+
 }
