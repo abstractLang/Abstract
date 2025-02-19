@@ -1,15 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <OutputName>abs</OutputName>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Core\Abstract.Src.Core\Abstract.Src.Core.csproj" />
+    <ProjectReference Include="..\..\Core\Abstract.Builder.Core\Abstract.Builder.Core.csproj" />
   </ItemGroup>
 
 </Project>

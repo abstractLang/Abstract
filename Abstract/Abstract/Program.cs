@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using Abstract;
 
 int consoleWidth = Console.WindowWidth;
 
@@ -16,6 +17,15 @@ If you spot a error, please help us to improve reporting it on:
 
 ".Trim(), consoleWidth));
 Console.WriteLine(new string('-', consoleWidth));
+
+#if DEBUG
+// Set working repository for debug 1
+Directory.SetCurrentDirectory("../../../../");
+#endif
+
+
+Builder.Build(); // NO return after here!
+return 0;
 
 static string PadCenterAndWrap(string source, int length)
 {
