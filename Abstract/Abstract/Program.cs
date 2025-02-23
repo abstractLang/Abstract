@@ -29,6 +29,8 @@ return 0;
 
 static string PadCenterAndWrap(string source, int length)
 {
+    if (length == 0) return source;
+
     var str = new StringBuilder();
 
     List<string> srcLines = [.. source.Split(["\r\n", "\n", "\r"], StringSplitOptions.None)];
