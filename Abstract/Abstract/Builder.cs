@@ -60,7 +60,7 @@ public static class Builder
         public int Total => total;
         public int Completed => completed;
 
-        public Progress Branch(string name, int initialTotal = 1)
+        public Progress Branch(string name, int initialTotal = 0)
         {
             var p = new Progress(name)
             {
@@ -89,7 +89,7 @@ public static class Builder
         {
             var str = new StringBuilder();
 
-            str.AppendLine($"{name} " + (done ? "DONE" : $"[{completed}/{total}]"));
+            str.AppendLine($"{name} " + (done ? "DONE" : (total > 0 ? $"[{completed}/{total}]" : "")));
             foreach (var i in  _children.ToArray())
             {
                 var l = i.ToString().Split(Environment.NewLine);
@@ -193,7 +193,7 @@ public static class Builder
 
         public void Build()
         {
-            Console.WriteLine("Build Requested!1;");
+            Console.WriteLine("Build Requested!");
         }
 
         private static void ParseFile(int taskIdx, string filePath, CancellationToken cancelTkn)
