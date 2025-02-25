@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Abstract.Parsing.Core;
+namespace Abstract.Core.Language;
 
 /// <summary>
 /// Represents a sliced value in a source script.

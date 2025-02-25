@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Utils\Abstract.InterOp\Abstract.InterOp.csproj" />
+    <ProjectReference Include="../../Core/Abstract.Core.Builder/Abstract.Core.Builder.csproj" />
   </ItemGroup>
 
 </Project>
