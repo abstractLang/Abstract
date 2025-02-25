@@ -1,4 +1,4 @@
-﻿namespace Abstract.Src.Core;
+﻿namespace Abstract.Core.Src;
 
 public abstract class Source
 {

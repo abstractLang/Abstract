@@ -1,4 +1,4 @@
-﻿namespace Abstract.Parsing.Core;
+﻿namespace Abstract.Core.Language;
 
 /// <summary>
 /// A token sliced from the source code.

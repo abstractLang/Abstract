@@ -17,16 +17,21 @@ public class AbstractNamespaceAttribute : Attribute
 /// <summary>
 /// When aplyed to a class or structure, defines it as an public abstract interoperable structure.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface, Inherited = true)]
 public class AbstractStructAttribute : Attribute
 {
+
+     public string? StructureName { get; set; } = null;
+
+    public AbstractStructAttribute() {}
+    public AbstractStructAttribute(string name) => StructureName = name;
 
 }
 
 /// <summary>
 /// When aplyed to a method, defines it as an public abstract interoperable function.
 /// </summary>
-[AttributeUsage(AttributeTargets.Method, Inherited = false)]
+[AttributeUsage(AttributeTargets.Method, Inherited = true)]
 public class AbstractFunctionAttribute : Attribute
 {
 
@@ -35,7 +40,7 @@ public class AbstractFunctionAttribute : Attribute
 /// <summary>
 /// WHen aplied to a field or property, defines it as an public abstract interoperable field.
 /// </summary>
-[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = false)]
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
 public class AbstractPublicFieldAttribute : Attribute
 {
 

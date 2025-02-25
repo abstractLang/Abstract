@@ -1,5 +1,5 @@
 ﻿
-namespace Abstract.Src.Core;
+namespace Abstract.Core.Src;
 
 public class Script : Source
 {
