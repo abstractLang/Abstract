@@ -47,7 +47,7 @@ public static class BuildNamespace
     /// <summary>
     /// Node to show process state
     /// </summary>
-    [AbstractStruct("Step")]
+    [AbstractStruct("Progress")]
     public class Progress(string name)
     {
 
@@ -73,7 +73,8 @@ public static class BuildNamespace
             _children.Add(p);
             return p;
         }
-       
+        public void Append(Progress progress) => _children.Add(progress);
+
         public void Done()
         {
             done = true;

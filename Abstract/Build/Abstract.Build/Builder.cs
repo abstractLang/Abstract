@@ -24,19 +24,14 @@ public partial class Builder
         var ctx = new BuilderContext();
         DefaultBuildScript(ctx);
 
-        Queue<Step> waitingSteps = [];
-        Queue<Step> next = [];
-        Step current = ctx.GetInstallStep();
-
-        while (waitingSteps.Count > 0)
+        Queue<Step> stepQueue = new(ctx.GetInstallStep().Dependences);
+        while(stepQueue.Count > 0)
         {
-            if (current.HaveDependences)
-            {
-                waitingSteps.Enqueue(current);
-                foreach (var i in current.Dependences)
-                    next.Enqueue(i);
-            }
+            var step = stepQueue.Dequeue();
+            progress.Append(step.Progress);
+            step.Run();
         }
+        progress.Done();
 
         console.Stop();
         return 0;
@@ -44,13 +39,12 @@ public partial class Builder
 
     private static void DefaultBuildScript(BuilderContext b)
     {
-        var exe = CreateExecutable(
-            name: "test-prg",
+        var exe = b.CreateExecutable(name: "my-program",
             rootDirectory: "test-code/"
         );
-        
-        b.GetInstallStep().DependsOn(exe.Step);
+        var install = b.AddInstallArtifact(exe);
 
+        b.GetInstallStep().DependsOn(install);
     }
 
 }
