@@ -32,9 +32,7 @@ public partial class Builder
         public void Stop()
         {
             _drawing = false;
-            Draw();
             Console.Write("\x1b[?25h");
-            //Clean();
         }
     
         private void Draw()
@@ -104,31 +102,74 @@ public partial class Builder
 
     public abstract class Step(string name) : IStep
     {
-        private Progress _progress = new(name);
+        private readonly Progress _progress = new(name);
+        public Progress Progress => _progress;
         public string Name => _progress.Name;
 
-        private List<Step> _dependences = [];
-        public Step[] Dependences = [];
-        public bool HaveDependences => _dependences.Count == 0 || _dependences.All(e => e._progress.IsComplete());
+        private readonly List<Step> _dependences = [];
+        public Step[] Dependences => [.. _dependences];
+        public bool HasDependences => _dependences.Count > 0 && !_dependences.Any(e => !e._progress.IsComplete());
+        private bool _complete = false;
+        public bool Complete => _complete;
 
         public void DependsOn(Step step) => _dependences.Add(step);
 
-        public abstract void Run();
+        public void Run()
+        {
+            // Solve dependences
+            var depQueue = new Queue<Step>(_dependences);
+            while (depQueue.Count > 0) {
+                var s = depQueue.Dequeue();
+                if (s.Complete) continue;
+                _progress.Append(s._progress);
+                s.Run();
+            }
+            // Run itself
+            Make();
+
+            Progress.Done();
+        }
+        protected abstract void Make();
     }
 
+    #region Random Build Steps
     private class StepNode(string name) : Step(name)
     {
-        public override void Run() {}
+        protected override void Make()
+        {
+            
+        }
     }
-    
 
-    public class BuilderContext : IBuilder
+    private class InstallArtifactStep : Step
     {
-        private Step _installStep = new StepNode("Install");
+        private Executable _artifact;
+
+        public InstallArtifactStep(Executable artifact) : base("Installing Artifact")
+        {
+            _artifact = artifact;
+            DependsOn(artifact.Step);
+        }
+
+        protected override void Make()
+        {
+
+        }
+    }
+    #endregion
+
+    private class BuilderContext : IBuilder
+    {
+        private Step _installStep = new StepNode("Build");
         public Step GetInstallStep() => _installStep;
+
+        // Build things
+        public InstallArtifactStep AddInstallArtifact(Executable artifact) => new(artifact);
+        public StepNode AddStep(string name) => new(name);
+        public Executable CreateExecutable(string name, string rootDirectory) => new(name, rootDirectory);
     }
 
-    public class Executable : IExecutable
+    private class Executable : IExecutable
     {
 
         private string _name;
@@ -148,22 +189,12 @@ public partial class Builder
 
         public class BuildExecutableStep(Executable exe) : Step("Building executable") {
             private Executable _exeRef = exe;
-            public override void Run()
+            protected override void Make()
             {
-                console.WriteWarn("Todo Bueild executable step");
+                console.WriteWarn("Todo Build executable step");
             }
         }
 
-    }
-
-    private static Executable CreateExecutable(string name, string rootDirectory)
-    {
-        return new Executable(name, rootDirectory);
-    }
-    private static void InstallArtifact(Executable exe)
-    {
-        console.WriteWarn("Installing...");
-        console.WriteSuccess("Build finished!");
     }
 
 }

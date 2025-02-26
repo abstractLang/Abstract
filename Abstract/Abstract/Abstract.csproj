@@ -10,8 +10,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../Build/Abstract.Build/Abstract.Build.csproj" />
-    <ProjectReference Include="../Core/Abstract.Builder.Core/Abstract.Builder.Core.csproj" />
-    <ProjectReference Include="../Core/Abstract.Src.Core/Abstract.Core.Src.csproj" />
   </ItemGroup>
 
 </Project>
