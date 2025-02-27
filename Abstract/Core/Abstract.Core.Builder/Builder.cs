@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using Abstract.Core.Src;
 using Abstract.InterOp;
 
 
@@ -7,7 +6,7 @@ namespace Abstract.Core.Builder;
 
 /// <summary>
 /// Build namespace.
-/// Countains interoperable structures to help
+/// Contains interoperable structures to help
 /// building abstract solutions inside abstract
 /// code.
 /// </summary>
@@ -93,7 +92,7 @@ public static class BuildNamespace
         {
             var str = new StringBuilder();
 
-            str.AppendLine($"{name} " + (done ? "\x1b[42;30mDONE\x1b[0m" : (total > 0 ? $"[{completed}/{total}]" : "")));
+            str.AppendLine((done ? "\x1b[42;30mDONE\x1b[0m" : (total > 0 ? $"[{completed}/{total}]" : "")) + $" {name}");
             foreach (var i in  _children.ToArray())
             {
                 var l = i.ToString().Split(Environment.NewLine);

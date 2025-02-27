@@ -8,8 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../Abstract.Core.Src/Abstract.Core.Src.csproj" />
-    <ProjectReference Include="../Abstract.Src.Core/Abstract.Core.Src.csproj" />
-    <ProjectReference Include="../Abstract.Src.Core/Abstract.Src.Core.csproj" />
     <ProjectReference Include="..\..\Utils\Abstract.InterOp\Abstract.InterOp.csproj" />
   </ItemGroup>
 

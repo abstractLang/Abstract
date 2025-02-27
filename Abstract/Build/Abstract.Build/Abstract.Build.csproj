@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../Core/Abstract.Core.Builder/Abstract.Core.Builder.csproj" />
+    <ProjectReference Include="..\..\Parsing\Abstract.Parsing\Abstract.Parsing.csproj" />
   </ItemGroup>
 
 </Project>

@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../Core/Abstract.Parsing.Core/Abstract.Core.Language.csproj" />
+    <ProjectReference Include="..\..\Core\Abstract.Core.Language\Abstract.Core.Language.csproj" />
   </ItemGroup>
 
 </Project>

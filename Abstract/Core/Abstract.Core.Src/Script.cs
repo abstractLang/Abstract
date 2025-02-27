@@ -8,20 +8,23 @@ public class Script : Source
     private string _path;
     private FileInfo _finfo;
 
+    private string? _content = null;
+
     public string FilePath => $"{_root}{Path.DirectorySeparatorChar}{_path}";
     private string FileIdentifier => Path.DirectorySeparatorChar != '/'
         ? _path.Replace(Path.DirectorySeparatorChar, '/') : _path;
 
     public Script(string root, string path)
     {
-        _path = path;
+        _path = path[root.Length..];
         _root = root;
         _finfo = new FileInfo(FilePath);
     }
 
-    public override Memory<char> Read()
+    public override ReadOnlyMemory<char> Read()
     {
-        throw new FileNotFoundException(_path);
+        if (_content == null) _content = File.ReadAllText(FilePath);
+        return _content.AsMemory();
     }
 
     public override string ToString() => $"{FileIdentifier} ({FormatSize(_finfo.Length)})";

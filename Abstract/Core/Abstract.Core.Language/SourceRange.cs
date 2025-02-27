@@ -6,25 +6,25 @@ namespace Abstract.Core.Language;
 /// Represents a sliced value in a source script.
 /// </summary>
 /// <param name="value"> The sliced value. </param>
-/// <param name="beggin"> The beggining index of the slice. </param>
+/// <param name="beggin"> The beginning index of the slice. </param>
 public readonly struct SourceRange
 {
 
-    public readonly Memory<char> value;
+    public readonly ReadOnlyMemory<char> value;
 
-    public readonly ulong beggin;
+    public readonly ulong begin;
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Estilos de Nomenclatura", Justification = "<Pendente>")]
-    public readonly ulong end => beggin + (ulong)value.Length;
+    public readonly ulong end => begin + (ulong)value.Length;
 
     public SourceRange()
     {
         this.value = new();
-        this.beggin = 0;
+        this.begin = 0;
     }
-    public SourceRange(Memory<char> value, ulong beggin)
+    public SourceRange(Memory<char> value, ulong begin)
     {
         this.value = value;
-        this.beggin = beggin;
+        this.begin = begin;
     }
 
     public override string ToString() => value.ToString();
