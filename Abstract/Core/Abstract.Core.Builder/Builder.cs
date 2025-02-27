@@ -85,6 +85,7 @@ public static class BuildNamespace
 
         public void End() => _parent._children.Remove(this);
 
+        public bool IsSelfDone() => done;
         public bool IsAllDone() => _children.All(e => e.done);
         public bool IsComplete() => total == completed;
 
