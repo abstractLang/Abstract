@@ -219,7 +219,9 @@ public partial class Builder
                     Task.Run(() => ParseScriptAsync(p, s));
                 }
 
-                while (true);
+                // Hold on until all individual scripts are processed
+                while (ready.Any(e => !e.IsSelfDone())) ;
+
             }
         
             private void ParseScriptAsync(Progress progress, Script s)

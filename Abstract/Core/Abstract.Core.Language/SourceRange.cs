@@ -12,16 +12,16 @@ public readonly struct SourceRange
 
     public readonly ReadOnlyMemory<char> value;
 
-    public readonly ulong begin;
+    public readonly int begin;
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Estilos de Nomenclatura", Justification = "<Pendente>")]
-    public readonly ulong end => begin + (ulong)value.Length;
+    public readonly int end => begin + value.Length;
 
     public SourceRange()
     {
         this.value = new();
         this.begin = 0;
     }
-    public SourceRange(Memory<char> value, ulong begin)
+    public SourceRange(ReadOnlyMemory<char> value, int begin)
     {
         this.value = value;
         this.begin = begin;
