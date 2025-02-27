@@ -18,8 +18,8 @@ If you spot a error, please help us to improve reporting it on:
 Console.WriteLine(new string('-', consoleWidth));
 
 #if DEBUG
-// Set working repository for debug 1
-Directory.SetCurrentDirectory("../../../../");
+// Set working repository for debug
+Directory.SetCurrentDirectory("../../../../test-code");
 #endif
 
 

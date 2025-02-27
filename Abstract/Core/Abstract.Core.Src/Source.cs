@@ -3,6 +3,6 @@
 public abstract class Source
 {
 
-    public abstract Memory<char> Read();
+    public abstract ReadOnlyMemory<char> Read();
     public override string ToString() => $"undefined source";
 }

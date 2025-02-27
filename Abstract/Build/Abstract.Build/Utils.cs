@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Abstract.Core.Src;
+using Abstract.Parsing;
 using static Abstract.Core.Builder.BuildNamespace;
 
 namespace Abstract.Build;
@@ -177,8 +178,6 @@ public partial class Builder
         private BuildExecutableStep _step;
         public Step Step => _step;
 
-        private List<Script> _scripts = [];
-
         public Executable(string name, string rootDirectory)
         {
             _name = name;
@@ -186,15 +185,50 @@ public partial class Builder
             _step = new(this);
         }
 
-
         public class BuildExecutableStep(Executable exe) : Step("Building executable") {
             private Executable _exeRef = exe;
             protected override void Make()
             {
-                console.WriteWarn("Todo Build executable step");
-            }
-        }
+                console.WriteLog("Scanning project...");
+                List<Script> scripts = [];
+                int ignored = 0;
 
+                var root = Path.GetFullPath("./");
+
+                Queue<string> dirs = new([root]);
+                while (dirs.Count > 0)
+                {
+                    var curdir = dirs.Dequeue();
+                    foreach (var i in Directory.GetFiles(curdir))
+                    {
+                        if (Path.GetExtension(i) == ".a") scripts.Add(new Script(root, i));
+                        else ignored++;
+                    }
+                    foreach (var i in Directory.GetDirectories(curdir))
+                        dirs.Enqueue(i);
+                }
+
+                console.WriteSuccess($"{scripts.Count} scripts found; {ignored} files ignored");
+                console.WriteLog("Parsing files...");
+
+                Progress[] ready = new Progress[scripts.Count];
+                for (var i = 0; i < scripts.Count; i++)
+                {
+                    ready[i] = Progress.Branch($"Parsing {scripts[i]}");
+                    var p = ready[i]; var s = scripts[i];
+                    Task.Run(() => ParseScriptAsync(p, s));
+                }
+
+                while (true);
+            }
+        
+            private void ParseScriptAsync(Progress progress, Script s)
+            {
+                Lexer.LexText(s.Read());
+                progress.Done();
+            }
+
+        }
     }
 
 }

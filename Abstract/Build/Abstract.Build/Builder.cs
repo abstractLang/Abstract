@@ -16,22 +16,15 @@ public partial class Builder
 
     private static int __build__()
     {
-        var progress = new Progress("Building project");
-        console = new ConsoleWrapper(progress);
+        var ctx = new BuilderContext();
+        console = new ConsoleWrapper(ctx.GetInstallStep().Progress);
+
         console.Reset();
         console.Start();
 
-        var ctx = new BuilderContext();
         DefaultBuildScript(ctx);
 
-        Queue<Step> stepQueue = new(ctx.GetInstallStep().Dependences);
-        while(stepQueue.Count > 0)
-        {
-            var step = stepQueue.Dequeue();
-            progress.Append(step.Progress);
-            step.Run();
-        }
-        progress.Done();
+        ctx.GetInstallStep().Run();
 
         console.Stop();
         return 0;
