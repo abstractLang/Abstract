@@ -67,6 +67,11 @@ public class Token(SourceRange trivia, SourceRange value, Kind kind)
         char_interrogation,
         char_equals,
 
+        char_cross,
+        char_dash,
+        char_slash,
+        char_star,
+
         char_open_parenthesis,   char_close_parenthesis,
         char_open_curlyBracket,  char_close_curlyBracket,
         char_open_squareBracket, char_close_squareBracket,
