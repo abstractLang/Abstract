@@ -12,11 +12,11 @@ public class Token(SourceRange trivia, SourceRange value, Kind kind)
     /// represent important information.
     /// e.g.: spaces, tabs or comments.
     /// </summary>
-    public readonly SourceRange trivia;
+    public readonly SourceRange trivia = trivia;
     /// <summary>
     /// The actual token value.
     /// </summary>
-    public readonly SourceRange value;
+    public readonly SourceRange value = value;
 
     public Token before = null!;
     public Token after = null!;
@@ -35,7 +35,7 @@ public class Token(SourceRange trivia, SourceRange value, Kind kind)
     public enum Kind : byte
     {
         undefined = 0,
-        statement_und, // line feed or semicolon
+        statement_end, // line feed or semicolon
 
         keyword_from,
         keyword_import,
@@ -75,6 +75,7 @@ public class Token(SourceRange trivia, SourceRange value, Kind kind)
         identifier,
 
         literal_string,
+        literal_char,
         literal_integer,
         literal_float,
 
