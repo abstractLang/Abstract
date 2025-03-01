@@ -42,7 +42,7 @@ public class Token(SourceRange trivia, SourceRange value, Kind kind)
 
         keyword_let,
         keyword_const,
-        keyword_function,
+        keyword_func,
         keyword_struct,
         keyword_enum,
 
@@ -65,12 +65,16 @@ public class Token(SourceRange trivia, SourceRange value, Kind kind)
         char_dot,
         char_bang,
         char_interrogation,
-        char_equals,
+        char_at,
+        char_anpersant,
 
         char_cross,
         char_dash,
         char_slash,
         char_star,
+        char_equals,
+
+        opetator_equality,
 
         char_open_parenthesis,   char_close_parenthesis,
         char_open_curlyBracket,  char_close_curlyBracket,
