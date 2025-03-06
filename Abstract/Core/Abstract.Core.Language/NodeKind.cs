@@ -1,0 +1,10 @@
+namespace Abstract.Core.Language;
+
+public enum NodeKind : byte
+{
+    Undefined = 0,
+    Token,
+    Root,
+    
+
+}

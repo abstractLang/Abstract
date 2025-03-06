@@ -33,6 +33,10 @@ public static class Lexer
         {"false", TokenKind.keyword_value_false},
         {"null", TokenKind.keyword_value_null},
     };
+    private static readonly Dictionary<string, (bool left, bool right)> _tokenLineConnectorMap = new()
+    {
+        // TODO
+    };
 
     public static Token[] LexText(ReadOnlyMemory<char> text)
     {

@@ -1,5 +1,8 @@
 ﻿namespace Abstract.Core.Language;
 
-public class SyntaxTree
+public sealed class SyntaxTree
 {
+
+    public readonly SyntaxNode root = new(NodeKind.Root);
+
 }

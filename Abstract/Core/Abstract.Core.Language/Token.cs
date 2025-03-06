@@ -26,7 +26,7 @@ public class Token(SourceRange trivia, SourceRange value, Kind kind)
     /// </summary>
     public readonly Kind kind = kind;
 
-    public override string ToString() => $"{trivia.ToString()}{value.ToString()}";
+    public override string ToString() => $"{trivia}{value}";
 
 
     /// <summary>

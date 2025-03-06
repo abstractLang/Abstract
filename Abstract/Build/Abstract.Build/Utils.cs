@@ -211,6 +211,10 @@ public partial class Builder
                 console.WriteSuccess($"{scripts.Count} scripts found; {ignored} files ignored");
                 console.WriteLog("Parsing files...");
 
+                // scripts modification time should be comparated with
+                // a cached table. Only modified scripts should be
+                // parsed and analysed
+
                 Progress[] ready = new Progress[scripts.Count];
                 for (var i = 0; i < scripts.Count; i++)
                 {
@@ -226,7 +230,15 @@ public partial class Builder
         
             private void ParseScriptAsync(Progress progress, Script s)
             {
-                Lexer.LexText(s.Read());
+                // Every file should be it own tree.
+                // Each tree will be semantically analysed
+                // and output a little piece of the program
+                // that can be reused inf future builds
+                // (incremental compilation)
+
+                var tokens = Lexer.LexText(s.Read());
+                var tree = Parser.BuildTree(tokens);
+
                 progress.Done();
             }
 
