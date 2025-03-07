@@ -17,8 +17,18 @@ public class SyntaxNode(NodeKind kind) : ISyntaxNode
     {
         if (node is TokenNode @tknnode) tknnode.Parent = this;
         else if (node is SyntaxNode @stxnode) stxnode.Parent = this;
-        
+    
         _children.Add(node);
+    }
+    public void AppendChildren(IEnumerable<ISyntaxNode> nodes)
+    {
+        foreach (var node in nodes)
+        {
+            if (node is TokenNode @tknnode) tknnode.Parent = this;
+            else if (node is SyntaxNode @stxnode) stxnode.Parent = this;
+        
+            _children.Add(node);
+        }
     }
 
     public override string ToString() => string.Join("", _children);

@@ -5,6 +5,9 @@ public enum NodeKind : byte
     Undefined = 0,
     Token,
     Root,
+    Identifier,
+
+    FromImport,
     
 
 }

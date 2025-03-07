@@ -10,15 +10,61 @@ public static class Parser
     public static SyntaxTree BuildTree(Token[] tokens)
     {
         SyntaxTree tree = new();
+        List<Token> tokensList = [.. tokens];
 
-        
+        try {
+            while(tokensList.Count > 0)
+                ParseRoot(tree.root, tokensList);
+
+        } catch(Exception ex) {
+            Console.WriteLine(ex);
+            Console.ReadLine();
+        }
+
         OutputGraph(tree);
         return tree;
     }
 
     public static void ParseRoot(SyntaxNode parent, List<Token> tokens)
     {
+        if (tokens[0].kind == Token.Kind.statement_end) tokens.RemoveAt(0);
 
+        if (tokens[0].kind == Token.Kind.keyword_from)
+        {
+            var import_node = new SyntaxNode(NodeKind.FromImport);
+
+            import_node.AppendChild(new TokenNode(tokens.Pop()));
+            ParseIdentifier(import_node, tokens);
+            import_node.AppendChild(new TokenNode(tokens.Pop()));
+
+            parent.AppendChild(import_node);
+        }
+
+        else throw new Exception($"{tokens[0].kind} unhandled");
+    }
+
+    public static void ParseIdentifier(SyntaxNode parent, List<Token> tokens)
+    {
+        List<TokenNode> onhold = [];
+
+        while(true) {
+            if (tokens[0].kind == Token.Kind.char_dot) {
+                if (!string.IsNullOrEmpty(tokens[0].trivia.ToString()) || !string.IsNullOrEmpty(tokens[0].after.trivia.ToString()))
+                    throw new Exception("dot operator with whitespace");
+                
+                onhold.Add(new(tokens.Pop()));
+            }
+            else if (onhold.Count > 0) break;
+            
+            if (tokens[0].kind == Token.Kind.identifier)
+                onhold.Add(new(tokens.Pop()));
+            
+            else throw new Exception($"{tokens[0].kind} cannot be used in a identifier");
+        }
+
+        var identifierNode = new SyntaxNode(NodeKind.Identifier);
+        identifierNode.AppendChildren(onhold);
+        parent.AppendChild(identifierNode);
     }
 
 
@@ -42,7 +88,8 @@ public static class Parser
                 var i = children.Dequeue();
                 var iid = nodes++;
 
-                str.AppendLine($"\t{parentid} -- {iid} [label=\"{i.Kind}\" shape=\"rectangle\"]");
+                str.AppendLine($"\t{iid} [label=\"{i.Kind}\" shape=\"rectangle\"]");
+                str.AppendLine($"\t{parentid} -> {iid}");
 
                 if (i is SyntaxNode @sn)
                     stack.Push((sn, iid, new(sn.Children)));

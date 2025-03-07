@@ -156,7 +156,7 @@ public static class Lexer
 
         File.WriteAllText("tokens.txt", str.ToString());
 
-        return [];
+        return [.. tokens];
     }
 
     private static void AppendToken(List<Token> tknlist, ReadOnlyMemory<char> src, int triviabegin, int tokenbegin,  int tokenend, Token.Kind kind)
