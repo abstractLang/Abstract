@@ -1,5 +1,3 @@
-using System;
-
 namespace Abstract.Core.Language;
 
 public interface ISyntaxNode
