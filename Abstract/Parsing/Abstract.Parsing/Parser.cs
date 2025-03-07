@@ -12,14 +12,13 @@ public static class Parser
         SyntaxTree tree = new();
         List<Token> tokensList = [.. tokens];
 
-        try {
-            while(tokensList.Count > 0)
-                ParseRoot(tree.root, tokensList);
+        //try {
+        while(tokensList.Count > 0)
+            ParseRoot(tree.root, tokensList);
 
-        } catch(Exception ex) {
-            Console.WriteLine(ex);
-            Console.ReadLine();
-        }
+        //} catch(Exception ex) {
+        //    Console.WriteLine(ex.Message);
+        //}
 
         OutputGraph(tree);
         return tree;
@@ -29,21 +28,82 @@ public static class Parser
     {
         if (tokens[0].kind == Token.Kind.statement_end) tokens.RemoveAt(0);
 
-        if (tokens[0].kind == Token.Kind.keyword_from)
+        else if (tokens[0].kind == Token.Kind.keyword_from)
         {
             var import_node = new SyntaxNode(NodeKind.FromImport);
 
             import_node.AppendChild(new TokenNode(tokens.Pop()));
-            ParseIdentifier(import_node, tokens);
+            import_node.AppendChild(ParseIdentifier(tokens));
             import_node.AppendChild(new TokenNode(tokens.Pop()));
 
             parent.AppendChild(import_node);
         }
 
-        else throw new Exception($"{tokens[0].kind} unhandled");
+        else ParseExpression(parent, tokens);
     }
 
-    public static void ParseIdentifier(SyntaxNode parent, List<Token> tokens)
+
+    public static void ParseExpression(SyntaxNode parent, List<Token> tokens)
+    {
+        var exp = ParseAssign(tokens);
+        parent.AppendChild(exp);
+    }
+
+    #region Recursive parsing
+    // Recursive operation prerecession being procced here
+    public static ISyntaxNode ParseAssign(List<Token> tokens)
+    {
+        var val = ParseTypeCasting(tokens);
+        // TODO logic
+        return val;
+    }
+    public static ISyntaxNode ParseTypeCasting(List<Token> tokens)
+    {
+        var val = ParseArithmeticExponentation(tokens);
+        // TODO logic
+        return val;
+    }
+
+    #region arithmetic ops
+    public static ISyntaxNode ParseArithmeticExponentation(List<Token> tokens)
+    {
+        var val = ParseArithmeticMultiplication(tokens);
+        // TODO logic
+        return val;
+    }
+    public static ISyntaxNode ParseArithmeticMultiplication(List<Token> tokens)
+    {
+        var val = ParseArithmeticAddition(tokens);
+        // TODO logic
+        return val;
+    }
+    public static ISyntaxNode ParseArithmeticAddition(List<Token> tokens)
+    {
+        var val = ParseValue(tokens);
+        // TODO logic
+        return val;
+    }
+    #endregion
+
+    public static ISyntaxNode ParseValue(List<Token> tokens)
+    {
+        if (tokens[0].kind == Token.Kind.identifier)
+        {
+            var identifier = ParseIdentifier(tokens);
+
+            if (tokens[0].kind == Token.Kind.char_open_parenthesis) // function call
+            {
+                throw new Exception("Do fucking function call rn");
+            }
+
+            return identifier;
+        }
+        else throw new Exception($"{tokens[0]} ({tokens.Pop().kind}) unhandled");
+    }
+
+    #endregion
+
+    public static ISyntaxNode ParseIdentifier(List<Token> tokens)
     {
         List<TokenNode> onhold = [];
 
@@ -64,42 +124,62 @@ public static class Parser
 
         var identifierNode = new SyntaxNode(NodeKind.Identifier);
         identifierNode.AppendChildren(onhold);
-        parent.AppendChild(identifierNode);
+
+        return identifierNode;
+    }
+    public static ISyntaxNode ParseArguments(List<TokenNode> tokens)
+    {
+        return null!;
     }
 
 
     private static void OutputGraph(SyntaxTree tree)
     {
-        StringBuilder str = new();
-        int nodes = 0;
+        StringBuilder nodes = new();
+        StringBuilder conns = new();
+        int nodecount = 0;
 
-        Stack<(ISyntaxNode parent, int parentid, Queue<ISyntaxNode> children)> stack = [];
-        stack.Push((tree.root, 0, new(tree.root.Children)));
+        Queue<(SyntaxNode node, int parentid, int parentidx)> queue = [];
 
-        str.AppendLine("graph {");
-        str.AppendLine($"\t{nodes++} [label=\"root\" shape=\"rectangle\"]");
+        foreach (var i in tree.root.Children) queue.Enqueue(((SyntaxNode)i, 0, 0));
+        nodes.AppendLine($"  {nodecount++} [label=\"<f0>[root]\" rankdir=TB]");
 
-        while (stack.Count > 0)
+        while (queue.Count > 0)
         {
-            var (parent, parentid, children) = stack.Peek();
+            var (node, parentid, parentidx) = queue.Dequeue();
+            var iid = nodecount++;
 
-            while (children.Count > 0)
+            nodes.Append($"  {iid} [label=\"{{ {node.Kind} | {{");
+            conns.AppendLine($"  {parentid}:{parentidx} -- {iid}");
+
+            for (var j = 0; j < node.Children.Length; j++)
             {
-                var i = children.Dequeue();
-                var iid = nodes++;
+                var c = node.Children[j];
 
-                str.AppendLine($"\t{iid} [label=\"{i.Kind}\" shape=\"rectangle\"]");
-                str.AppendLine($"\t{parentid} -> {iid}");
+                if (c is SyntaxNode @sn)
+                {
+                    nodes.Append($"<f{j}>[{sn.Kind}]|");
+                    queue.Enqueue((sn, iid, j));
 
-                if (i is SyntaxNode @sn)
-                    stack.Push((sn, iid, new(sn.Children)));
+                }
+                else if (c is TokenNode @tn)
+                {
+                    nodes.Append($"<f{j}>{tn.Value}|");
+                }
             }
 
-            stack.Pop();
+            nodes.Length--;
+            nodes.AppendLine($"}}}}\"]");
         }
 
-        str.AppendLine("}");
-        File.WriteAllText("ast.dot", str.ToString());
+        StringBuilder merge = new();
+
+        merge.AppendLine("graph {");
+        merge.AppendLine($"  node [shape=\"Mrecord\"]");
+        merge.Append(nodes);
+        merge.Append(conns);
+        merge.AppendLine("}");
+        File.WriteAllText("ast.dot", merge.ToString());
 
         var psi = new ProcessStartInfo() {
             FileName = "dot",
