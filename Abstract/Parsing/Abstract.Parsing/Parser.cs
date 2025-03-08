@@ -48,14 +48,13 @@ public static class Parser
             parent.AppendChild(func_declaration);
         }
 
-        else ParseExpression(parent, tokens);
+        else parent.AppendChild(ParseExpression(tokens));
     }
 
 
-    public static void ParseExpression(SyntaxNode parent, List<Token> tokens)
+    public static ISyntaxNode ParseExpression(List<Token> tokens)
     {
-        var exp = ParseAssign(tokens);
-        parent.AppendChild(exp);
+        return ParseAssign(tokens);
     }
     public static ISyntaxNode ParseScope(List<Token> tokens)
     {
@@ -121,11 +120,20 @@ public static class Parser
 
             if (tokens[0].kind == Token.Kind.char_open_parenthesis) // function call
             {
-                throw new Exception("Do fucking function call rn");
+                var call = new SyntaxNode(NodeKind.FunctionCall);
+                call.AppendChild(identifier);
+                call.AppendChild(ParseArguments(tokens));
+                return call;
             }
 
             return identifier;
         }
+        
+        else if (tokens[0].kind == Token.Kind.literal_string)
+        {
+            
+        }
+        
         else throw new Exception($"{tokens[0]} ({tokens.Pop().kind}) unhandled");
     }
 
@@ -171,7 +179,22 @@ public static class Parser
 
     public static ISyntaxNode ParseArguments(List<Token> tokens)
     {
-        return null!;
+        var parent = new SyntaxNode(NodeKind.ArgumentsList);
+
+        if (tokens[0].kind != Token.Kind.char_open_parenthesis) throw new Exception("WHERE'S THE FUCKING PARENTHESIS???");
+        parent.AppendChild(new TokenNode(tokens.Pop()));
+
+        if (tokens[0].kind != Token.Kind.char_close_parenthesis) while(true) {
+            parent.AppendChild(ParseExpression(tokens));
+
+            if (tokens[0].kind != Token.Kind.char_comma) break;
+            parent.AppendChild(new TokenNode(tokens.Pop()));
+        }
+
+        if (tokens[0].kind != Token.Kind.char_close_parenthesis) throw new Exception("WHERE'S THE FUCKING PARENTHESIS???");
+        parent.AppendChild(new TokenNode(tokens.Pop()));
+
+        return parent;
     }
     public static ISyntaxNode ParseParameters(List<Token> tokens)
     {
