@@ -68,6 +68,7 @@ public static class Lexer
             else if (c1 == ';')    AppendToken(tokens, text, triviaBegin, index, TokenKind.statement_end); // Statement break
 
             else if (c1 == '.')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_dot);
+            else if (c1 == ',')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_comma);
             else if (c1 == '@')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_at);
             else if (c1 == '&')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_anpersant);
 

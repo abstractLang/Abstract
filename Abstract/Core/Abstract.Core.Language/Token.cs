@@ -63,6 +63,7 @@ public class Token(SourceRange trivia, SourceRange value, Kind kind)
         keyword_value_null,
 
         char_dot,
+        char_comma,
         char_bang,
         char_interrogation,
         char_at,

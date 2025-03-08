@@ -8,6 +8,13 @@ public enum NodeKind : byte
     Identifier,
 
     FromImport,
-    
+    FunctionDeclaration,
+
+    Scope,
+    FunctionCall,
+
+    ArgumentsList,
+    ParametersList,
+    TypedIdentifier,
 
 }

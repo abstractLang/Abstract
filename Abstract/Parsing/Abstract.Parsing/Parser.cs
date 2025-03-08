@@ -12,13 +12,10 @@ public static class Parser
         SyntaxTree tree = new();
         List<Token> tokensList = [.. tokens];
 
-        //try {
         while(tokensList.Count > 0)
-            ParseRoot(tree.root, tokensList);
-
-        //} catch(Exception ex) {
-        //    Console.WriteLine(ex.Message);
-        //}
+        {
+            try { ParseRoot(tree.root, tokensList); } catch {}
+        }
 
         OutputGraph(tree);
         return tree;
@@ -39,6 +36,18 @@ public static class Parser
             parent.AppendChild(import_node);
         }
 
+        else if (tokens[0].kind == Token.Kind.keyword_func)
+        {
+            var func_declaration = new SyntaxNode(NodeKind.FunctionDeclaration);
+            func_declaration.AppendChild(new TokenNode(tokens.Pop()));
+            func_declaration.AppendChild(ParseSingleIdentifier(tokens));
+            func_declaration.AppendChild(ParseParameters(tokens));
+            func_declaration.AppendChild(ParseType(tokens));
+            func_declaration.AppendChild(ParseScope(tokens));
+
+            parent.AppendChild(func_declaration);
+        }
+
         else ParseExpression(parent, tokens);
     }
 
@@ -48,6 +57,25 @@ public static class Parser
         var exp = ParseAssign(tokens);
         parent.AppendChild(exp);
     }
+    public static ISyntaxNode ParseScope(List<Token> tokens)
+    {
+        if (tokens[0].kind != Token.Kind.char_open_curlyBracket)
+            throw new Exception("WHERES THE FUCKING CURLY BRACKET???????????");
+
+        var node = new SyntaxNode(NodeKind.Scope);
+        node.AppendChild(new TokenNode(tokens.Pop()));
+
+        while(tokens[0].kind != Token.Kind.char_close_curlyBracket) {
+            ParseRoot(node, tokens);
+        }
+
+        if (tokens[0].kind != Token.Kind.char_close_curlyBracket)
+            throw new Exception("WHERES THE FUCKING CURLY BRACKET???????????");
+        node.AppendChild(new TokenNode(tokens.Pop()));
+
+        return node;
+    }
+
 
     #region Recursive parsing
     // Recursive operation prerecession being procced here
@@ -127,9 +155,46 @@ public static class Parser
 
         return identifierNode;
     }
-    public static ISyntaxNode ParseArguments(List<TokenNode> tokens)
+    public static ISyntaxNode ParseSingleIdentifier(List<Token> tokens)
+    {
+        if (tokens[0].kind != Token.Kind.identifier)
+            throw new Exception("WHERE'S THE FUCKING IDENTIFIER??????");
+        
+        var identifierNode = new SyntaxNode(NodeKind.Identifier);
+        identifierNode.AppendChild(new TokenNode(tokens.Pop()));
+        return identifierNode;
+    }
+    public static ISyntaxNode ParseType(List<Token> tokens)
+    {
+        return ParseIdentifier(tokens);
+    }
+
+    public static ISyntaxNode ParseArguments(List<Token> tokens)
     {
         return null!;
+    }
+    public static ISyntaxNode ParseParameters(List<Token> tokens)
+    {
+        var parent = new SyntaxNode(NodeKind.ParametersList);
+
+        if (tokens[0].kind != Token.Kind.char_open_parenthesis) throw new Exception("WHERE'S THE FUCKING PARENTHESIS???");
+        parent.AppendChild(new TokenNode(tokens.Pop()));
+
+        if (tokens[0].kind != Token.Kind.char_close_parenthesis) while(true) {
+
+            var item = new SyntaxNode(NodeKind.TypedIdentifier);
+            item.AppendChild(ParseType(tokens));
+            item.AppendChild(ParseSingleIdentifier(tokens));
+            parent.AppendChild(item);
+
+            if (tokens[0].kind != Token.Kind.char_comma) break;
+            parent.AppendChild(new TokenNode(tokens.Pop()));
+        }
+
+        if (tokens[0].kind != Token.Kind.char_close_parenthesis) throw new Exception("WHERE'S THE FUCKING PARENTHESIS???");
+        parent.AppendChild(new TokenNode(tokens.Pop()));
+
+        return parent;
     }
 
 
@@ -137,12 +202,11 @@ public static class Parser
     {
         StringBuilder nodes = new();
         StringBuilder conns = new();
-        int nodecount = 0;
+        int nodecount = 1;
 
         Queue<(SyntaxNode node, int parentid, int parentidx)> queue = [];
 
         foreach (var i in tree.root.Children) queue.Enqueue(((SyntaxNode)i, 0, 0));
-        nodes.AppendLine($"  {nodecount++} [label=\"<f0>[root]\" rankdir=TB]");
 
         while (queue.Count > 0)
         {
@@ -150,7 +214,7 @@ public static class Parser
             var iid = nodecount++;
 
             nodes.Append($"  {iid} [label=\"{{ {node.Kind} | {{");
-            conns.AppendLine($"  {parentid}:{parentidx} -- {iid}");
+            if (parentid != 0) conns.AppendLine($"  {parentid}:{parentidx} -- {iid}");
 
             for (var j = 0; j < node.Children.Length; j++)
             {
@@ -158,17 +222,17 @@ public static class Parser
 
                 if (c is SyntaxNode @sn)
                 {
-                    nodes.Append($"<f{j}>[{sn.Kind}]|");
+                    nodes.Append($"<{j}>[{sn.Kind}] | ");
                     queue.Enqueue((sn, iid, j));
 
                 }
                 else if (c is TokenNode @tn)
                 {
-                    nodes.Append($"<f{j}>{tn.Value}|");
+                    nodes.Append($"{tn.Value} | ");
                 }
             }
 
-            nodes.Length--;
+            nodes.Length -= 3;
             nodes.AppendLine($"}}}}\"]");
         }
 
