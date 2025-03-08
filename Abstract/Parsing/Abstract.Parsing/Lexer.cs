@@ -77,6 +77,7 @@ public static class Lexer
             else if (c1 == '-')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_dash);
             else if (c1 == '/')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_slash);
             else if (c1 == '*')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_star);
+            else if (c1 == '%')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_percent);
             else if (c1 == '=')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_equals);
 
             // opens and closings

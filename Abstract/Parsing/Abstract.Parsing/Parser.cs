@@ -42,7 +42,10 @@ public static class Parser
             func_declaration.AppendChild(new TokenNode(tokens.Pop()));
             func_declaration.AppendChild(ParseSingleIdentifier(tokens));
             func_declaration.AppendChild(ParseParameters(tokens));
-            func_declaration.AppendChild(ParseType(tokens));
+
+            if (tokens[0].kind != Token.Kind.char_open_curlyBracket)
+                func_declaration.AppendChild(ParseType(tokens));
+
             func_declaration.AppendChild(ParseScope(tokens));
 
             parent.AppendChild(func_declaration);
@@ -86,13 +89,14 @@ public static class Parser
     }
     public static ISyntaxNode ParseTypeCasting(List<Token> tokens)
     {
-        var val = ParseArithmeticExponentation(tokens);
+        var val = ParseArithmeticExponentiation(tokens);
         // TODO logic
         return val;
     }
 
+
     #region arithmetic ops
-    public static ISyntaxNode ParseArithmeticExponentation(List<Token> tokens)
+    public static ISyntaxNode ParseArithmeticExponentiation(List<Token> tokens)
     {
         var val = ParseArithmeticMultiplication(tokens);
         // TODO logic
@@ -101,16 +105,40 @@ public static class Parser
     public static ISyntaxNode ParseArithmeticMultiplication(List<Token> tokens)
     {
         var val = ParseArithmeticAddition(tokens);
-        // TODO logic
+        
+        while (tokens[0].kind == Token.Kind.char_star ||
+            tokens[0].kind == Token.Kind.char_slash ||
+            tokens[0].kind == Token.Kind.char_percent
+        )
+        {
+            var exp = new SyntaxNode(NodeKind.BinaryExpression);
+            exp.AppendChild(val);
+            exp.AppendChild(new TokenNode(tokens.Pop()));
+            exp.AppendChild(ParseArithmeticAddition(tokens));
+            val = exp;
+        }
+
         return val;
     }
     public static ISyntaxNode ParseArithmeticAddition(List<Token> tokens)
     {
         var val = ParseValue(tokens);
-        // TODO logic
+
+        while (tokens[0].kind == Token.Kind.char_cross ||
+            tokens[0].kind == Token.Kind.char_dash
+        )
+        {
+            var exp = new SyntaxNode(NodeKind.BinaryExpression);
+            exp.AppendChild(val);
+            exp.AppendChild(new TokenNode(tokens.Pop()));
+            exp.AppendChild(ParseArithmeticAddition(tokens));
+            val = exp;
+        }
+
         return val;
     }
     #endregion
+
 
     public static ISyntaxNode ParseValue(List<Token> tokens)
     {
@@ -131,7 +159,9 @@ public static class Parser
         
         else if (tokens[0].kind == Token.Kind.literal_string)
         {
-            
+            var str = new SyntaxNode(NodeKind.StringLiteral);
+            str.AppendChild(new TokenNode(tokens.Pop()));
+            return str;
         }
         
         else throw new Exception($"{tokens[0]} ({tokens.Pop().kind}) unhandled");
@@ -176,6 +206,7 @@ public static class Parser
     {
         return ParseIdentifier(tokens);
     }
+
 
     public static ISyntaxNode ParseArguments(List<Token> tokens)
     {
@@ -251,7 +282,13 @@ public static class Parser
                 }
                 else if (c is TokenNode @tn)
                 {
-                    nodes.Append($"{tn.Value} | ");
+                    nodes.Append($"{
+                        tn.Value.ToString()
+                            .Replace("\\", "\\\\")
+                            .Replace("\"", "\\\"")
+                            .Replace("{", "\\{")
+                            .Replace("}", "\\}")
+                        } | ");
                 }
             }
 

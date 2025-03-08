@@ -17,4 +17,8 @@ public enum NodeKind : byte
     ParametersList,
     TypedIdentifier,
 
+    BinaryExpression,
+    UnaryExpression,
+
+    StringLiteral,
 }

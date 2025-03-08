@@ -73,6 +73,7 @@ public class Token(SourceRange trivia, SourceRange value, Kind kind)
         char_dash,
         char_slash,
         char_star,
+        char_percent,
         char_equals,
 
         opetator_equality,
