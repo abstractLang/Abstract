@@ -236,7 +236,7 @@ public partial class Builder
                 // that can be reused inf future builds
                 // (incremental compilation)
 
-                var tokens = Lexer.LexText(s.Read());
+                var tokens = Lexer.LexText(s.Read(), true);
                 var tree = Parser.BuildTree(tokens);
 
                 progress.Done();

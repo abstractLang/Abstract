@@ -33,12 +33,16 @@ public static class Lexer
         {"false", TokenKind.keyword_value_false},
         {"null", TokenKind.keyword_value_null},
     };
-    private static readonly Dictionary<string, (bool left, bool right)> _tokenLineConnectorMap = new()
+    private static readonly Dictionary<TokenKind, (bool left, bool right)> _tokenLineConnectorMap = new()
     {
-        // TODO
+        {TokenKind.char_cross, (true, true)},
+        {TokenKind.char_dash, (true, true)},
+        {TokenKind.char_star, (true, true)},
+        {TokenKind.char_slash, (true, true)},
+        {TokenKind.char_percent, (true, true)},
     };
 
-    public static Token[] LexText(ReadOnlyMemory<char> text)
+    public static Token[] LexText(ReadOnlyMemory<char> text, bool removeUnecessary = false)
     {
         var textSpan = text.Span;
         int index = 0;
@@ -144,6 +148,7 @@ public static class Lexer
             index++; continue;
         }
 
+        if (removeUnecessary) RemoveUncecessaryTokens(tokens);
 
         var str = new StringBuilder();
         foreach (var i in tokens)
@@ -159,6 +164,32 @@ public static class Lexer
         File.WriteAllText("tokens.txt", str.ToString());
 
         return [.. tokens];
+    }
+
+    private static void RemoveUncecessaryTokens(List<Token> tkns)
+    {
+        for (var i = 0; i < tkns.Count; i++)
+        {
+            var cur = tkns[i];
+
+            if (_tokenLineConnectorMap.TryGetValue(cur.kind, out var val)) {
+
+                while (val.left && cur.before != null && cur.before.kind == TokenKind.statement_end) {
+                    var toremove = cur.before;
+                    cur.before = toremove.before;
+                    cur.before.after = cur;
+                    tkns.RemoveAt(i-1);
+                }
+
+                while (val.right && cur.after != null && cur.after.kind == TokenKind.statement_end) {
+                    var toremove = cur.after;
+                    cur.after = toremove.after;
+                    cur.after.before = cur;
+                    tkns.RemoveAt(i+1);
+                }
+
+            }
+        }
     }
 
     private static void AppendToken(List<Token> tknlist, ReadOnlyMemory<char> src, int triviabegin, int tokenbegin,  int tokenend, Token.Kind kind)
