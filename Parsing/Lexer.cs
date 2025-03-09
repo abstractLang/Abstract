@@ -42,7 +42,7 @@ public static class Lexer
         {TokenKind.char_percent, (true, true)},
     };
 
-    public static Token[] LexText(ReadOnlyMemory<char> text, bool removeUnecessary = false)
+    public static Token[] LexText(ReadOnlyMemory<char> text, bool removeUnnecessary = false)
     {
         var textSpan = text.Span;
         int index = 0;
@@ -148,7 +148,7 @@ public static class Lexer
             index++; continue;
         }
 
-        if (removeUnecessary) RemoveUncecessaryTokens(tokens);
+        if (removeUnnecessary) RemoveUnnecessaryTokens(tokens);
 
         var str = new StringBuilder();
         foreach (var i in tokens)
@@ -166,7 +166,7 @@ public static class Lexer
         return [.. tokens];
     }
 
-    private static void RemoveUncecessaryTokens(List<Token> tkns)
+    private static void RemoveUnnecessaryTokens(List<Token> tkns)
     {
         for (var i = 0; i < tkns.Count; i++)
         {
