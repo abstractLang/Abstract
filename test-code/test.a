@@ -1,0 +1,43 @@
+from Std.Console import
+
+func main() !void {
+    writeln("Hello, World!")
+    writeln("I'm coding in abstract!")
+}
+
+Std.Console.writeln("This string"
+    + " is being used to break this line!")
+
+# Is interpreted as
+Std.Console.writeln("This string" + " is being used to break this line!")
+
+write("Hello, "); write("World!"); write("\n")
+
+IAm.executeable()
+###
+    I am a comment!
+    Me too!
+###
+
+# The function main will ask for a list of strings
+# to be called. It also declares a return type
+# 'void', meaning it will not return any valid data.
+@public func main([]string args) !void {
+
+    let i8 myByte = 8
+    let i16 myShort = 16
+    let i32 myInt = 32
+    foo(myByte) # foo(i8) -> void
+    foo(myInt) # foo(i32) -> void
+    foo(myShort) # foo(i32) -> void
+
+}
+
+# Overloads of the function 'foo'
+@public func foo(i8 value) {
+    writeln("The value is a byte and it is \{value}!")
+}
+@public func foo(i32 value) {
+    writeln("The value is an int32 and it is \{value}!")
+}
+

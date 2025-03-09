@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "r1zW7XKNuZ4=",
+  "success": true,
+  "projectFilePath": "/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Res/Abstract.Resources/Abstract.Resources.csproj",
+  "expectedPackageFiles": [
+    "/home/mila/.nuget/packages/microsoft.aspnetcore.app.ref/9.0.1/microsoft.aspnetcore.app.ref.9.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}

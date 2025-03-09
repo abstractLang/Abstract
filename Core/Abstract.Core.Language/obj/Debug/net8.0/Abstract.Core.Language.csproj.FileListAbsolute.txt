@@ -1,0 +1,12 @@
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/bin/Debug/net8.0/Abstract.Core.Language.deps.json
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/bin/Debug/net8.0/Abstract.Core.Language.dll
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/bin/Debug/net8.0/Abstract.Core.Language.pdb
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/obj/Debug/net8.0/Abstract.Core.Language.GeneratedMSBuildEditorConfig.editorconfig
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/obj/Debug/net8.0/Abstract.Core.Language.AssemblyInfoInputs.cache
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/obj/Debug/net8.0/Abstract.Core.Language.AssemblyInfo.cs
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/obj/Debug/net8.0/Abstract.Core.Language.csproj.CoreCompileInputs.cache
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/obj/Debug/net8.0/Abstract.Core.Language.sourcelink.json
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/obj/Debug/net8.0/Abstract.Core.Language.dll
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/obj/Debug/net8.0/refint/Abstract.Core.Language.dll
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/obj/Debug/net8.0/Abstract.Core.Language.pdb
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Core.Language/obj/Debug/net8.0/ref/Abstract.Core.Language.dll

@@ -1,0 +1,16 @@
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/Abstract.Parsing.csproj.AssemblyReference.cache
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/Abstract.Parsing.GeneratedMSBuildEditorConfig.editorconfig
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/Abstract.Parsing.AssemblyInfoInputs.cache
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/Abstract.Parsing.AssemblyInfo.cs
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/Abstract.Parsing.csproj.CoreCompileInputs.cache
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/Abstract.Parsing.sourcelink.json
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/bin/Debug/net8.0/Abstract.Parsing.deps.json
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/bin/Debug/net8.0/Abstract.Parsing.dll
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/bin/Debug/net8.0/Abstract.Parsing.pdb
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/bin/Debug/net8.0/Abstract.Core.Language.dll
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/bin/Debug/net8.0/Abstract.Core.Language.pdb
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/Abstract.38FF6880.Up2Date
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/Abstract.Parsing.dll
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/refint/Abstract.Parsing.dll
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/Abstract.Parsing.pdb
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Parsing/Abstract.Parsing/obj/Debug/net8.0/ref/Abstract.Parsing.dll

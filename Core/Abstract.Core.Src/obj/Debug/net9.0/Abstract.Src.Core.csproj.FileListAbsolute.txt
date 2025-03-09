@@ -1,0 +1,12 @@
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/bin/Debug/net9.0/Abstract.Src.Core.deps.json
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/bin/Debug/net9.0/Abstract.Src.Core.dll
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/bin/Debug/net9.0/Abstract.Src.Core.pdb
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/obj/Debug/net9.0/Abstract.Src.Core.GeneratedMSBuildEditorConfig.editorconfig
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/obj/Debug/net9.0/Abstract.Src.Core.AssemblyInfoInputs.cache
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/obj/Debug/net9.0/Abstract.Src.Core.AssemblyInfo.cs
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/obj/Debug/net9.0/Abstract.Src.Core.csproj.CoreCompileInputs.cache
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/obj/Debug/net9.0/Abstract.Src.Core.sourcelink.json
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/obj/Debug/net9.0/Abstract.Src.Core.dll
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/obj/Debug/net9.0/refint/Abstract.Src.Core.dll
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/obj/Debug/net9.0/Abstract.Src.Core.pdb
+/home/mila/Documents/Repositories/Abstract/Abstract/Abstract/Core/Abstract.Src.Core/obj/Debug/net9.0/ref/Abstract.Src.Core.dll
