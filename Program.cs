@@ -4,6 +4,8 @@ using Abstract.Build;
 
 int consoleWidth = Console.WindowWidth;
 
+Console.SetCursorPosition(0, 0);
+
 Console.WriteLine(new string('-', consoleWidth));
 Console.WriteLine(PadCenterAndWrap($@"
 
