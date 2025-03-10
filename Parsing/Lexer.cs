@@ -157,7 +157,7 @@ public static class Lexer
                 }
                 skipNumbase:
 
-                for (; i < text.Length; i++) if (!_digits[0..numbase].Contains(textSpan[i]) && textSpan[i] != '_') break;
+                for (; i < text.Length; i++) if (!_digits[0..numbase].Contains(char.ToUpper(textSpan[i])) && textSpan[i] != '_') break;
                 AppendToken(tokens, text, triviaBegin, index, i, TokenKind.literal_integer);
 
                 index = i; triviaBegin = index; continue;

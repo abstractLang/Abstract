@@ -100,7 +100,7 @@ public static class Parser
 
     public static ISyntaxNode ParseExpression(List<Token> tokens)
     {
-        return ParseAssign(tokens);
+        return ParseArithmeticAddition(tokens);
     }
     public static ISyntaxNode ParseScope(List<Token> tokens)
     {
@@ -126,46 +126,31 @@ public static class Parser
     // Recursive operation prerecession being procced here
     public static ISyntaxNode ParseAssign(List<Token> tokens)
     {
-        var val = ParseTypeCasting(tokens);
+        var val = ParseValue(tokens);
         // TODO logic
         return val;
     }
     public static ISyntaxNode ParseTypeCasting(List<Token> tokens)
     {
-        var val = ParseArithmeticExponentiation(tokens);
+        var val = ParseAssign(tokens);
         // TODO logic
         return val;
     }
 
-
+    #region bitwise ops
+    public static ISyntaxNode ParseBitwise(List<Token> tokens)
+    {
+        throw new NotImplementedException();
+    }
+    public static ISyntaxNode ParseBitshift(List<Token> tokens)
+    {
+        throw new NotImplementedException();
+    }
+    #endregion
     #region arithmetic ops
-    public static ISyntaxNode ParseArithmeticExponentiation(List<Token> tokens)
-    {
-        var val = ParseArithmeticMultiplication(tokens);
-        // TODO logic
-        return val;
-    }
-    public static ISyntaxNode ParseArithmeticMultiplication(List<Token> tokens)
-    {
-        var val = ParseArithmeticAddition(tokens);
-        
-        while (tokens[0].kind == Token.Kind.char_star ||
-            tokens[0].kind == Token.Kind.char_slash ||
-            tokens[0].kind == Token.Kind.char_percent
-        )
-        {
-            var exp = new SyntaxNode(NodeKind.BinaryExpression);
-            exp.AppendChild(val);
-            exp.AppendChild(new TokenNode(tokens.Pop()));
-            exp.AppendChild(ParseArithmeticAddition(tokens));
-            val = exp;
-        }
-
-        return val;
-    }
     public static ISyntaxNode ParseArithmeticAddition(List<Token> tokens)
     {
-        var val = ParseValue(tokens);
+        var val = ParseArithmeticMultiplication(tokens);
 
         while (tokens[0].kind == Token.Kind.char_cross ||
             tokens[0].kind == Token.Kind.char_dash
@@ -178,6 +163,30 @@ public static class Parser
             val = exp;
         }
 
+        return val;
+    }
+    public static ISyntaxNode ParseArithmeticMultiplication(List<Token> tokens)
+    {
+        var val = ParseArithmeticExponentiation(tokens);
+
+        while (tokens[0].kind == Token.Kind.char_star ||
+            tokens[0].kind == Token.Kind.char_slash ||
+            tokens[0].kind == Token.Kind.char_percent
+        )
+        {
+            var exp = new SyntaxNode(NodeKind.BinaryExpression);
+            exp.AppendChild(val);
+            exp.AppendChild(new TokenNode(tokens.Pop()));
+            exp.AppendChild(ParseArithmeticMultiplication(tokens));
+            val = exp;
+        }
+
+        return val;
+    }
+    public static ISyntaxNode ParseArithmeticExponentiation(List<Token> tokens)
+    {
+        var val = ParseTypeCasting(tokens);
+        // TODO logic
         return val;
     }
     #endregion

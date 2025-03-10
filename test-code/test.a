@@ -46,3 +46,6 @@ IAm.executeable()
 @public func foo(i32 value) {
 	writeln("The value is an int32 and it is \{value}!")
 }
+
+# Testing expressions
+let foo = 10 + 5 * 4 % 12 - 0xfce45a
