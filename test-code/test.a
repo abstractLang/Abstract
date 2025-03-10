@@ -1,5 +1,11 @@
 from Std.Console import
 
+let i8 explicitlyTyped1
+let implicitlyTyped1
+
+let i8 explicitlyTyped2 = foo
+let implicitlyTyped2 = foo
+
 func main() !void {
 	writeln("Hello, World!")
 	writeln("I'm coding in abstract!")

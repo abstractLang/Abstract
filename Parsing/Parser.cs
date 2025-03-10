@@ -23,35 +23,78 @@ public static class Parser
 
     public static void ParseRoot(SyntaxNode parent, List<Token> tokens)
     {
-        if (tokens[0].kind == Token.Kind.statement_end) tokens.RemoveAt(0);
-
-        else if (tokens[0].kind == Token.Kind.keyword_from)
+        try
         {
-            var import_node = new SyntaxNode(NodeKind.FromImport);
+            if (tokens[0].kind == Token.Kind.statement_end) tokens.RemoveAt(0);
 
-            import_node.AppendChild(new TokenNode(tokens.Pop()));
-            import_node.AppendChild(ParseIdentifier(tokens));
-            import_node.AppendChild(new TokenNode(tokens.Pop()));
+            else if (tokens[0].kind == Token.Kind.char_at)
+            {
+                var attribute_node = new SyntaxNode(NodeKind.Attribute);
 
-            parent.AppendChild(import_node);
+                attribute_node.AppendChild(new TokenNode(tokens.Pop()));
+                attribute_node.AppendChild(ParseIdentifier(tokens));
+
+                if (tokens[0].kind == Token.Kind.char_open_parenthesis)
+                    attribute_node.AppendChild(ParseArguments(tokens));
+
+                parent.AppendChild(attribute_node);
+            }
+
+            else if (tokens[0].kind == Token.Kind.keyword_from)
+            {
+                var import_node = new SyntaxNode(NodeKind.FromImport);
+
+                import_node.AppendChild(new TokenNode(tokens.Pop()));
+                import_node.AppendChild(ParseIdentifier(tokens));
+                import_node.AppendChild(new TokenNode(tokens.Pop()));
+
+                parent.AppendChild(import_node);
+            }
+
+            else if (tokens[0].kind == Token.Kind.keyword_func)
+            {
+                var func_declaration = new SyntaxNode(NodeKind.FunctionDeclaration);
+                func_declaration.AppendChild(new TokenNode(tokens.Pop()));
+                func_declaration.AppendChild(ParseSingleIdentifier(tokens));
+                func_declaration.AppendChild(ParseParameters(tokens));
+
+                if (tokens[0].kind != Token.Kind.char_open_curlyBracket)
+                    func_declaration.AppendChild(ParseType(tokens));
+
+                func_declaration.AppendChild(ParseScope(tokens));
+
+                parent.AppendChild(func_declaration);
+            }
+
+            else if (tokens[0].kind is Token.Kind.keyword_let or Token.Kind.keyword_const)
+            {
+                var variable = new SyntaxNode(NodeKind.Variable);
+
+                variable.AppendChild(new TokenNode(tokens.Pop()));
+
+                // variable identifiers counts only as one tokes, so
+                // in the case of
+                // >    let foo
+                // it will have at least 2 tokens, the variable
+                // indicator and the name. the same verification
+                // can be still valid if the 3rd token is an equals
+
+                if (tokens[1].kind is not Token.Kind.statement_end and not Token.Kind.char_equals)
+                    variable.AppendChild(ParseType(tokens));
+                variable.AppendChild(ParseSingleIdentifier(tokens));
+
+                if (tokens[0].kind == Token.Kind.char_equals)
+                {
+                    variable.AppendChild(new TokenNode(tokens.Pop()));
+                    variable.AppendChild(ParseExpression(tokens));
+                }
+
+                parent.AppendChild(variable);
+            }
+
+            else parent.AppendChild(ParseExpression(tokens));
         }
-
-        else if (tokens[0].kind == Token.Kind.keyword_func)
-        {
-            var func_declaration = new SyntaxNode(NodeKind.FunctionDeclaration);
-            func_declaration.AppendChild(new TokenNode(tokens.Pop()));
-            func_declaration.AppendChild(ParseSingleIdentifier(tokens));
-            func_declaration.AppendChild(ParseParameters(tokens));
-
-            if (tokens[0].kind != Token.Kind.char_open_curlyBracket)
-                func_declaration.AppendChild(ParseType(tokens));
-
-            func_declaration.AppendChild(ParseScope(tokens));
-
-            parent.AppendChild(func_declaration);
-        }
-
-        else parent.AppendChild(ParseExpression(tokens));
+        catch { /* TODO handle error */ }
     }
 
 
@@ -164,6 +207,13 @@ public static class Parser
             return str;
         }
         
+        else if (tokens[0].kind == Token.Kind.literal_integer)
+        {
+            var inte = new SyntaxNode(NodeKind.IntegerLiteral);
+            inte.AppendChild(new TokenNode(tokens.Pop()));
+            return inte;
+        }
+
         else throw new Exception($"{tokens[0]} ({tokens.Pop().kind}) unhandled");
     }
 
@@ -204,7 +254,26 @@ public static class Parser
     }
     public static ISyntaxNode ParseType(List<Token> tokens)
     {
-        return ParseIdentifier(tokens);
+        var typenode = new SyntaxNode(NodeKind.Type);
+
+        if (tokens[0].kind == Token.Kind.char_open_squareBracket)
+        {
+            typenode.AppendChild(new TokenNode(tokens.Pop()));
+            if (tokens[0].kind != Token.Kind.char_close_squareBracket) throw new Exception("WHERE IS THE FUCKING SQUARE BRACKET?????");
+            typenode.AppendChild(new TokenNode(tokens.Pop()));
+            typenode.AppendChild(ParseType(tokens));
+        }
+
+        else if (tokens[0].kind == Token.Kind.char_bang)
+        {
+            typenode.AppendChild(new TokenNode(tokens.Pop()));
+            typenode.AppendChild(ParseType(tokens));
+        }
+
+        else if (tokens[0].kind == Token.Kind.identifier)
+            typenode.AppendChild(ParseIdentifier(tokens));
+
+        return typenode;
     }
 
 

@@ -1,157 +1,239 @@
 graph {
   node [shape="Mrecord"]
   1 [label="{ FromImport | {from | <1>[Identifier] | import}}"]
-  2 [label="{ FunctionDeclaration | {func | <1>[Identifier] | <2>[ParametersList] | <3>[Identifier] | <4>[Scope]}}"]
-  3 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  4 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  5 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  6 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  2 [label="{ Variable | {let | <1>[Type] | <2>[Identifier]}}"]
+  3 [label="{ Variable | {let | <1>[Identifier]}}"]
+  4 [label="{ Variable | {let | <1>[Type] | <2>[Identifier] | = | <4>[Identifier]}}"]
+  5 [label="{ Variable | {let | <1>[Identifier] | = | <3>[Identifier]}}"]
+  6 [label="{ FunctionDeclaration | {func | <1>[Identifier] | <2>[ParametersList] | <3>[Type] | <4>[Scope]}}"]
   7 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
   8 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  9 [label="{ Identifier | {public}}"]
-  10 [label="{ Identifier | {string}}"]
-  11 [label="{ Identifier | {args}}"]
-  12 [label="{ Identifier | {void}}"]
-  13 [label="{ Identifier | {i8}}"]
-  14 [label="{ Identifier | {myByte}}"]
-  15 [label="{ Identifier | {8}}"]
-  16 [label="{ Identifier | {i16}}"]
-  17 [label="{ Identifier | {myShort}}"]
-  18 [label="{ Identifier | {16}}"]
-  19 [label="{ Identifier | {i32}}"]
-  20 [label="{ Identifier | {myInt}}"]
-  21 [label="{ Identifier | {32}}"]
-  22 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  23 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  24 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  25 [label="{ Identifier | {public}}"]
-  26 [label="{ FunctionDeclaration | {func | <1>[Identifier] | <2>[ParametersList] | <3>[Scope]}}"]
-  27 [label="{ Identifier | {public}}"]
-  28 [label="{ FunctionDeclaration | {func | <1>[Identifier] | <2>[ParametersList] | <3>[Scope]}}"]
-  29 [label="{ Identifier | {Std | . | Console}}"]
-  30 [label="{ Identifier | {main}}"]
-  31 [label="{ ParametersList | {( | )}}"]
-  32 [label="{ Identifier | {void}}"]
-  33 [label="{ Scope | {\{ | <1>[FunctionCall] | <2>[FunctionCall] | \}}}"]
+  9 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  10 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  11 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  12 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  13 [label="{ Attribute | {@ | <1>[Identifier]}}"]
+  14 [label="{ FunctionDeclaration | {func | <1>[Identifier] | <2>[ParametersList] | <3>[Type] | <4>[Scope]}}"]
+  15 [label="{ Attribute | {@ | <1>[Identifier]}}"]
+  16 [label="{ FunctionDeclaration | {func | <1>[Identifier] | <2>[ParametersList] | <3>[Scope]}}"]
+  17 [label="{ Attribute | {@ | <1>[Identifier]}}"]
+  18 [label="{ FunctionDeclaration | {func | <1>[Identifier] | <2>[ParametersList] | <3>[Scope]}}"]
+  19 [label="{ Identifier | {Std | . | Console}}"]
+  20 [label="{ Type | {<0>[Identifier]}}"]
+  21 [label="{ Identifier | {explicitlyTyped1}}"]
+  22 [label="{ Identifier | {implicitlyTyped1}}"]
+  23 [label="{ Type | {<0>[Identifier]}}"]
+  24 [label="{ Identifier | {explicitlyTyped2}}"]
+  25 [label="{ Identifier | {foo}}"]
+  26 [label="{ Identifier | {implicitlyTyped2}}"]
+  27 [label="{ Identifier | {foo}}"]
+  28 [label="{ Identifier | {main}}"]
+  29 [label="{ ParametersList | {( | )}}"]
+  30 [label="{ Type | {! | <1>[Type]}}"]
+  31 [label="{ Scope | {\{ | <1>[FunctionCall] | <2>[FunctionCall] | \}}}"]
+  32 [label="{ Identifier | {Std | . | Console | . | writeln}}"]
+  33 [label="{ ArgumentsList | {( | <1>[BinaryExpression] | )}}"]
   34 [label="{ Identifier | {Std | . | Console | . | writeln}}"]
   35 [label="{ ArgumentsList | {( | <1>[BinaryExpression] | )}}"]
-  36 [label="{ Identifier | {Std | . | Console | . | writeln}}"]
-  37 [label="{ ArgumentsList | {( | <1>[BinaryExpression] | )}}"]
+  36 [label="{ Identifier | {write}}"]
+  37 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
   38 [label="{ Identifier | {write}}"]
   39 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
   40 [label="{ Identifier | {write}}"]
   41 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
-  42 [label="{ Identifier | {write}}"]
-  43 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
-  44 [label="{ Identifier | {IAm | . | executeable}}"]
-  45 [label="{ ArgumentsList | {( | )}}"]
-  46 [label="{ Identifier | {foo}}"]
-  47 [label="{ ArgumentsList | {( | <1>[Identifier] | )}}"]
-  48 [label="{ Identifier | {foo}}"]
-  49 [label="{ ArgumentsList | {( | <1>[Identifier] | )}}"]
+  42 [label="{ Identifier | {IAm | . | executeable}}"]
+  43 [label="{ ArgumentsList | {( | )}}"]
+  44 [label="{ Identifier | {public}}"]
+  45 [label="{ Identifier | {main}}"]
+  46 [label="{ ParametersList | {( | <1>[TypedIdentifier] | )}}"]
+  47 [label="{ Type | {! | <1>[Type]}}"]
+  48 [label="{ Scope | {\{ | <1>[Variable] | <2>[Variable] | <3>[Variable] | <4>[FunctionCall] | <5>[FunctionCall] | <6>[FunctionCall] | \}}}"]
+  49 [label="{ Identifier | {public}}"]
   50 [label="{ Identifier | {foo}}"]
-  51 [label="{ ArgumentsList | {( | <1>[Identifier] | )}}"]
-  52 [label="{ Identifier | {foo}}"]
-  53 [label="{ ParametersList | {( | <1>[TypedIdentifier] | )}}"]
-  54 [label="{ Scope | {\{ | <1>[FunctionCall] | \}}}"]
-  55 [label="{ Identifier | {foo}}"]
-  56 [label="{ ParametersList | {( | <1>[TypedIdentifier] | )}}"]
-  57 [label="{ Scope | {\{ | <1>[FunctionCall] | \}}}"]
-  58 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  59 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  60 [label="{ BinaryExpression | {<0>[StringLiteral] | + | <2>[StringLiteral]}}"]
-  61 [label="{ BinaryExpression | {<0>[StringLiteral] | + | <2>[StringLiteral]}}"]
-  62 [label="{ StringLiteral | {\"Hello, \"}}"]
-  63 [label="{ StringLiteral | {\"World!\"}}"]
-  64 [label="{ StringLiteral | {\"\\n\"}}"]
-  65 [label="{ Identifier | {myByte}}"]
-  66 [label="{ Identifier | {myInt}}"]
-  67 [label="{ Identifier | {myShort}}"]
-  68 [label="{ TypedIdentifier | {<0>[Identifier] | <1>[Identifier]}}"]
-  69 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  70 [label="{ TypedIdentifier | {<0>[Identifier] | <1>[Identifier]}}"]
-  71 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
-  72 [label="{ Identifier | {writeln}}"]
-  73 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
-  74 [label="{ Identifier | {writeln}}"]
-  75 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
-  76 [label="{ StringLiteral | {\"This string\"}}"]
-  77 [label="{ StringLiteral | {\" is being used to break this line!\"}}"]
-  78 [label="{ StringLiteral | {\"This string\"}}"]
-  79 [label="{ StringLiteral | {\" is being used to break this line!\"}}"]
-  80 [label="{ Identifier | {i8}}"]
-  81 [label="{ Identifier | {value}}"]
+  51 [label="{ ParametersList | {( | <1>[TypedIdentifier] | )}}"]
+  52 [label="{ Scope | {\{ | <1>[FunctionCall] | \}}}"]
+  53 [label="{ Identifier | {public}}"]
+  54 [label="{ Identifier | {foo}}"]
+  55 [label="{ ParametersList | {( | <1>[TypedIdentifier] | )}}"]
+  56 [label="{ Scope | {\{ | <1>[FunctionCall] | \}}}"]
+  57 [label="{ Identifier | {i8}}"]
+  58 [label="{ Identifier | {i8}}"]
+  59 [label="{ Type | {<0>[Identifier]}}"]
+  60 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  61 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  62 [label="{ BinaryExpression | {<0>[StringLiteral] | + | <2>[StringLiteral]}}"]
+  63 [label="{ BinaryExpression | {<0>[StringLiteral] | + | <2>[StringLiteral]}}"]
+  64 [label="{ StringLiteral | {\"Hello, \"}}"]
+  65 [label="{ StringLiteral | {\"World!\"}}"]
+  66 [label="{ StringLiteral | {\"\\n\"}}"]
+  67 [label="{ TypedIdentifier | {<0>[Type] | <1>[Identifier]}}"]
+  68 [label="{ Type | {<0>[Identifier]}}"]
+  69 [label="{ Variable | {let | <1>[Type] | <2>[Identifier] | = | <4>[IntegerLiteral]}}"]
+  70 [label="{ Variable | {let | <1>[Type] | <2>[Identifier] | = | <4>[IntegerLiteral]}}"]
+  71 [label="{ Variable | {let | <1>[Type] | <2>[Identifier] | = | <4>[IntegerLiteral]}}"]
+  72 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  73 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  74 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  75 [label="{ TypedIdentifier | {<0>[Type] | <1>[Identifier]}}"]
+  76 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  77 [label="{ TypedIdentifier | {<0>[Type] | <1>[Identifier]}}"]
+  78 [label="{ FunctionCall | {<0>[Identifier] | <1>[ArgumentsList]}}"]
+  79 [label="{ Identifier | {void}}"]
+  80 [label="{ Identifier | {writeln}}"]
+  81 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
   82 [label="{ Identifier | {writeln}}"]
   83 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
-  84 [label="{ Identifier | {i32}}"]
-  85 [label="{ Identifier | {value}}"]
-  86 [label="{ Identifier | {writeln}}"]
-  87 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
-  88 [label="{ StringLiteral | {\"Hello, World!\"}}"]
-  89 [label="{ StringLiteral | {\"I'm coding in abstract!\"}}"]
-  90 [label="{ StringLiteral | {\"The value is a byte and it is \\\{value\}!\"}}"]
-  91 [label="{ StringLiteral | {\"The value is an int32 and it is \\\{value\}!\"}}"]
-  1:1 -- 29
-  2:1 -- 30
-  2:2 -- 31
-  2:3 -- 32
-  2:4 -- 33
-  3:0 -- 34
-  3:1 -- 35
-  4:0 -- 36
-  4:1 -- 37
-  5:0 -- 38
-  5:1 -- 39
-  6:0 -- 40
-  6:1 -- 41
-  7:0 -- 42
-  7:1 -- 43
-  8:0 -- 44
-  8:1 -- 45
-  22:0 -- 46
-  22:1 -- 47
-  23:0 -- 48
-  23:1 -- 49
-  24:0 -- 50
-  24:1 -- 51
-  26:1 -- 52
-  26:2 -- 53
-  26:3 -- 54
-  28:1 -- 55
-  28:2 -- 56
-  28:3 -- 57
-  33:1 -- 58
-  33:2 -- 59
-  35:1 -- 60
-  37:1 -- 61
-  39:1 -- 62
-  41:1 -- 63
-  43:1 -- 64
-  47:1 -- 65
-  49:1 -- 66
-  51:1 -- 67
-  53:1 -- 68
-  54:1 -- 69
-  56:1 -- 70
-  57:1 -- 71
-  58:0 -- 72
-  58:1 -- 73
-  59:0 -- 74
-  59:1 -- 75
-  60:0 -- 76
-  60:2 -- 77
-  61:0 -- 78
-  61:2 -- 79
-  68:0 -- 80
-  68:1 -- 81
-  69:0 -- 82
-  69:1 -- 83
-  70:0 -- 84
-  70:1 -- 85
-  71:0 -- 86
-  71:1 -- 87
-  73:1 -- 88
-  75:1 -- 89
-  83:1 -- 90
-  87:1 -- 91
+  84 [label="{ StringLiteral | {\"This string\"}}"]
+  85 [label="{ StringLiteral | {\" is being used to break this line!\"}}"]
+  86 [label="{ StringLiteral | {\"This string\"}}"]
+  87 [label="{ StringLiteral | {\" is being used to break this line!\"}}"]
+  88 [label="{ Type | {[ | ] | <2>[Type]}}"]
+  89 [label="{ Identifier | {args}}"]
+  90 [label="{ Identifier | {void}}"]
+  91 [label="{ Type | {<0>[Identifier]}}"]
+  92 [label="{ Identifier | {myByte}}"]
+  93 [label="{ IntegerLiteral | {8}}"]
+  94 [label="{ Type | {<0>[Identifier]}}"]
+  95 [label="{ Identifier | {myShort}}"]
+  96 [label="{ IntegerLiteral | {16}}"]
+  97 [label="{ Type | {<0>[Identifier]}}"]
+  98 [label="{ Identifier | {myInt}}"]
+  99 [label="{ IntegerLiteral | {32}}"]
+  100 [label="{ Identifier | {foo}}"]
+  101 [label="{ ArgumentsList | {( | <1>[Identifier] | )}}"]
+  102 [label="{ Identifier | {foo}}"]
+  103 [label="{ ArgumentsList | {( | <1>[Identifier] | )}}"]
+  104 [label="{ Identifier | {foo}}"]
+  105 [label="{ ArgumentsList | {( | <1>[Identifier] | )}}"]
+  106 [label="{ Type | {<0>[Identifier]}}"]
+  107 [label="{ Identifier | {value}}"]
+  108 [label="{ Identifier | {writeln}}"]
+  109 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
+  110 [label="{ Type | {<0>[Identifier]}}"]
+  111 [label="{ Identifier | {value}}"]
+  112 [label="{ Identifier | {writeln}}"]
+  113 [label="{ ArgumentsList | {( | <1>[StringLiteral] | )}}"]
+  114 [label="{ StringLiteral | {\"Hello, World!\"}}"]
+  115 [label="{ StringLiteral | {\"I'm coding in abstract!\"}}"]
+  116 [label="{ Type | {<0>[Identifier]}}"]
+  117 [label="{ Identifier | {i8}}"]
+  118 [label="{ Identifier | {i16}}"]
+  119 [label="{ Identifier | {i32}}"]
+  120 [label="{ Identifier | {myByte}}"]
+  121 [label="{ Identifier | {myInt}}"]
+  122 [label="{ Identifier | {myShort}}"]
+  123 [label="{ Identifier | {i8}}"]
+  124 [label="{ StringLiteral | {\"The value is a byte and it is \\\{value\}!\"}}"]
+  125 [label="{ Identifier | {i32}}"]
+  126 [label="{ StringLiteral | {\"The value is an int32 and it is \\\{value\}!\"}}"]
+  127 [label="{ Identifier | {string}}"]
+  1:1 -- 19
+  2:1 -- 20
+  2:2 -- 21
+  3:1 -- 22
+  4:1 -- 23
+  4:2 -- 24
+  4:4 -- 25
+  5:1 -- 26
+  5:3 -- 27
+  6:1 -- 28
+  6:2 -- 29
+  6:3 -- 30
+  6:4 -- 31
+  7:0 -- 32
+  7:1 -- 33
+  8:0 -- 34
+  8:1 -- 35
+  9:0 -- 36
+  9:1 -- 37
+  10:0 -- 38
+  10:1 -- 39
+  11:0 -- 40
+  11:1 -- 41
+  12:0 -- 42
+  12:1 -- 43
+  13:1 -- 44
+  14:1 -- 45
+  14:2 -- 46
+  14:3 -- 47
+  14:4 -- 48
+  15:1 -- 49
+  16:1 -- 50
+  16:2 -- 51
+  16:3 -- 52
+  17:1 -- 53
+  18:1 -- 54
+  18:2 -- 55
+  18:3 -- 56
+  20:0 -- 57
+  23:0 -- 58
+  30:1 -- 59
+  31:1 -- 60
+  31:2 -- 61
+  33:1 -- 62
+  35:1 -- 63
+  37:1 -- 64
+  39:1 -- 65
+  41:1 -- 66
+  46:1 -- 67
+  47:1 -- 68
+  48:1 -- 69
+  48:2 -- 70
+  48:3 -- 71
+  48:4 -- 72
+  48:5 -- 73
+  48:6 -- 74
+  51:1 -- 75
+  52:1 -- 76
+  55:1 -- 77
+  56:1 -- 78
+  59:0 -- 79
+  60:0 -- 80
+  60:1 -- 81
+  61:0 -- 82
+  61:1 -- 83
+  62:0 -- 84
+  62:2 -- 85
+  63:0 -- 86
+  63:2 -- 87
+  67:0 -- 88
+  67:1 -- 89
+  68:0 -- 90
+  69:1 -- 91
+  69:2 -- 92
+  69:4 -- 93
+  70:1 -- 94
+  70:2 -- 95
+  70:4 -- 96
+  71:1 -- 97
+  71:2 -- 98
+  71:4 -- 99
+  72:0 -- 100
+  72:1 -- 101
+  73:0 -- 102
+  73:1 -- 103
+  74:0 -- 104
+  74:1 -- 105
+  75:0 -- 106
+  75:1 -- 107
+  76:0 -- 108
+  76:1 -- 109
+  77:0 -- 110
+  77:1 -- 111
+  78:0 -- 112
+  78:1 -- 113
+  81:1 -- 114
+  83:1 -- 115
+  88:2 -- 116
+  91:0 -- 117
+  94:0 -- 118
+  97:0 -- 119
+  101:1 -- 120
+  103:1 -- 121
+  105:1 -- 122
+  106:0 -- 123
+  109:1 -- 124
+  110:0 -- 125
+  113:1 -- 126
+  116:0 -- 127
 }

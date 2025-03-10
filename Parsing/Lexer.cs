@@ -41,6 +41,7 @@ public static class Lexer
         {TokenKind.char_slash, (true, true)},
         {TokenKind.char_percent, (true, true)},
     };
+    private static readonly char[] _digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
 
     public static Token[] LexText(ReadOnlyMemory<char> text, bool removeUnnecessary = false)
     {
@@ -75,6 +76,7 @@ public static class Lexer
             else if (c1 == ',')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_comma);
             else if (c1 == '@')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_at);
             else if (c1 == '&')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_anpersant);
+            else if (c1 == '!')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_bang);
 
             // operators
             else if (c1 == '+')    AppendToken(tokens, text, triviaBegin, index, TokenKind.char_cross);
@@ -135,8 +137,34 @@ public static class Lexer
 
 
             // ------------------------------------------------------------------------------- //
+            // Try parse number
+            if (char.IsAsciiDigit(textSpan[index]))
+            {
+                i = index + 1;
+                int numbase = 10;
+
+                // select base
+                if (textSpan[index] == '0' && text.Length - index > 2)
+                {
+                    var bmod = textSpan[index..(index + 2)].ToString();
+
+                    if (bmod == "0b") numbase = 2;
+                    else if (bmod == "0o") numbase = 8;
+                    else if (bmod == "0x") numbase = 16;
+                    else goto skipNumbase;
+
+                    i += 1;
+                }
+                skipNumbase:
+
+                for (; i < text.Length; i++) if (!_digits[0..numbase].Contains(textSpan[i]) && textSpan[i] != '_') break;
+                AppendToken(tokens, text, triviaBegin, index, i, TokenKind.literal_integer);
+
+                index = i; triviaBegin = index; continue;
+            }
+
             // Try parse identifier
-            if (!char.IsAsciiLetterOrDigit(textSpan[index]) && textSpan[index] != '_') goto Skip;
+            if (!char.IsAsciiLetter(textSpan[index]) && textSpan[index] != '_') goto Skip;
             for (i = index + 1; i < text.Length; i++) if (!char.IsAsciiLetterOrDigit(textSpan[i]) && textSpan[i] != '_') break;
 
             if (!_tokenKindMap.TryGetValue(textSpan[index..i].ToString(), out var tknKind)) tknKind = TokenKind.identifier;

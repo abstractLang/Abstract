@@ -6,9 +6,12 @@ public enum NodeKind : byte
     Token,
     Root,
     Identifier,
+    Type,
 
     FromImport,
     FunctionDeclaration,
+    Attribute,
+    Variable,
 
     Scope,
     FunctionCall,
@@ -21,4 +24,5 @@ public enum NodeKind : byte
     UnaryExpression,
 
     StringLiteral,
+    IntegerLiteral,
 }
