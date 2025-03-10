@@ -8,13 +8,22 @@ public enum NodeKind : byte
     Identifier,
     Type,
 
+    // control shit
     FromImport,
     FunctionDeclaration,
+    StructureDeclaration,
+    EnumDeclaration,
     Attribute,
     Variable,
 
+    // scopes
     Scope,
+    ImplicitScope,
+
+    // expressions
     FunctionCall,
+    ConstructorCall,
+    DestructorCall,
 
     ArgumentsList,
     ParametersList,

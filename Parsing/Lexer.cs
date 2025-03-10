@@ -32,6 +32,9 @@ public static class Lexer
         {"true", TokenKind.keyword_value_true},
         {"false", TokenKind.keyword_value_false},
         {"null", TokenKind.keyword_value_null},
+
+        {"new", TokenKind.keyword_new},
+        {"destroy", TokenKind.keyword_destroy},
     };
     private static readonly Dictionary<TokenKind, (bool left, bool right)> _tokenLineConnectorMap = new()
     {

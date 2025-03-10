@@ -66,6 +66,17 @@ public static class Parser
                 parent.AppendChild(func_declaration);
             }
 
+            else if (tokens[0].kind == Token.Kind.keyword_struct)
+            {
+                var struct_declaration = new SyntaxNode(NodeKind.StructureDeclaration);
+                struct_declaration.AppendChild(new TokenNode(tokens.Pop()));
+
+                struct_declaration.AppendChild(ParseSingleIdentifier(tokens));
+                struct_declaration.AppendChild(ParseScope(tokens));
+
+                parent.AppendChild(struct_declaration);
+            }
+
             else if (tokens[0].kind is Token.Kind.keyword_let or Token.Kind.keyword_const)
             {
                 var variable = new SyntaxNode(NodeKind.Variable);
@@ -127,7 +138,17 @@ public static class Parser
     public static ISyntaxNode ParseAssign(List<Token> tokens)
     {
         var val = ParseValue(tokens);
-        // TODO logic
+
+        while (tokens[0].kind == Token.Kind.char_equals
+        )
+        {
+            var exp = new SyntaxNode(NodeKind.BinaryExpression);
+            exp.AppendChild(val);
+            exp.AppendChild(new TokenNode(tokens.Pop()));
+            exp.AppendChild(ParseAssign(tokens));
+            val = exp;
+        }
+
         return val;
     }
     public static ISyntaxNode ParseTypeCasting(List<Token> tokens)
@@ -209,6 +230,15 @@ public static class Parser
             return identifier;
         }
         
+        else if (tokens[0].kind == Token.Kind.keyword_new)
+        {
+            var new_object = new SyntaxNode(NodeKind.ConstructorCall);
+            new_object.AppendChild(new TokenNode(tokens.Pop()));
+            new_object.AppendChild(ParseType(tokens));
+            new_object.AppendChild(ParseArguments(tokens));
+            return new_object;
+        }
+
         else if (tokens[0].kind == Token.Kind.literal_string)
         {
             var str = new SyntaxNode(NodeKind.StringLiteral);

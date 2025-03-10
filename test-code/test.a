@@ -1,33 +1,13 @@
 from Std.Console import
 
-let i8 explicitlyTyped1
-let implicitlyTyped1
-
-let i8 explicitlyTyped2 = foo
-let implicitlyTyped2 = foo
-
-func main() !void {
-	writeln("Hello, World!")
-	writeln("I'm coding in abstract!")
-}
-
+# Testing line break
 Std.Console.writeln("This string"
 	+ " is being used to break this line!")
-
-# Is interpreted as
 Std.Console.writeln("This string" + " is being used to break this line!")
 
 write("Hello, "); write("World!"); write("\n")
 
-IAm.executeable()
-###
-	I am a comment!
-	Me too!
-###
-
-# The function main will ask for a list of strings
-# to be called. It also declares a return type
-# 'void', meaning it will not return any valid data.
+#testing functions
 @public func main([]string args) !void {
 
 	let i8 myByte = 8
@@ -39,13 +19,36 @@ IAm.executeable()
 
 }
 
-# Overloads of the function 'foo'
-@public func foo(i8 value) {
-	writeln("The value is a byte and it is \{value}!")
+func main() !void {
+	writeln("Hello, World!")
+	writeln("I'm coding in abstract!")
 }
-@public func foo(i32 value) {
-	writeln("The value is an int32 and it is \{value}!")
-}
+
+@public func foo(i8 value) { writeln("The value is a byte and it is \{value}!") }
+@public func foo(i32 value) { writeln("The value is an int32 and it is \{value}!") }
 
 # Testing expressions
 let foo = 10 + 5 * 4 % 12 - 0xfce45a
+
+# testing implicit typing in variables
+let i8 explicitlyTyped1
+let implicitlyTyped1
+
+let i8 explicitlyTyped2 = foo
+let implicitlyTyped2 = foo
+
+const i8 explicitlyTyped3 = foo
+const implicitlyTyped3 = foo
+
+# Testing structures
+struct Biography {
+	@public let u8 myAge
+	@public let string myName
+	@public let string myGithub
+}
+
+let Biography myBio = new Biography();
+
+myBio.myAge = 17
+myBio.myName = "Camila"
+myBio.myGithub = "lumi2021"
