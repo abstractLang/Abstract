@@ -139,10 +139,9 @@ public static class Parser
     {
         var val = ParseValue(tokens);
 
-        while (tokens[0].kind == Token.Kind.char_equals
-        )
+        while (tokens[0].kind == Token.Kind.char_equals)
         {
-            var exp = new SyntaxNode(NodeKind.BinaryExpression);
+            var exp = new SyntaxNode(NodeKind.AssignmentExpression);
             exp.AppendChild(val);
             exp.AppendChild(new TokenNode(tokens.Pop()));
             exp.AppendChild(ParseAssign(tokens));
@@ -154,7 +153,16 @@ public static class Parser
     public static ISyntaxNode ParseTypeCasting(List<Token> tokens)
     {
         var val = ParseAssign(tokens);
-        // TODO logic
+
+        if (tokens[0].kind == Token.Kind.keyword_cast_as)
+        {
+            var exp = new SyntaxNode(NodeKind.CastExpression);
+            exp.AppendChild(val);
+            exp.AppendChild(new TokenNode(tokens.Pop()));
+            exp.AppendChild(ParseType(tokens));
+            val = exp;
+        }
+
         return val;
     }
 

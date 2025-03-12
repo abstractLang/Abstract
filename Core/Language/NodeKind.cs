@@ -31,6 +31,8 @@ public enum NodeKind : byte
 
     BinaryExpression,
     UnaryExpression,
+    AssignmentExpression,
+    CastExpression,
 
     StringLiteral,
     IntegerLiteral,

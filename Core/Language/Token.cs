@@ -58,6 +58,8 @@ public class Token(SourceRange trivia, SourceRange value, Kind kind)
         keyword_operator_and,
         keyword_operator_or,
 
+        keyword_cast_as,
+
         keyword_value_true,
         keyword_value_false,
         keyword_value_null,

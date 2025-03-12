@@ -1,9 +1,9 @@
 from Std.Console import
 
 # Testing line break
-Std.Console.writeln("This string"
+writeln("This string"
 	+ " is being used to break this line!")
-Std.Console.writeln("This string" + " is being used to break this line!")
+writeln("This string" + " is being used to break this line!")
 
 write("Hello, "); write("World!"); write("\n")
 
@@ -17,11 +17,9 @@ write("Hello, "); write("World!"); write("\n")
 	foo(myInt) # foo(i32) -> void
 	foo(myShort) # foo(i32) -> void
 
-}
-
-func main() !void {
 	writeln("Hello, World!")
 	writeln("I'm coding in abstract!")
+
 }
 
 @public func foo(i8 value) { writeln("The value is a byte and it is \{value}!") }
@@ -52,3 +50,7 @@ let Biography myBio = new Biography();
 myBio.myAge = 17
 myBio.myName = "Camila"
 myBio.myGithub = "lumi2021"
+
+# Testing cast
+let i64 myLong = 0x_0000_0000_0000_FFFF
+let i32 shortedLong = myLong as i64

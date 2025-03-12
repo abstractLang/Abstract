@@ -29,6 +29,8 @@ public static class Lexer
         {"and", TokenKind.keyword_operator_and},
         {"or", TokenKind.keyword_operator_or},
 
+        {"as", TokenKind.keyword_cast_as},
+
         {"true", TokenKind.keyword_value_true},
         {"false", TokenKind.keyword_value_false},
         {"null", TokenKind.keyword_value_null},
