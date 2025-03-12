@@ -10,15 +10,16 @@ write("Hello, "); write("World!"); write("\n")
 #testing functions
 @public func main([]string args) !void {
 
+	writeln("Hello, World!")
+	writeln("I'm coding in abstract!")
+
 	let i8 myByte = 8
 	let i16 myShort = 16
 	let i32 myInt = 32
+	
 	foo(myByte) # foo(i8) -> void
 	foo(myInt) # foo(i32) -> void
 	foo(myShort) # foo(i32) -> void
-
-	writeln("Hello, World!")
-	writeln("I'm coding in abstract!")
 
 }
 

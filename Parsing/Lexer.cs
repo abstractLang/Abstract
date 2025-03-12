@@ -183,18 +183,18 @@ public static class Lexer
 
         if (removeUnnecessary) RemoveUnnecessaryTokens(tokens);
 
-        var str = new StringBuilder();
-        foreach (var i in tokens)
-        {
-            var t = i.trivia.ToString().Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
-            var v = i.value.ToString().Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
+        //var str = new StringBuilder();
+        //foreach (var i in tokens)
+        //{
+        //    var t = i.trivia.ToString().Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
+        //    var v = i.value.ToString().Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
 
-            if (t.Length >= 50) t = t[..45] + " ...";
+        //    if (t.Length >= 50) t = t[..45] + " ...";
 
-            str.AppendLine($"|{t}|{new string('.', Math.Max(0, 49 - t.Length))}|{v}|{new string('.', 49 - v.Length)}| {i.kind}");
-        }
+        //    str.AppendLine($"|{t}|{new string('.', Math.Max(0, 49 - t.Length))}|{v}|{new string('.', 49 - v.Length)}| {i.kind}");
+        //}
 
-        File.WriteAllText("tokens.txt", str.ToString());
+        //File.WriteAllText("tokens.txt", str.ToString());
 
         return [.. tokens];
     }
