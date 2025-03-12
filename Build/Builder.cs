@@ -32,7 +32,8 @@ public partial class Builder
 
     private static void DefaultBuildScript(BuilderContext b)
     {
-        var exe = b.CreateExecutable(name: "my-program",
+        var exe = b.CreateExecutable(
+            name: "my-program",
             rootDirectory: "test-code/"
         );
         var install = b.AddInstallArtifact(exe);

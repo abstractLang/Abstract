@@ -8,7 +8,6 @@ namespace Abstract.Build;
 
 public partial class Builder
 {
-
     public class ConsoleWrapper(Progress progressRoot)
     {
         private List<(char kind, string content)> _logs = [];
@@ -238,11 +237,11 @@ public partial class Builder
 
                 var tokens = Lexer.LexText(s.Read(), true);
                 var tree = Parser.BuildTree(tokens);
+                Analyzer.ShallowAnalyze(tree);
 
                 progress.Done();
             }
 
         }
     }
-
 }
