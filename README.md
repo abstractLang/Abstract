@@ -55,5 +55,5 @@ If you have some time and good knowledge, try to contribute! (it would make me r
 # External links
 
 - [Abstract website](https://abstractlang.github.io/)
-- [Abstract documentation]((https://abstractlang.github.io/docs/language/intro)
+- [Abstract documentation](https://abstractlang.github.io/docs/language/intro)
 - [Abstract development blogs](https://abstractlang.github.io/blog)
