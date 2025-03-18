@@ -21,7 +21,7 @@ Console.WriteLine(new string('-', consoleWidth));
 
 #if DEBUG
 // Set working repository for debug
-Directory.SetCurrentDirectory("../../../test-code");
+Directory.SetCurrentDirectory("../../../../test-code");
 #endif
 
 
