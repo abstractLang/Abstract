@@ -1,4 +1,5 @@
-﻿using Abstract.Core.Language;
+﻿using Abstract.Binutils.ELF;
+using Abstract.Core.Language;
 
 namespace Abstract.Parsing;
 
@@ -23,6 +24,8 @@ public static class Analyzer
     /// <param name="tree"> The tree of the source file </param>
     public static void ShallowAnalyze(SyntaxTree tree)
     {
+
+        var programBlock = new ElfProgram();
 
 
 
