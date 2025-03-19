@@ -1,4 +1,6 @@
-﻿using Abstract.Core.Language;
+﻿using System.Diagnostics;
+using System.Text;
+using Abstract.Core.Language;
 
 namespace Abstract.Parsing;
 
@@ -15,7 +17,7 @@ public static class Parser
             try { ParseRoot(tree.root, tokensList); } catch {}
         }
 
-        //OutputGraph(tree);
+        OutputGraph(tree);
         return tree;
     }
 
@@ -45,6 +47,8 @@ public static class Parser
                 import_node.AppendChild(new TokenNode(tokens.Pop()));
                 import_node.AppendChild(ParseIdentifier(tokens));
                 import_node.AppendChild(new TokenNode(tokens.Pop()));
+
+                // TODO implement specific importing and aliases
 
                 parent.AppendChild(import_node);
             }
@@ -365,73 +369,72 @@ public static class Parser
     }
 
 
-    //private static void OutputGraph(SyntaxTree tree)
-    //{
-    //    StringBuilder nodes = new();
-    //    StringBuilder conns = new();
-    //    int nodecount = 1;
+    private static void OutputGraph(SyntaxTree tree)
+    {
+        StringBuilder nodes = new();
+        StringBuilder conns = new();
+        int nodecount = 1;
 
-    //    Queue<(SyntaxNode node, int parentid, int parentidx)> queue = [];
+        Queue<(SyntaxNode node, int parentid, int parentidx)> queue = [];
 
-    //    foreach (var i in tree.root.Children) queue.Enqueue(((SyntaxNode)i, 0, 0));
+        foreach (var i in tree.root.Children) queue.Enqueue(((SyntaxNode)i, 0, 0));
 
-    //    while (queue.Count > 0)
-    //    {
-    //        var (node, parentid, parentidx) = queue.Dequeue();
-    //        var iid = nodecount++;
+        while (queue.Count > 0)
+        {
+            var (node, parentid, parentidx) = queue.Dequeue();
+            var iid = nodecount++;
 
-    //        nodes.Append($"  {iid} [label=\"{{ {node.Kind} | {{");
-    //        if (parentid != 0) conns.AppendLine($"  {parentid}:{parentidx} -- {iid}");
+            nodes.Append($"  {iid} [label=\"{{ {node.Kind} | {{");
+            if (parentid != 0) conns.AppendLine($"  {parentid}:{parentidx} -- {iid}");
 
-    //        for (var j = 0; j < node.Children.Length; j++)
-    //        {
-    //            var c = node.Children[j];
+            for (var j = 0; j < node.Children.Length; j++)
+            {
+                var c = node.Children[j];
 
-    //            if (c is SyntaxNode @sn)
-    //            {
-    //                nodes.Append($"<{j}>[{sn.Kind}] | ");
-    //                queue.Enqueue((sn, iid, j));
+                if (c is SyntaxNode @sn)
+                {
+                    nodes.Append($"<{j}>[{sn.Kind}] | ");
+                    queue.Enqueue((sn, iid, j));
 
-    //            }
-    //            else if (c is TokenNode @tn)
-    //            {
-    //                nodes.Append($"{
-    //                    tn.Value.ToString()
-    //                        .Replace("\\", "\\\\")
-    //                        .Replace("\"", "\\\"")
-    //                        .Replace("{", "\\{")
-    //                        .Replace("}", "\\}")
-    //                    } | ");
-    //            }
-    //        }
+                }
+                else if (c is TokenNode @tn)
+                {
+                    nodes.Append($"{tn.Value.ToString()
+                            .Replace("\\", "\\\\")
+                            .Replace("\"", "\\\"")
+                            .Replace("{", "\\{")
+                            .Replace("}", "\\}")} | ");
+                }
+            }
 
-    //        nodes.Length -= 3;
-    //        nodes.AppendLine($"}}}}\"]");
-    //    }
+            nodes.Length -= 3;
+            nodes.AppendLine($"}}}}\"]");
+        }
 
-    //    StringBuilder merge = new();
+        StringBuilder merge = new();
 
-    //    merge.AppendLine("graph {");
-    //    merge.AppendLine($"  node [shape=\"Mrecord\"]");
-    //    merge.Append(nodes);
-    //    merge.Append(conns);
-    //    merge.AppendLine("}");
-    //    File.WriteAllText("ast.dot", merge.ToString());
+        merge.AppendLine("graph {");
+        merge.AppendLine($"  node [shape=\"Mrecord\"]");
+        merge.Append(nodes);
+        merge.Append(conns);
+        merge.AppendLine("}");
+        File.WriteAllText("ast.dot", merge.ToString());
 
-    //    var psi = new ProcessStartInfo() {
-    //        FileName = "dot",
-    //        Arguments = "-Tpng ast.dot -o ast.png",
-    //        UseShellExecute = false,
-    //        CreateNoWindow = false
-    //    };
+        var psi = new ProcessStartInfo()
+        {
+            FileName = "dot",
+            Arguments = "-Tpng ast.dot -o ast.png",
+            UseShellExecute = false,
+            CreateNoWindow = false
+        };
 
-    //    using Process proc = new() { StartInfo = psi };
-    //    proc.Start();
+        using Process proc = new() { StartInfo = psi };
+        proc.Start();
 
-    //    proc.WaitForExit();
+        proc.WaitForExit();
 
-    //    //File.Delete("ast.dot");
-    //}
+        //File.Delete("ast.dot");
+    }
 }
 
 static class ListExtensions

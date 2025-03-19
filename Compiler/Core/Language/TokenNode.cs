@@ -20,9 +20,5 @@ public class TokenNode(Token tkn) : ISyntaxNode
     public Token After => token.after;
 
     public override string ToString() => token.ToString();
-
-    string ISyntaxNode.ToString()
-    {
-        throw new NotImplementedException();
-    }
+    string ISyntaxNode.ToString() => ToString();
 }

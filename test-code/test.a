@@ -1,13 +1,6 @@
 from Std.Console import
+#from Std.Foo import { Test1, Test2, Test3 as t3 } # not supported yet!
 
-# Testing line break
-writeln("This string"
-	+ " is being used to break this line!")
-writeln("This string" + " is being used to break this line!")
-
-write("Hello, "); write("World!"); write("\n")
-
-#testing functions
 @public func main([]string args) !void {
 
 	writeln("Hello, World!")
@@ -21,37 +14,23 @@ write("Hello, "); write("World!"); write("\n")
 	foo(myInt) # foo(i32) -> void
 	foo(myShort) # foo(i32) -> void
 
+	let Biography myBio = new Biography();
+
+	myBio.myAge = 17
+	myBio.myName = "Camila"
+	myBio.myGithub = "lumi2021"
+
+	# Testing cast
+	let i64 myLong = 0x_0000_0000_0000_FFFF
+	let i32 shortedLong = myLong as i64
+
 }
 
 @public func foo(i8 value) { writeln("The value is a byte and it is \{value}!") }
 @public func foo(i32 value) { writeln("The value is an int32 and it is \{value}!") }
 
-# Testing expressions
-let foo = 10 + 5 * 4 % 12 - 0xfce45a
-
-# testing implicit typing in variables
-let i8 explicitlyTyped1
-let implicitlyTyped1
-
-let i8 explicitlyTyped2 = foo
-let implicitlyTyped2 = foo
-
-const i8 explicitlyTyped3 = foo
-const implicitlyTyped3 = foo
-
-# Testing structures
 struct Biography {
 	@public let u8 myAge
 	@public let string myName
 	@public let string myGithub
 }
-
-let Biography myBio = new Biography();
-
-myBio.myAge = 17
-myBio.myName = "Camila"
-myBio.myGithub = "lumi2021"
-
-# Testing cast
-let i64 myLong = 0x_0000_0000_0000_FFFF
-let i32 shortedLong = myLong as i64

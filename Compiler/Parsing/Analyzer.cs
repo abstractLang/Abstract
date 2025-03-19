@@ -1,5 +1,8 @@
-﻿using Abstract.Binutils.ELF;
+﻿using System.Text;
+using Abstract.Binutils.ELF;
+using Abstract.Binutils.ELF.ProgramNodes;
 using Abstract.Core.Language;
+using Directory = Abstract.Binutils.ELF.ProgramNodes.Directory;
 
 namespace Abstract.Parsing;
 
@@ -27,8 +30,34 @@ public static class Analyzer
 
         var programBlock = new ElfProgram();
 
-
+        ShallowAnalyzeRoot(tree.root, programBlock.Root);
 
     }
 
+    public static void ShallowAnalyzeRoot(SyntaxNode parentNode, Directory parent)
+    {
+        foreach (var node in parentNode.Children)
+        {
+            if (node.Kind == NodeKind.FromImport)
+            {
+                var importNode = (Directory)parent.Branch("IMPORT", NodeTypes.Directory);
+                var importFrom = (Content)importNode.Branch("FROM", NodeTypes.Content);
+                importFrom.Stream.Write(Encoding.ASCII.GetBytes(((SyntaxNode)node).Children[2].ToString()));
+            }
+            else if (node.Kind == NodeKind.FunctionDeclaration)
+            {
+                var funcNode = (Directory)parent.Branch("FUNC", NodeTypes.Directory);
+            }
+            else if (node.Kind == NodeKind.StructureDeclaration)
+            {
+                var structNode = (Directory)parent.Branch("STRUCT", NodeTypes.Directory);
+            }
+            else if (node.Kind == NodeKind.EnumDeclaration)
+            {
+
+            }
+
+            //else throw new Exception();
+        }
+    }
 }
