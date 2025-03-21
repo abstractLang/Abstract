@@ -32,6 +32,7 @@ public static class Analyzer
 
         ShallowAnalyzeRoot(tree.root, programBlock.Root);
 
+        File.WriteAllText("elf.txt", programBlock.ToString());
     }
 
     public static void ShallowAnalyzeRoot(SyntaxNode parentNode, Directory parent)

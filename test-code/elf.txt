@@ -1,0 +1,3 @@
+Abstract's ELF file
+
+(ROOT(IMPORTAbstract.Binutils.ELF.ProgramNodes.Content)(FUNC)(FUNC)(FUNC)(STRUCT))
