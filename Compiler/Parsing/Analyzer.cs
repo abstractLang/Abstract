@@ -43,7 +43,7 @@ public static class Analyzer
             {
                 var importNode = (Directory)parent.Branch("IMPORT", NodeTypes.Directory);
                 var importFrom = (Content)importNode.Branch("FROM", NodeTypes.Content);
-                importFrom.Stream.Write(Encoding.ASCII.GetBytes(((SyntaxNode)node).Children[2].ToString()));
+                importFrom.Stream.Write(Encoding.ASCII.GetBytes(((SyntaxNode)node).Children[1].ToString()));
             }
             else if (node.Kind == NodeKind.FunctionDeclaration)
             {

@@ -1,1 +1,10 @@
-Abstract.Binutils.ELF.ElfProgram
+Abstract ELF Program
+(ROOT
+  (IMPORT
+    (FROM "20 S t d 2E C o n s o l e")
+  )
+  (FUNC)
+  (FUNC)
+  (FUNC)
+  (STRUCT)
+)
