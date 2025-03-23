@@ -27,7 +27,6 @@ public static class Analyzer
     /// <param name="tree"> The tree of the source file </param>
     public static void ShallowAnalyze(SyntaxTree tree)
     {
-
         var programBlock = new ElfProgram();
 
         ShallowAnalyzeRoot(tree.root, programBlock.Root);
@@ -43,16 +42,22 @@ public static class Analyzer
             {
                 var importNode = (Directory)parent.Branch("IMPORT", NodeTypes.Directory);
                 var importFrom = (Content)importNode.Branch("FROM", NodeTypes.Content);
-                importFrom.Stream.Write(Encoding.ASCII.GetBytes(((SyntaxNode)node).Children[1].ToString()));
+                importFrom.Stream.WriteString_ASCII( ((SyntaxNode)node).Children[1].ToString() );
             }
+
             else if (node.Kind == NodeKind.FunctionDeclaration)
             {
                 var funcNode = (Directory)parent.Branch("FUNC", NodeTypes.Directory);
+
+                var name = (Content)funcNode.Branch("NAME", NodeTypes.Content);
+                name.Stream.WriteString_ASCII(GetIdentifier( (SyntaxNode)(((SyntaxNode)node).Children[1]) ));
             }
+
             else if (node.Kind == NodeKind.StructureDeclaration)
             {
                 var structNode = (Directory)parent.Branch("STRUCT", NodeTypes.Directory);
             }
+
             else if (node.Kind == NodeKind.EnumDeclaration)
             {
 
@@ -60,5 +65,19 @@ public static class Analyzer
 
             //else throw new Exception();
         }
+    }
+
+
+    public static string GetIdentifier(SyntaxNode identifierNode)
+    {
+        if (identifierNode.Kind != NodeKind.Identifier) throw new Exception();
+
+        var sb = new StringBuilder();
+        foreach (var node in identifierNode.Children)
+        {
+            var tkn = (TokenNode)node;
+            sb.Append(tkn.Value);
+        }
+        return sb.ToString();
     }
 }
