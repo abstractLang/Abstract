@@ -42,7 +42,7 @@ public static class Analyzer
             {
                 var importNode = (Directory)parent.Branch("IMPORT", NodeTypes.Directory);
                 var importFrom = (Content)importNode.Branch("FROM", NodeTypes.Content);
-                importFrom.Stream.WriteString_ASCII( ((SyntaxNode)node).Children[1].ToString() );
+                importFrom.Stream.WriteString_ASCII(GetIdentifier( (SyntaxNode)(((SyntaxNode)node).Children[1]) ));
             }
 
             else if (node.Kind == NodeKind.FunctionDeclaration)
@@ -56,6 +56,9 @@ public static class Analyzer
             else if (node.Kind == NodeKind.StructureDeclaration)
             {
                 var structNode = (Directory)parent.Branch("STRUCT", NodeTypes.Directory);
+
+                var name = (Content)structNode.Branch("NAME", NodeTypes.Content);
+                name.Stream.WriteString_ASCII(GetIdentifier((SyntaxNode)(((SyntaxNode)node).Children[1])));
             }
 
             else if (node.Kind == NodeKind.EnumDeclaration)

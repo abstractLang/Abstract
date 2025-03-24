@@ -1,16 +1,18 @@
 Abstract ELF Program
 (ROOT
   (IMPORT
-    (FROM ")
+    (FROM "S t d 2E C o n s o l e")
   )
   (FUNC
-    (NAME ")
+    (NAME "m a i n")
   )
   (FUNC
-    (NAME ")
+    (NAME "f o o")
   )
   (FUNC
-    (NAME ")
+    (NAME "f o o")
   )
-  (STRUCT)
+  (STRUCT
+    (NAME "B i o g r a p h y")
+  )
 )
