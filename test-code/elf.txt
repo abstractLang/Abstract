@@ -1,18 +1,19 @@
 Abstract ELF Program
 (ROOT
-  (IMPORT
-    (FROM "S t d 2E C o n s o l e")
-  )
-  (FUNC
-    (NAME "m a i n")
-  )
-  (FUNC
-    (NAME "f o o")
-  )
-  (FUNC
-    (NAME "f o o")
-  )
-  (STRUCT
-    (NAME "B i o g r a p h y")
-  )
-)
+  (MODULE
+    (IMPORT
+      (FROM "Std.Console"))
+    (FUNC
+      (NAME "main")
+      (ATTRREF (; TODO ;)))
+    (FUNC
+      (NAME "foo")
+      (ATTRREF (; TODO ;)))
+    (FUNC
+      (NAME "foo")
+      (ATTRREF (; TODO ;)))
+    (STRUCT
+      (NAME "Biography")))
+  (EXTERN
+    (MEMBER
+      (NAME "public"))))

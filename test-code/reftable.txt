@@ -1,0 +1,3 @@
+main            FUNC
+foo             FUNC
+Biography       STRUCT
