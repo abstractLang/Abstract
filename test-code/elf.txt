@@ -17,3 +17,4 @@ Abstract ELF Program
   (EXTERN
     (MEMBER
       (NAME "public"))))
+

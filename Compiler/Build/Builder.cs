@@ -1,4 +1,4 @@
-﻿using static Abstract.Core.Builder.BuildNamespace;
+﻿using static Abstract.Build.Builder;
 
 namespace Abstract.Build;
 
@@ -9,8 +9,7 @@ public partial class Builder
     // remember to document it better
 
     // No return wrapper
-    public static void Build()
-        => Environment.Exit(__build__());
+    public static void Build() => Environment.Exit(__build__());
 
     public static ConsoleWrapper console = null!;
 
@@ -24,7 +23,10 @@ public partial class Builder
 
         DefaultBuildScript(ctx);
 
-        ctx.GetInstallStep().Run();
+        var bctx = new BuildContext();
+        bctx.console = console;
+
+        ctx.GetInstallStep().Run(bctx);
 
         console.Stop();
         return 0;

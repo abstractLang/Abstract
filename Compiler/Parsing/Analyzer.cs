@@ -3,6 +3,7 @@ using System.Xml.Linq;
 using Abstract.Binutils.ELF;
 using Abstract.Binutils.ELF.ProgramNodes;
 using Abstract.Core.Language;
+using static Abstract.Build.Builder;
 using Directory = Abstract.Binutils.ELF.ProgramNodes.Directory;
 
 namespace Abstract.Parsing;
@@ -26,7 +27,7 @@ public static class Analyzer
     /// 
     /// </summary>
     /// <param name="tree"> The tree of the source file </param>
-    public static void ShallowAnalyze(SyntaxTree tree)
+    public static void ShallowAnalyze(BuildContext ctx, SyntaxTree tree)
     {
         var programBlock = new ElfProgram();
         var data = new ModuleData(programBlock);

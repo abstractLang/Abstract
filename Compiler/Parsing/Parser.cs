@@ -1,13 +1,14 @@
 ﻿using System.Diagnostics;
 using System.Text;
 using Abstract.Core.Language;
+using static Abstract.Build.Builder;
 
 namespace Abstract.Parsing;
 
 public static class Parser
 {
 
-    public static SyntaxTree BuildTree(Token[] tokens)
+    public static SyntaxTree BuildTree(BuildContext ctx, Token[] tokens)
     {
         SyntaxTree tree = new();
         List<Token> tokensList = [.. tokens];

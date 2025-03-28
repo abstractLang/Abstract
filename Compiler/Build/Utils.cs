@@ -42,6 +42,7 @@ public partial class Builder
 
             int cur = Console.GetCursorPosition().Top + 1;
             int width = Console.BufferWidth;
+            if (width == 0) width = 100;
 
             _buf.Append($"\x1b[{_cursorRoot};0H"); // move cursor to root
 
@@ -98,6 +99,9 @@ public partial class Builder
         public void WriteWarn(object? value) =>    _logs.Add(('w', value?.ToString() ?? "null"));
         public void WriteSuccess(object? value) => _logs.Add(('s', value?.ToString() ?? "null"));
     }
+    public class BuildContext {
+        public ConsoleWrapper console = null!;
+    }
 
 
     public abstract class Step(string name) : IStep
@@ -114,7 +118,7 @@ public partial class Builder
 
         public void DependsOn(Step step) => _dependences.Add(step);
 
-        public void Run()
+        public void Run(BuildContext ctx)
         {
             // Solve dependences
             var depQueue = new Queue<Step>(_dependences);
@@ -122,20 +126,20 @@ public partial class Builder
                 var s = depQueue.Dequeue();
                 if (s.Complete) continue;
                 _progress.Append(s._progress);
-                s.Run();
+                s.Run(ctx);
             }
             // Run itself
-            Make();
+            Make(ctx);
 
             Progress.Done();
         }
-        protected abstract void Make();
+        protected abstract void Make(BuildContext ctx);
     }
 
     #region Random Build Steps
     private class StepNode(string name) : Step(name)
     {
-        protected override void Make()
+        protected override void Make(BuildContext ctx)
         {
             
         }
@@ -151,7 +155,7 @@ public partial class Builder
             DependsOn(artifact.Step);
         }
 
-        protected override void Make()
+        protected override void Make(BuildContext ctx)
         {
 
         }
@@ -186,7 +190,7 @@ public partial class Builder
 
         public class BuildExecutableStep(Executable exe) : Step("Building executable") {
             private Executable _exeRef = exe;
-            protected override void Make()
+            protected override void Make(BuildContext ctx)
             {
                 console.WriteLog("Scanning project...");
                 List<Script> scripts = [];
@@ -219,7 +223,7 @@ public partial class Builder
                 {
                     ready[i] = Progress.Branch($"Parsing {scripts[i]}");
                     var p = ready[i]; var s = scripts[i];
-                    Task.Run(() => ParseScriptAsync(p, s));
+                    Task.Run(() => ParseScriptAsync(ctx, p, s));
                 }
 
                 // Hold on until all individual scripts are processed
@@ -227,7 +231,7 @@ public partial class Builder
 
             }
         
-            private void ParseScriptAsync(Progress progress, Script s)
+            private void ParseScriptAsync(BuildContext ctx, Progress progress, Script s)
             {
                 // Every file should be it own tree.
                 // Each tree will be semantically analysed
@@ -235,9 +239,9 @@ public partial class Builder
                 // that can be reused inf future builds
                 // (incremental compilation)
 
-                var tokens = Lexer.LexText(s.Read(), true);
-                var tree = Parser.BuildTree(tokens);
-                Analyzer.ShallowAnalyze(tree);
+                var tokens = Lexer.LexText(ctx, s.Read(), true);
+                var tree = Parser.BuildTree(ctx, tokens);
+                Analyzer.ShallowAnalyze(ctx, tree);
 
                 progress.Done();
             }

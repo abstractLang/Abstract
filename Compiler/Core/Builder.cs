@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Abstract.InterOp;
+using static Abstract.Build.Builder;
 
 
 namespace Abstract.Core.Builder;
@@ -20,7 +21,7 @@ public static class BuildNamespace
     public interface IStep
     {
         [AbstractFunction]
-        public void Run();
+        public void Run(BuildContext ctx);
     }
 
     /// <summary>
