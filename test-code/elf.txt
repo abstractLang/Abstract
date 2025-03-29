@@ -7,14 +7,13 @@ Abstract ELF Program
       (NAME "main")
       (ATTRREF (; TODO ;)))
     (FUNC
-      (NAME "foo")
+      (NAME "foo_i8")
       (ATTRREF (; TODO ;)))
     (FUNC
-      (NAME "foo")
+      (NAME "foo_i32")
       (ATTRREF (; TODO ;)))
     (STRUCT
       (NAME "Biography")))
   (EXTERN
     (MEMBER
       (NAME "public"))))
-

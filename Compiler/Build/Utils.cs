@@ -101,6 +101,7 @@ public partial class Builder
     }
     public class BuildContext {
         public ConsoleWrapper console = null!;
+        public string cacheDir = null!;
     }
 
 

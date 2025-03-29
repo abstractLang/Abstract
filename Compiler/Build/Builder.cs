@@ -23,8 +23,21 @@ public partial class Builder
 
         DefaultBuildScript(ctx);
 
+        var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), ".abs-cache");
+        var cacheDebugDir = Path.Combine(cacheDir, "debug");
+        var cacheModulesDir = Path.Combine(cacheDir, "modules");
+        var cacheDependencesDir = Path.Combine(cacheDir, "dependences");
+
+        // Check if the cache directory is already created and create it if not
+        if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
+        if (!Directory.Exists(cacheDebugDir)) Directory.CreateDirectory(cacheDebugDir);
+        if (!Directory.Exists(cacheModulesDir)) Directory.CreateDirectory(cacheModulesDir);
+        if (!Directory.Exists(cacheDependencesDir)) Directory.CreateDirectory(cacheDependencesDir);
+
+        // Create build context
         var bctx = new BuildContext();
         bctx.console = console;
+        bctx.cacheDir = cacheDir;
 
         ctx.GetInstallStep().Run(bctx);
 
