@@ -1,9 +1,8 @@
 ﻿using System.Text;
-using System.Xml.Linq;
 using Abstract.Binutils.ELF;
 using Abstract.Binutils.ELF.ProgramNodes;
+using Abstract.Build;
 using Abstract.Core.Language;
-using static Abstract.Build.Builder;
 using Directory = Abstract.Binutils.ELF.ProgramNodes.Directory;
 
 namespace Abstract.Parsing;
@@ -27,18 +26,18 @@ public static class Analyzer
     /// 
     /// </summary>
     /// <param name="tree"> The tree of the source file </param>
-    public static void ShallowAnalyze(BuildContext ctx, SyntaxTree tree)
+    public static void ShallowAnalyze(BuildContext ctx, int hash, SyntaxTree tree)
     {
         var programBlock = new ElfProgram();
         var data = new ModuleData(programBlock);
 
         ShallowAnalyzeRoot(data, tree.root, programBlock.Module);
 
-        File.WriteAllText("elf.txt", programBlock.ToString());
+        File.WriteAllText(Path.Combine(ctx.cacheDir, "debug", "elf.txt"), programBlock.ToString());
 
-        //var sb = new StringBuilder();
-        //foreach (var item in data.referenceTable) sb.AppendLine($"{item.Key.PadRight(15)} {item.Value[0].name}");
-        //File.WriteAllText("reftable.txt", sb.ToString());
+        var sb = new StringBuilder();
+        foreach (var item in data.referenceTable) sb.AppendLine($"{item.Key.PadRight(15)} {item.Value[0].name}");
+        File.WriteAllText(Path.Combine(ctx.cacheDir, "debug", $"{hash:X16}-reftable.txt"), sb.ToString());
     }
 
     private static void ShallowAnalyzeRoot(ModuleData d, SyntaxNode parentNode, Directory parent)

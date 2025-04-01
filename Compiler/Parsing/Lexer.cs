@@ -1,6 +1,6 @@
 ﻿using System.Text;
+using Abstract.Build;
 using Abstract.Core.Language;
-using static Abstract.Build.Builder;
 using TokenKind = Abstract.Core.Language.Token.Kind;
 
 namespace Abstract.Parsing;
@@ -49,7 +49,7 @@ public static class Lexer
     };
     private static readonly char[] _digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'];
 
-    public static Token[] LexText(BuildContext ctx, ReadOnlyMemory<char> text, bool removeUnnecessary = false)
+    public static Token[] LexText(BuildContext ctx, int hash, ReadOnlyMemory<char> text, bool removeUnnecessary = false)
     {
         var textSpan = text.Span;
         int index = 0;

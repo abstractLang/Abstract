@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using Abstract.Build;
 using Abstract.Core.Language;
 using static Abstract.Build.Builder;
 
@@ -8,7 +9,7 @@ namespace Abstract.Parsing;
 public static class Parser
 {
 
-    public static SyntaxTree BuildTree(BuildContext ctx, Token[] tokens)
+    public static SyntaxTree BuildTree(BuildContext ctx, int hash, Token[] tokens)
     {
         SyntaxTree tree = new();
         List<Token> tokensList = [.. tokens];
@@ -18,7 +19,7 @@ public static class Parser
             try { ParseRoot(tree.root, tokensList); } catch {}
         }
 
-        OutputGraph(tree);
+        OutputGraph(tree, Path.Combine(ctx.cacheDir, "debug"), hash);
         return tree;
     }
 
@@ -370,7 +371,7 @@ public static class Parser
     }
 
 
-    private static void OutputGraph(SyntaxTree tree)
+    private static void OutputGraph(SyntaxTree tree, string debugPath, int hash)
     {
         StringBuilder nodes = new();
         StringBuilder conns = new();
@@ -419,12 +420,12 @@ public static class Parser
         merge.Append(nodes);
         merge.Append(conns);
         merge.AppendLine("}");
-        File.WriteAllText("ast.dot", merge.ToString());
+        File.WriteAllText(Path.Combine(debugPath, $"{hash:X16}-ast.dot"), merge.ToString());
 
         var psi = new ProcessStartInfo()
         {
             FileName = "dot",
-            Arguments = "-Tpng ast.dot -o ast.png",
+            Arguments = $"-Tpng {Path.Combine(debugPath, $"{hash:X16}-ast.dot")} -o {Path.Combine(debugPath, $"{hash:X16}-ast.png")}",
             UseShellExecute = false,
             CreateNoWindow = false
         };

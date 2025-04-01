@@ -15,13 +15,11 @@ public partial class Builder
 
     private static int __build__()
     {
-        var ctx = new BuilderContext();
-        console = new ConsoleWrapper(ctx.GetInstallStep().Progress);
+        var ctx = new BuildContext();
+        console = new ConsoleWrapper(ctx.DefaultInstallStep.Progress);
 
         console.Reset();
         console.Start();
-
-        DefaultBuildScript(ctx);
 
         var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), ".abs-cache");
         var cacheDebugDir = Path.Combine(cacheDir, "debug");
@@ -34,18 +32,16 @@ public partial class Builder
         if (!Directory.Exists(cacheModulesDir)) Directory.CreateDirectory(cacheModulesDir);
         if (!Directory.Exists(cacheDependencesDir)) Directory.CreateDirectory(cacheDependencesDir);
 
-        // Create build context
-        var bctx = new BuildContext();
-        bctx.console = console;
-        bctx.cacheDir = cacheDir;
+        ctx.cacheDir = cacheDir;
 
-        ctx.GetInstallStep().Run(bctx);
+        DefaultBuildScript(ctx);
+        ctx.DefaultInstallStep.Run();
 
         console.Stop();
         return 0;
     }
 
-    private static void DefaultBuildScript(BuilderContext b)
+    private static void DefaultBuildScript(BuildContext b)
     {
         var exe = b.CreateExecutable(
             name: "my-program",
@@ -53,7 +49,8 @@ public partial class Builder
         );
         var install = b.AddInstallArtifact(exe);
 
-        b.GetInstallStep().DependsOn(install);
+        b.DefaultInstallStep = b.AddStepNode("Build");
+        b.DefaultInstallStep.DependsOn(install);
     }
 
 }

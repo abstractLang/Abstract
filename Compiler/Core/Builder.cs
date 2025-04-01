@@ -21,7 +21,7 @@ public static class BuildNamespace
     public interface IStep
     {
         [AbstractFunction]
-        public void Run(BuildContext ctx);
+        public void Run();
     }
 
     /// <summary>
