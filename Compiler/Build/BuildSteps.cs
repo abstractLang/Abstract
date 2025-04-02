@@ -106,7 +106,7 @@ public partial class BuildExecutableStep(BuildContext ctx, Executable exe) : Ste
         // that can be reused inf future builds
         // (incremental compilation)
 
-        int scriptHash = HashCode.Combine(s.FilePath);
+        var scriptHash = SimpleHash(s.FilePath);
 
         var tokens = Lexer.LexText(ctx, scriptHash, s.Read(), true);
         var tree = Parser.BuildTree(ctx, scriptHash, tokens);
@@ -116,6 +116,16 @@ public partial class BuildExecutableStep(BuildContext ctx, Executable exe) : Ste
     }
 
     [GeneratedRegex("^[a-zA-Z_][a-zA-Z_]*$")] private static partial Regex IdentifierPattern();
+    static ulong SimpleHash(string input)
+    {
+        ulong hash = 14695981039346656037;
+        foreach (char c in input)
+        {
+            hash ^= (byte)c;
+            hash *= 1099511628211;
+        }
+        return hash;
+    }
 }
 
 public class InstallArtifactStep : Step

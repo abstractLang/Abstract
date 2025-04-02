@@ -22,7 +22,7 @@ from Std.Console import
 
 	# Testing cast
 	let i64 myLong = 0x_0000_0000_0000_FFFF
-	let i32 shortedLong = myLong as i64
+	let i32 shortedLong = myLong as i32
 
 }
 

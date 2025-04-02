@@ -9,7 +9,7 @@ namespace Abstract.Parsing;
 public static class Parser
 {
 
-    public static SyntaxTree BuildTree(BuildContext ctx, int hash, Token[] tokens)
+    public static SyntaxTree BuildTree(BuildContext ctx, ulong hash, Token[] tokens)
     {
         SyntaxTree tree = new();
         List<Token> tokensList = [.. tokens];
@@ -371,7 +371,7 @@ public static class Parser
     }
 
 
-    private static void OutputGraph(SyntaxTree tree, string debugPath, int hash)
+    private static void OutputGraph(SyntaxTree tree, string debugPath, ulong hash)
     {
         StringBuilder nodes = new();
         StringBuilder conns = new();

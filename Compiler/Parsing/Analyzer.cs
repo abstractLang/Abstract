@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Xml.Linq;
 using Abstract.Binutils.ELF;
 using Abstract.Binutils.ELF.ProgramNodes;
 using Abstract.Build;
@@ -26,17 +27,17 @@ public static class Analyzer
     /// 
     /// </summary>
     /// <param name="tree"> The tree of the source file </param>
-    public static void ShallowAnalyze(BuildContext ctx, int hash, SyntaxTree tree)
+    public static void ShallowAnalyze(BuildContext ctx, ulong hash, SyntaxTree tree)
     {
         var programBlock = new ElfProgram();
         var data = new ModuleData(programBlock);
 
         ShallowAnalyzeRoot(data, tree.root, programBlock.Module);
 
-        File.WriteAllText(Path.Combine(ctx.cacheDir, "debug", "elf.txt"), programBlock.ToString());
+        File.WriteAllText(Path.Combine(ctx.cacheDir, "debug", $"{hash:X16}-elf.txt"), programBlock.ToString());
 
         var sb = new StringBuilder();
-        foreach (var item in data.referenceTable) sb.AppendLine($"{item.Key.PadRight(15)} {item.Value[0].name}");
+        foreach (var item in data.referenceTable) sb.AppendLine($"{item.Key.PadRight(15)} {item.Value.kind}");
         File.WriteAllText(Path.Combine(ctx.cacheDir, "debug", $"{hash:X16}-reftable.txt"), sb.ToString());
     }
 
@@ -67,7 +68,7 @@ public static class Analyzer
                 name.Stream.WriteString_ASCII(identifier);
 
                 AppendAttributes(d, funcNode, attributes);
-                RegisterReference(d, identifier, funcNode);
+                RegisterReference(d, identifier, funcNode, ReferenceKind.function);
             }
 
             else if (node.Kind == NodeKind.StructureDeclaration)
@@ -79,7 +80,7 @@ public static class Analyzer
                 name.Stream.WriteString_ASCII(identifier);
 
                 AppendAttributes(d, structNode, attributes);
-                RegisterReference(d, identifier, structNode);
+                RegisterReference(d, identifier, structNode, ReferenceKind.structure);
             }
 
             else if (node.Kind == NodeKind.EnumDeclaration)
@@ -113,8 +114,8 @@ public static class Analyzer
                 var identifier = GetIdentifier((SyntaxNode)i.Children[1]);
 
                 Node reference;
-                if (TryGetMultipleReferences(d, identifier, out var o)) reference = o[0];
-                else reference = RegisterExternalReference(d, identifier);
+                if (TryGetReference(d, identifier, out var o)) reference = o.node;
+                else reference = RegisterExternalReference(d, identifier, ReferenceKind.external);
 
                 var attributePtr = (Pointer)member.Branch("ATTRREF", NodeTypes.Pointer);
                 attributePtr.PointsTo = reference;
@@ -143,45 +144,40 @@ public static class Analyzer
     }
 
 
-    private static void RegisterReference(ModuleData d, string identifier, Node node)
+    private static void RegisterReference(ModuleData d, string identifier, Node node, ReferenceKind refkind)
     {
-        if (d.referenceTable.TryGetValue(identifier, out var v)) v.Add(node);
-        else d.referenceTable.Add(identifier, [node]);
+        d.referenceTable.Add(identifier, new() {
+            identifier = identifier,
+            node = node,
+            kind = refkind,
+            dir = (Directory)node
+        });
     }
-    private static Node RegisterExternalReference(ModuleData d, string identifier)
+    private static Node RegisterExternalReference(ModuleData d, string identifier, ReferenceKind refkind)
     {
         var newExRef = (Directory)d.dependences.Branch("MEMBER", NodeTypes.Directory);
-        var nameLump = (Content)newExRef.Branch("NAME", NodeTypes.Content);
+        var nameLump = (Content)newExRef.Branch("SYMBOL", NodeTypes.Content);
 
         nameLump.Stream.WriteString_ASCII(identifier);
 
-        d.referenceTable.Add(identifier, [newExRef]);
+        d.referenceTable.Add(identifier, new()
+        {
+            identifier = identifier,
+            node = newExRef,
+            kind = refkind,
+        });
         return newExRef;
     }
     
-    private static bool TryGetSingleReference(ModuleData d, string identifier, out Node o)
+    private static bool TryGetReference(ModuleData d, string identifier, out ProgramMemberReference o)
     {
         if (d.referenceTable.TryGetValue(identifier, out var v))
         {
-            if (v.Count == 1)
-            {
-                o = v[0];
-                return true;
-            }
+            o = v;
+            return true;
             
         }
 
-        o = null!;
-        return false;
-    }
-    private static bool TryGetMultipleReferences(ModuleData d, string identifier, out Node[] o)
-    {
-        if (d.referenceTable.TryGetValue(identifier, out var v))
-        {
-            o = [.. v];
-            return true;
-        }
-        
         o = null!;
         return false;
     }
@@ -194,6 +190,23 @@ public static class Analyzer
         public Directory dependences => program.Dependences;
 
 
-        public Dictionary<string, List<Node>> referenceTable = [];
+        public Dictionary<string, ProgramMemberReference> referenceTable = [];
+    }
+    private class ProgramMemberReference
+    {
+        public string identifier;
+        public Node node;
+        public ReferenceKind kind;
+        public Directory dir;
+    }
+    public enum ReferenceKind
+    {
+        unknown = 0,
+
+        function,
+        structure,
+        enumerator,
+
+        external,
     }
 }
