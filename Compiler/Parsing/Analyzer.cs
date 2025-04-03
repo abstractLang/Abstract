@@ -1,10 +1,10 @@
 ﻿using System.Text;
-using System.Xml.Linq;
 using Abstract.Binutils.ELF;
-using Abstract.Binutils.ELF.ProgramNodes;
+using Abstract.Binutils.ELF.ElfBuilder;
+using Abstract.Binutils.ELF.ElfBuilder.ProgramNodes;
 using Abstract.Build;
 using Abstract.Core.Language;
-using Directory = Abstract.Binutils.ELF.ProgramNodes.Directory;
+using Directory = Abstract.Binutils.ELF.ElfBuilder.ProgramNodes.Directory;
 
 namespace Abstract.Parsing;
 
@@ -27,18 +27,22 @@ public static class Analyzer
     /// 
     /// </summary>
     /// <param name="tree"> The tree of the source file </param>
-    public static void ShallowAnalyze(BuildContext ctx, ulong hash, SyntaxTree tree)
+    public static ELFProgram ShallowAnalyze(BuildContext ctx, ulong hash, SyntaxTree tree)
     {
-        var programBlock = new ElfProgram();
+        var programBlock = new ElfProgramBuilder();
         var data = new ModuleData(programBlock);
 
         ShallowAnalyzeRoot(data, tree.root, programBlock.Module);
 
-        File.WriteAllText(Path.Combine(ctx.cacheDir, "debug", $"{hash:X16}-elf.txt"), programBlock.ToString());
+        var bakedProgram = programBlock.Bake();
+
+        File.WriteAllText(Path.Combine(ctx.cacheDir, "debug", $"{hash:X16}-elf.txt"), bakedProgram.ToString());
 
         var sb = new StringBuilder();
         foreach (var item in data.referenceTable) sb.AppendLine($"{item.Key.PadRight(15)} {item.Value.kind}");
         File.WriteAllText(Path.Combine(ctx.cacheDir, "debug", $"{hash:X16}-reftable.txt"), sb.ToString());
+
+        return bakedProgram;
     }
 
     private static void ShallowAnalyzeRoot(ModuleData d, SyntaxNode parentNode, Directory parent)
@@ -183,9 +187,9 @@ public static class Analyzer
     }
 
 
-    private class ModuleData(ElfProgram program)
+    private class ModuleData(ElfProgramBuilder program)
     {
-        public ElfProgram program = program;
+        public ElfProgramBuilder program = program;
         public Directory module => program.Module;
         public Directory dependences => program.Dependences;
 

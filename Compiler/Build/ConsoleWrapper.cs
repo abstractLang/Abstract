@@ -18,23 +18,38 @@ public class ConsoleWrapper(Progress progressRoot)
 
     public void Reset()
     {
+#if DEBUG
+        return;
+#else
         _cursorRoot = Console.GetCursorPosition().Top + 1;
+#endif
     }
     
     public void Start()
     {
+#if DEBUG
+        return;
+#else
         _drawing = true;
         Console.Write("\x1b[?25l");
         Task.Run(() => { while (_drawing) { Draw(); } });
+#endif
     }
     public void Stop()
     {
+#if DEBUG
+        return;
+#else
         _drawing = false;
         Console.Write("\x1b[?25h");
+#endif
     }
-    
+
     private void Draw()
     {
+#if DEBUG
+        return;
+#else
         _buf.Clear();
         int bl = 0;
 
@@ -88,6 +103,7 @@ public class ConsoleWrapper(Progress progressRoot)
         _buf.Append($"\x1b[{point - 1};0H"); // move cursor back
 
         Console.WriteLine(_buf.ToString());
+#endif
     }
 
 
