@@ -33,6 +33,7 @@ public static class Analyzer
         var data = new ModuleData(programBlock);
 
         ShallowAnalyzeRoot(data, tree.root, programBlock.Module);
+        ShallowAnalyzeProcessReferences(data);
 
         var bakedProgram = programBlock.Bake();
 
@@ -72,7 +73,7 @@ public static class Analyzer
                 name.Stream.WriteString_ASCII(identifier);
 
                 AppendAttributes(d, funcNode, attributes);
-                RegisterReference(d, identifier, funcNode, ReferenceKind.function);
+                RegisterReference(d, identifier, funcNode, (SyntaxNode)node, ReferenceKind.function);
             }
 
             else if (node.Kind == NodeKind.StructureDeclaration)
@@ -84,7 +85,10 @@ public static class Analyzer
                 name.Stream.WriteString_ASCII(identifier);
 
                 AppendAttributes(d, structNode, attributes);
-                RegisterReference(d, identifier, structNode, ReferenceKind.structure);
+                RegisterReference(d, identifier, structNode, (SyntaxNode)node, ReferenceKind.structure);
+
+                foreach (var i in ((SyntaxNode)node).Children)
+                    ShallowAnalyzeRoot(d, (SyntaxNode)node, structNode);
             }
 
             else if (node.Kind == NodeKind.EnumDeclaration)
@@ -98,6 +102,26 @@ public static class Analyzer
         // TODO check here if there's any orphan attribute
     }
 
+    private static void ShallowAnalyzeProcessReferences(ModuleData md)
+    {
+        // This func should be used to process the references
+        // and to generate the ELF structure for them
+        // It should be called after the entire tree is processed
+        // and the reference table is ready
+
+        foreach (var i in md.referenceTable.Values)
+        {
+            if (i.kind == ReferenceKind.function)
+            {
+                var text = (Content)i.dir.Branch("TEXT", NodeTypes.Content);
+                var data = (Content)i.dir.Branch("DATA", NodeTypes.Content);
+            }
+
+            else if (i.kind == ReferenceKind.structure) continue;
+            else if (i.kind == ReferenceKind.external) continue;
+            else throw new Exception($"Unknown reference kind {i.kind} for {i.identifier} ({i.node})");
+        }
+    }
 
 
     /// <summary>
@@ -118,7 +142,7 @@ public static class Analyzer
                 var identifier = GetIdentifier((SyntaxNode)i.Children[1]);
 
                 Node reference;
-                if (TryGetReference(d, identifier, out var o)) reference = o.node;
+                if (TryGetReference(d, identifier, out var o)) reference = o.dir;
                 else reference = RegisterExternalReference(d, identifier, ReferenceKind.external);
 
                 var attributePtr = (Pointer)member.Branch("ATTRREF", NodeTypes.Pointer);
@@ -148,13 +172,13 @@ public static class Analyzer
     }
 
 
-    private static void RegisterReference(ModuleData d, string identifier, Node node, ReferenceKind refkind)
+    private static void RegisterReference(ModuleData d, string identifier, Directory dir, SyntaxNode node, ReferenceKind refkind)
     {
         d.referenceTable.Add(identifier, new() {
             identifier = identifier,
             node = node,
             kind = refkind,
-            dir = (Directory)node
+            dir = dir
         });
     }
     private static Node RegisterExternalReference(ModuleData d, string identifier, ReferenceKind refkind)
@@ -167,8 +191,9 @@ public static class Analyzer
         d.referenceTable.Add(identifier, new()
         {
             identifier = identifier,
-            node = newExRef,
+            node = null!,
             kind = refkind,
+            dir = newExRef
         });
         return newExRef;
     }
@@ -199,7 +224,7 @@ public static class Analyzer
     private class ProgramMemberReference
     {
         public string identifier;
-        public Node node;
+        public SyntaxNode node;
         public ReferenceKind kind;
         public Directory dir;
     }
