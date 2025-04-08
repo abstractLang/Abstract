@@ -113,13 +113,23 @@ public static class Analyzer
         {
             if (i.kind == ReferenceKind.function)
             {
-                var text = (Content)i.dir.Branch("TEXT", NodeTypes.Content);
+                var text = (TextSection)i.dir.Branch("TEXT", NodeTypes.TextSection);
                 var data = (Content)i.dir.Branch("DATA", NodeTypes.Content);
+
+                ShallowAnalyzeAbstractFunction(md, i.node, text, data);
             }
 
             else if (i.kind == ReferenceKind.structure) continue;
             else if (i.kind == ReferenceKind.external) continue;
             else throw new Exception($"Unknown reference kind {i.kind} for {i.identifier} ({i.node})");
+        }
+    }
+
+
+    private static void ShallowAnalyzeAbstractFunction(ModuleData d, SyntaxNode funcnode, TextSection text, Content data)
+    {
+        foreach (var i in funcnode.Children) {
+            Builder.console.WriteWarn("TODO parse function body");
         }
     }
 
