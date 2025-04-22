@@ -27,6 +27,16 @@ public class Script : Source
         return _content.AsMemory();
     }
 
+    public ulong GetFileHashCode()
+    {
+        ulong hash = 14695981039346656037;
+        foreach (char c in FilePath)
+        {
+            hash ^= (byte)c;
+            hash *= 1099511628211;
+        }
+        return hash;
+    }
     public override string ToString() => $"{FileIdentifier} ({FormatSize(_finfo.Length)})";
 
 

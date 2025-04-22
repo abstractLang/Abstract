@@ -1,0 +1,14 @@
+@public func sqrt(type T, T value) T {
+	// TODO
+	return value
+}
+
+@public func sin(type T, T value) T {
+	// TODO
+	return value
+}
+
+@public func cos(type T, T value) T {
+	// TODO
+	return value
+}

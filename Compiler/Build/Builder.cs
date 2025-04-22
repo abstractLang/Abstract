@@ -1,4 +1,7 @@
-﻿using static Abstract.Build.Builder;
+﻿using System.Text.RegularExpressions;
+using Abstract.Core.Src;
+using Abstract.Parsing;
+using static Abstract.Build.Builder;
 
 namespace Abstract.Build;
 
@@ -11,15 +14,9 @@ public partial class Builder
     // No return wrapper
     public static void Build() => Environment.Exit(__build__());
 
-    public static ConsoleWrapper console = null!;
-
     private static int __build__()
     {
         var ctx = new BuildContext();
-        console = new ConsoleWrapper(ctx.DefaultInstallStep.Progress);
-
-        console.Reset();
-        console.Start();
 
         var cacheDir = Path.Combine(Directory.GetCurrentDirectory(), ".abs-cache");
         var cacheDebugDir = Path.Combine(cacheDir, "debug");
@@ -34,23 +31,55 @@ public partial class Builder
 
         ctx.cacheDir = cacheDir;
 
-        DefaultBuildScript(ctx);
-        ctx.DefaultInstallStep.Run();
+        var cwd = Path.GetFullPath("./");
+        var scripts = GetScriptsList(cwd);
 
-        console.Stop();
+
+        foreach (var i in scripts) {
+
+            var content = i.Read();
+            var hash = i.GetFileHashCode();
+
+            // Tokenize
+            var tokens = Lexer.LexText(ctx, hash, content, true);
+
+            // Build AST
+            var tree = Parser.BuildTree(ctx, hash, tokens);
+
+            // Shallow analyze
+            var analyzer = new ShallowAnalyzer(ctx);
+            var piece = analyzer.Analyze(hash, tree);
+
+        }
+
         return 0;
     }
 
-    private static void DefaultBuildScript(BuildContext b)
-    {
-        var exe = b.CreateExecutable(
-            name: "my-program",
-            rootDirectory: "test-code/"
-        );
-        var install = b.AddInstallArtifact(exe);
+    private static Script[] GetScriptsList(string root) {
+        List<Script> scripts = [];
 
-        b.DefaultInstallStep = b.AddStepNode("Build");
-        b.DefaultInstallStep.DependsOn(install);
+        Queue<string> toSearch = [];
+        toSearch.Enqueue(root);
+
+        while (toSearch.Count > 0) {
+            var cur = toSearch.Dequeue();
+
+            var files = Directory.GetFiles(cur);
+            foreach (var i in files) {
+                if (Path.GetExtension(i) == ".a") {
+                    scripts.Add(new Script(root, i));
+                }
+            }
+
+            var directories = Directory.GetDirectories(cur);
+            foreach (var i in directories) {
+                var a = i[Math.Max(0, i.LastIndexOf(Path.DirectorySeparatorChar) + 1) ..];
+                if(Regex.IsMatch(a, "^[a-zA-Z_][a-zA-Z0-9_]*$")) toSearch.Enqueue(i);
+            }
+
+        }
+
+        return [.. scripts];
     }
 
 }
