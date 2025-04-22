@@ -8,10 +8,7 @@ namespace Abstract.Build;
 public partial class Builder
 {
 
-    // TODO build system is complex,
-    // remember to document it better
-
-    // No return wrapper
+    // No-return wrapper
     public static void Build() => Environment.Exit(__build__());
 
     private static int __build__()

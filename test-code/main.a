@@ -10,9 +10,9 @@ from Std.Console import
 	let i16 myShort = 16
 	let i32 myInt = 32
 	
-	foo_i8(myByte)
-	foo_i32(myInt)
-	foo_i32(myShort)
+	foo(myByte)
+	foo(myInt)
+	foo(myShort)
 
 	let Biography myBio = new Biography()
 

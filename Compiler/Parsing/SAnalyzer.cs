@@ -137,7 +137,9 @@ public class ShallowAnalyzer(BuildContext ctx)
     private void AbstractFunction(SyntaxNode funcnode, TextSection text, Content data)
     {
         foreach (var i in funcnode.Children) {
-           Console.WriteLine("TODO parse function body");
+            // TODO
+
+            Console.WriteLine(funcnode);
         }
     }
 
@@ -168,7 +170,7 @@ public class ShallowAnalyzer(BuildContext ctx)
             }
             else
             {
-                // TODO
+                // TODO attributes with arguments
                 var attributeNode = (Directory)member.Branch("ATTRB", NodeTypes.Directory);
                 var attributePtr = (Pointer)attributeNode.Branch("ATTRREF", NodeTypes.Pointer);
             }
@@ -217,8 +219,11 @@ public class ShallowAnalyzer(BuildContext ctx)
             data.referenceTable.Add(identifier, reference);
         }
         
+        Console.WriteLine(refkind);
+
         var newExRef = (Directory)data.dependences.Branch("MEMBER", NodeTypes.Directory);
         var nameLump = (Content)newExRef.Branch("SYMBOL", NodeTypes.Content);
+        nameLump.Stream.WriteString_ASCII(identifier);
 
         reference.data.Add(new() {
             dir = newExRef,
