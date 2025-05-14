@@ -41,6 +41,12 @@ public partial class Builder
 
             Console.WriteLine($"Processing file {i.FilePath} ({hash:X16})");
 
+            // TODO incremental compilation
+            // Checks here if the file was recently edited or there is no
+            // data saved.
+            // If so, load the already processed module piece instead
+            // of process everything again
+
             // Tokenize
             var tokens = Lexer.LexText(ctx, hash, content, true);
 
@@ -51,9 +57,9 @@ public partial class Builder
 
         Console.WriteLine($"{trees.Count} trees parsed");
 
-        foreach (var i in trees) {
-            
-        }
+        var analizer = new Analizer();
+
+        analizer.IncludeTrees(trees);
 
         return 0;
     }
