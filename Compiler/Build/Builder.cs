@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using Abstract.Core.Language;
 using Abstract.Core.Src;
 using Abstract.Parsing;
 using static Abstract.Build.Builder;
@@ -31,22 +32,27 @@ public partial class Builder
         var cwd = Path.GetFullPath("./");
         var scripts = GetScriptsList(cwd);
 
+        List<SyntaxTree> trees = [];
 
         foreach (var i in scripts) {
 
             var content = i.Read();
             var hash = i.GetFileHashCode();
 
+            Console.WriteLine($"Processing file {i.FilePath} ({hash:X16})");
+
             // Tokenize
             var tokens = Lexer.LexText(ctx, hash, content, true);
 
             // Build AST
             var tree = Parser.BuildTree(ctx, hash, tokens);
+            trees.Add(tree);
+        }
 
-            // Shallow analyze
-            var analyzer = new ShallowAnalyzer(ctx);
-            var piece = analyzer.Analyze(hash, tree);
+        Console.WriteLine($"{trees.Count} trees parsed");
 
+        foreach (var i in trees) {
+            
         }
 
         return 0;

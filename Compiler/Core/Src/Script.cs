@@ -10,7 +10,7 @@ public class Script : Source
 
     private string? _content = null;
 
-    public string FilePath => $"{_root}{Path.DirectorySeparatorChar}{_path}";
+    public string FilePath => Path.Combine(_root, _path);
     private string FileIdentifier => Path.DirectorySeparatorChar != '/'
         ? _path.Replace(Path.DirectorySeparatorChar, '/') : _path;
 

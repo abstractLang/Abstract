@@ -2,7 +2,7 @@
 using System.Text.RegularExpressions;
 using Abstract.Build;
 
-int consoleWidth = Console.WindowWidth;
+int consoleWidth = Math.Max(100, Console.WindowWidth);
 
 Console.SetCursorPosition(0, 0);
 
