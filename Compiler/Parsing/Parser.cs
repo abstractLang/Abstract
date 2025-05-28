@@ -2,6 +2,7 @@
 using System.Text;
 using Abstract.Build;
 using Abstract.Core.Language;
+using Abstract.Core.Src;
 using static Abstract.Build.Builder;
 
 namespace Abstract.Parsing;
@@ -9,9 +10,9 @@ namespace Abstract.Parsing;
 public static class Parser
 {
 
-    public static SyntaxTree BuildTree(BuildContext ctx, ulong hash, Token[] tokens)
+    public static SyntaxTree BuildTree(BuildContext ctx, Script src, ulong hash, Token[] tokens)
     {
-        SyntaxTree tree = new();
+        SyntaxTree tree = new(src);
         List<Token> tokensList = [.. tokens];
 
         while(tokensList.Count > 0)

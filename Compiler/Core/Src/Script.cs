@@ -11,8 +11,10 @@ public class Script : Source
     private string? _content = null;
 
     public string FilePath => Path.Combine(_root, _path);
-    private string FileIdentifier => Path.DirectorySeparatorChar != '/'
-        ? _path.Replace(Path.DirectorySeparatorChar, '/') : _path;
+    public string FileIdentifier => Path.DirectorySeparatorChar != '/' ? _path.Replace(Path.DirectorySeparatorChar, '/') : _path;
+    public string[] FileNamespace => PMNamespace.GetPartsFromDirectory(Path.GetDirectoryName(_path) ?? "");
+
+    public string Size => FormatSize(_finfo.Length);
 
     public Script(string root, string path)
     {
@@ -23,7 +25,7 @@ public class Script : Source
 
     public override ReadOnlyMemory<char> Read()
     {
-        if (_content == null) _content = File.ReadAllText(FilePath);
+        _content ??= File.ReadAllText(FilePath);
         return _content.AsMemory();
     }
 

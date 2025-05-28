@@ -34,12 +34,13 @@ public partial class Builder
 
         List<SyntaxTree> trees = [];
 
-        foreach (var i in scripts) {
+        foreach (var i in scripts)
+        {
 
             var content = i.Read();
             var hash = i.GetFileHashCode();
 
-            Console.WriteLine($"Processing file {i.FilePath} ({hash:X16})");
+            Console.WriteLine($"Processing file {i.FilePath} - {i.Size} ({hash:X16})");
 
             // TODO incremental compilation
             // Checks here if the file was recently edited or there is no
@@ -51,7 +52,7 @@ public partial class Builder
             var tokens = Lexer.LexText(ctx, hash, content, true);
 
             // Build AST
-            var tree = Parser.BuildTree(ctx, hash, tokens);
+            var tree = Parser.BuildTree(ctx, i, hash, tokens);
             trees.Add(tree);
         }
 
@@ -60,6 +61,9 @@ public partial class Builder
         var analizer = new Analizer();
 
         analizer.IncludeTrees(trees);
+        analizer.Compile();
+
+        Console.WriteLine($"Build completed!");
 
         return 0;
     }

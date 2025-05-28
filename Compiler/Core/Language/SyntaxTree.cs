@@ -1,8 +1,11 @@
-﻿namespace Abstract.Core.Language;
+﻿using Abstract.Core.Src;
 
-public sealed class SyntaxTree
+namespace Abstract.Core.Language;
+
+public sealed class SyntaxTree(Script src)
 {
 
+    public readonly Script src = src;
     public readonly SyntaxNode root = new(NodeKind.Root);
 
 }
