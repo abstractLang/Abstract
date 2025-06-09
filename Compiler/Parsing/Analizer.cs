@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using Abstract.Core.Language;
 using Abstract.Core.Src;
 
@@ -6,7 +8,7 @@ namespace Abstract.Parsing;
 public class Analizer
 {
 
-    private Dictionary<string[], ProgramMember> _nametable = [];
+    private Dictionary<string[], ProgramMember> _nametable = new(new StringListComparer());
     private List<Piece> _pieces = [];
 
     public void IncludeTrees(IEnumerable<SyntaxTree> trees)
@@ -21,17 +23,21 @@ public class Analizer
         // to build everything as a single thing after
 
         // Checking if name is valid
-        string[] parent_namespace = ["Program", .. tree.src.FileNamespace];
-        if (_nametable.TryGetValue(parent_namespace, out var member))
-        {
-            if (member is not ProgramMember_Namespace) throw new Exception($"two entries with the same name \"{PMNamespace.Combine(parent_namespace)}\"!");
-        }
-        else _nametable.Add(parent_namespace, new ProgramMember_Namespace(parent_namespace, PMNamespace.Combine(tree.src.FileNamespace)));
+        string[] module_namespace = ["Program"];
+        string[] member_name = [..module_namespace, ..tree.src.FileNamespace];
 
-        var newPiece = new Piece(["Program", .. tree.src.FileNamespace], tree);
+        if (!_nametable.TryGetValue(member_name, out var member))
+            member = new ProgramMember_Namespace(module_namespace, PMNamespace.Combine(tree.src.FileNamespace));
+
+        if (member is not ProgramMember_Namespace)
+            throw new Exception($"two entries with the same name \"{PMNamespace.Combine(member_name)}\"!");
+
+        _nametable.Add(member_name, member);
+
+        var newPiece = new Piece(member_name, tree);
         _pieces.Add(newPiece);
 
-        ParseNodeRecursive(newPiece, null!, tree.root);
+        ParseNodeRecursive(newPiece, member, tree.root);
     }
 
     private void ParseNodeRecursive(Piece piece, ProgramMember? parent, ISyntaxNode node)
@@ -42,7 +48,7 @@ public class Analizer
         {
             case NodeKind.Root:
                 snode = (SyntaxNode)node;
-                foreach (var i in snode.Children) ParseNodeRecursive(piece, null!, i);
+                foreach (var i in snode.Children) ParseNodeRecursive(piece, parent, i);
                 break;
 
             case NodeKind.FromImport:
@@ -56,7 +62,7 @@ public class Analizer
 
             case NodeKind.StructureDeclaration:
                 snode = (SyntaxNode)node;
-                Console.WriteLine($"structure: \"{snode.Children[1]}\"");
+                ParseStructure(piece, parent, snode);
                 break;
 
             default:
@@ -66,9 +72,49 @@ public class Analizer
     }
     private void ParseFunction(Piece piece, ProgramMember? parent, SyntaxNode function)
     {
-         Console.WriteLine($"function: \"{function.Children[1]}\"");
+        var id = GetIdentifierAsStringArray((SyntaxNode)function.Children[1])[0];
+        Console.WriteLine($"function: \"{id}\"");
+
+        string[] name = [.. parent?.Fully_qualified_namespace ?? [], id];
+
+        if (!_nametable.TryGetValue(name, out var pmember))
+        {
+            pmember = new ProgramMember_FunctionGroup(parent?.member_namespace, id);
+            _nametable.Add(name, pmember);
+        }
+
+        if (pmember is not ProgramMember_FunctionGroup @fgroup)
+            throw new Exception($"identifier {string.Join('.', name)} already used by {pmember.GetType().Name}");
+
+        fgroup.functions.Add(new());
+    }
+    private void ParseStructure(Piece piece, ProgramMember? parent, SyntaxNode structure)
+    {
+        var id = GetIdentifierAsStringArray((SyntaxNode)structure.Children[1])[0];
+        Console.WriteLine($"structure: \"{id}\"");
+
+        string[] name = [.. parent?.Fully_qualified_namespace ?? [], id];
+
+        if (!_nametable.TryGetValue(name, out var pmember))
+        {
+            pmember = new ProgramMember_Structure(parent?.member_namespace, id);
+            _nametable.Add(name, pmember);
+        }
+        else throw new Exception($"identifier {string.Join('.', name)} already used by {pmember.GetType().Name}");
     }
 
+    private string[] GetIdentifierAsStringArray(ISyntaxNode identifier)
+    {
+        List<string> parts = [];
+
+        if (identifier is SyntaxNode @node && node.Kind == NodeKind.Identifier)
+        {
+            foreach (var i in node.Children) parts.Add(((TokenNode)i).Value.ToString());
+        }
+        else if (identifier is TokenNode @tkn) return [tkn.Value.ToString()];
+
+        return [.. parts];
+    }
 
     public void Compile()
     {
@@ -76,7 +122,7 @@ public class Analizer
         Console.WriteLine("Nametable:");
         foreach (var i in _nametable)
         {
-            Console.WriteLine($"- {PMNamespace.Combine(i.Key),-20}: {i.Value.GetType().Name}");
+            Console.WriteLine($"- {PMNamespace.Combine(i.Key),-50}: {i.Value.GetType().Name}");
         }
 
     }
@@ -91,23 +137,47 @@ public class Analizer
 
 
     // Program members
-    abstract class ProgramMember(string[] member_namespace, string identifier)
+    abstract class ProgramMember(string[]? member_namespace, string identifier)
     {
-        public readonly string[] member_namespace = member_namespace;
+        public readonly string[] member_namespace = member_namespace ?? [];
         public readonly string identifier = identifier;
+        public string[] Fully_qualified_namespace => [.. member_namespace, identifier];
     }
 
-    class ProgramMember_Namespace(string[] member_namespace, string identifier) : ProgramMember(member_namespace, identifier)
+    class ProgramMember_Namespace(string[]? member_namespace, string identifier) : ProgramMember(member_namespace, identifier)
     {
 
     }
-    class ProgramMember_Structure(string[] member_namespace, string identifier) : ProgramMember(member_namespace, identifier)
+    class ProgramMember_Structure(string[]? member_namespace, string identifier) : ProgramMember(member_namespace, identifier)
     {
 
     }
-    class ProgramMember_FunctionGroup(string[] member_namespace, string identifier) : ProgramMember(member_namespace, identifier)
+    class ProgramMember_FunctionGroup(string[]? member_namespace, string identifier) : ProgramMember(member_namespace, identifier)
+    {
+        public List<SubProgramMember_Function> functions = [];
+    }
+
+    // Unispecific
+    class SubProgramMember_Function()
     {
 
     }
+
+    class StringListComparer : IEqualityComparer<string[]>
+    {
+        public bool Equals(string[]? x, string[]? y)
+        {
+            if (x == null || y == null) return x == y;
+            return x.SequenceEqual(y);
+        }
+
+        public int GetHashCode([DisallowNull] string[] obj)
+        {
+            var hash = new HashCode();
+            foreach (var i in obj) hash.Add(i);
+            return hash.ToHashCode();
+        }
+    }
+
 
 }
