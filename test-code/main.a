@@ -29,7 +29,8 @@ from Std.Console import
 @public func foo(i8 value) { writeln("The value is a byte and it is \{value}!") }
 @public func foo(i32 value) { writeln("The value is an int32 and it is \{value}!") }
 
-struct Biography {
+
+@public struct Biography {
 	@public let u8 myAge
 	@public let string myName
 	@public let string myGithub
