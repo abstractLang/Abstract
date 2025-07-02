@@ -13,6 +13,8 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const realizer = b.dependency("realizer", .{}).module("realizer");
+    exe_mod.addImport("realizer", realizer);
 
     const exe = b.addExecutable(.{
         .name = "Abstract",
