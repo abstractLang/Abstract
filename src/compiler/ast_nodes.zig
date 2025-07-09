@@ -22,6 +22,7 @@ pub const Node = struct {
 const NodeList = std.ArrayList(*Node);
 
 const NodeData = union {
+    // technically not nodes but who cares
     module: Module,
     namespace: Namespace,
 
@@ -36,5 +37,7 @@ pub const Module = struct {
 };
 
 pub const Namespace = struct {
-
+    name: []const u8,
+    path: []const u8,
+    scripts: []const []const u8,
 };

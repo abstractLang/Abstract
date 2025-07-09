@@ -58,8 +58,11 @@ pub fn compile(allocator: std.mem.Allocator, options: CompileOptions) !void {
     };
 
 
-    const a = listNamespacesAndScripts(allocator, dir) catch @panic("Unexpected");
-    allocator.free(a);
+    const namespaces = listNamespacesAndScripts(node_allocator, dir) catch @panic("Unexpected");
+    
+    for (namespaces) |i| {
+        std.log.info("{s: <30} {s: <30} {} scripts", .{ i.name, i.path, i.scripts.len});
+    }
 
 }
 
@@ -67,10 +70,12 @@ fn listNamespacesAndScripts(allocator: std.mem.Allocator, project_dir: std.fs.Di
 
     const Dir = std.fs.Dir;
     const NPList = std.ArrayListUnmanaged(nodes.Namespace);
+    const StringList = std.ArrayListUnmanaged([]const u8);
     const StackItem = struct {
         iter: Dir.Iterator,
         dirname_len: usize = 0,
         namespace_len: usize = 0,
+        scripts: StringList = .empty
     };
 
     var npls: NPList = .empty;
@@ -83,17 +88,15 @@ fn listNamespacesAndScripts(allocator: std.mem.Allocator, project_dir: std.fs.Di
 
     while (stack.items.len > 0) {
 
-        var iterator = &stack.items[stack.items.len - 1].iter;
+        var current = &stack.items[stack.items.len - 1];
 
-        if (try iterator.next()) |entry| {
+        if (try current.iter.next()) |entry| {
 
             if (entry.kind == .directory) {
 
-                std.log.info("{s: <15} {s: <20} {s: <20} {s: <15}", .{ entry.name, dirname_buf.items, namespace_buf.items, @tagName(entry.kind) });
-
                 const last_idx = stack.items.len;
 
-                const child = try iterator.dir.openDir(entry.name, .{
+                const child = try current.iter.dir.openDir(entry.name, .{
                     .access_sub_paths = true,
                     .iterate = true,
                     .no_follow = true
@@ -114,18 +117,27 @@ fn listNamespacesAndScripts(allocator: std.mem.Allocator, project_dir: std.fs.Di
                 }) catch @panic("OOM");
             }
             else if (entry.kind == .file) {
-                std.log.info(">\t{s} - {s}{s}", .{ namespace_buf.items, dirname_buf.items, entry.name});
+                const filename = try allocator.dupe(u8, entry.name);
+                try current.scripts.append(allocator, filename);
             }
 
         } else {
             var popped = stack.pop().?;
             popped.iter.dir.close();
+            popped.scripts.shrinkAndFree(allocator, popped.scripts.items.len);
+
+            try npls.append(allocator, .{
+                .name = try allocator.dupe(u8, namespace_buf.items[0 .. popped.namespace_len]),
+                .path = try allocator.dupe(u8, dirname_buf.items[0 .. popped.dirname_len]),
+                .scripts = popped.scripts.items,
+            });
 
             if (stack.getLastOrNull()) |curr| {
                 dirname_buf.shrinkRetainingCapacity(curr.dirname_len);
                 namespace_buf.shrinkRetainingCapacity(curr.namespace_len);
             }
         }
+
 
     }
 
