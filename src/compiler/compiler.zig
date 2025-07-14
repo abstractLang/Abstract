@@ -2,7 +2,9 @@ const std = @import("std");
 const CompileOptions = @import("CompileOptions.zig");
 const fs = std.fs;
 const fatal = std.process.fatal;
+
 const nodes = @import("ast_nodes.zig");
+const syntaxBuilder = @import("syntaxBuilder.zig");
 
 /// This allocator must be used for all AST node related shit
 var node_allocator: std.mem.Allocator = undefined;
@@ -58,15 +60,16 @@ pub fn compile(allocator: std.mem.Allocator, options: CompileOptions) !void {
     };
 
 
-    const namespaces = listNamespacesAndScripts(node_allocator, dir) catch @panic("Unexpected");
-    
-    for (namespaces) |i| {
-        std.log.info("{s: <30} {s: <30} {} scripts", .{ i.name, i.path, i.scripts.len});
-    }
+    const namespaces = listNamespacesAndScripts(
+        node_allocator,
+        dir,
+        options.module_directory.?,
+    ) catch @panic("Unexpected");
+    syntaxBuilder.buildTree(node_allocator, namespaces);
 
 }
 
-fn listNamespacesAndScripts(allocator: std.mem.Allocator, project_dir: std.fs.Dir) ![]nodes.Namespace {
+fn listNamespacesAndScripts(allocator: std.mem.Allocator, project_dir: std.fs.Dir, project_path: []const u8) ![]nodes.Namespace {
 
     const Dir = std.fs.Dir;
     const NPList = std.ArrayListUnmanaged(nodes.Namespace);
@@ -117,7 +120,8 @@ fn listNamespacesAndScripts(allocator: std.mem.Allocator, project_dir: std.fs.Di
                 }) catch @panic("OOM");
             }
             else if (entry.kind == .file) {
-                const filename = try allocator.dupe(u8, entry.name);
+                const filename = try std.fmt.allocPrint(allocator, "{s}/{s}{s}",
+                    .{project_path, dirname_buf.items, entry.name});
                 try current.scripts.append(allocator, filename);
             }
 
@@ -145,7 +149,5 @@ fn listNamespacesAndScripts(allocator: std.mem.Allocator, project_dir: std.fs.Di
     dirname_buf.deinit(allocator);
     namespace_buf.deinit(allocator);
 
-    npls.shrinkAndFree(allocator, npls.items.len);
-    return npls.items;
-
+    return npls.toOwnedSlice(allocator);
 }

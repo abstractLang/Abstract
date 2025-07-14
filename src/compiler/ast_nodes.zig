@@ -40,4 +40,6 @@ pub const Namespace = struct {
     name: []const u8,
     path: []const u8,
     scripts: []const []const u8,
+
+    content: *Node = undefined,
 };
