@@ -6,7 +6,7 @@
             "name": "F5 Anything: Custom Command",
             "type": "f5anything",
             "request": "launch",
-            "command": "clear && zig build run -freference-trace -- compile /home/lumi/Documents/repos/Abstract/test-project"
+            "command": "clear && zig build run -freference-trace -- compile ./test-project"
         }
     ]
 }

@@ -65,7 +65,7 @@ pub fn compile(allocator: std.mem.Allocator, options: CompileOptions) !void {
         dir,
         options.module_directory.?,
     ) catch @panic("Unexpected");
-    syntaxBuilder.buildTree(node_allocator, namespaces);
+    try syntaxBuilder.build_module_tree(node_allocator, namespaces);
 
 }
 
@@ -134,6 +134,7 @@ fn listNamespacesAndScripts(allocator: std.mem.Allocator, project_dir: std.fs.Di
                 .name = try allocator.dupe(u8, namespace_buf.items[0 .. popped.namespace_len]),
                 .path = try allocator.dupe(u8, dirname_buf.items[0 .. popped.dirname_len]),
                 .scripts = popped.scripts.items,
+                .children = .init(allocator),
             });
 
             if (stack.getLastOrNull()) |curr| {

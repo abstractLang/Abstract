@@ -1,1 +1,10 @@
-Hello, World!
+from Math import
+
+
+func main() {
+
+	call("Hello, World!")
+
+}
+
+
