@@ -1,0 +1,33 @@
+###
+
+    This is a test script with the only purpose being
+    test all language features. It should be able to
+    fully compile without errors or warnings.
+
+###
+
+
+# Function `main`, no parameters, implicitly returns void
+func main() {
+}
+
+@public         # public attribute 
+# Function `foo`, no parameters, implicitly returns void
+func foo() {
+}
+
+@public         # public attribute 
+# Function `foo`, 1 parameter, implicitly returns void
+func foo(u8 i) {
+}
+
+@public         # public attribute 
+# Function `foo`, 2 parameters, implicitly returns void
+func foo(u8 i, u32 j) {
+}
+
+# function `bar`, no parameters, returns a boolean
+func bar() bool {
+}
+
+
