@@ -414,51 +414,69 @@ public static class Tokenizer
     private static void PostProcess(List<Token> tokensList)
     {
         
+        for (var i = 0; i < tokensList.Count; i++)
+        {
+            if (tokensList[i].type == TokenKind.LineFeedChar) tokensList.RemoveAt(i--);
+            else break;
+        }
+        
         var index = 0;
-
         List<int> indexesToRemove = [];
-
+        
         while (index < tokensList.Count)
         {
             var currToken = tokensList[index];
 
-            if ((LineJunctions["justLeft"].Contains(currToken.type)
-                 || LineJunctions["bothSides"].Contains(currToken.type)) && index > 0)
+            if (currToken.type == TokenKind.LineFeedChar)
             {
-                for (var i = index - 1; i >= 0; i--)
-                {
-                    if (tokensList[i].type == TokenKind.LineFeedChar)
-                    {
-                        indexesToRemove.Add(i);
-                    }
-                    else break;
-                }
-            }
-            if (LineJunctions["justRight"].Contains(currToken.type)
-                || LineJunctions["bothSides"].Contains(currToken.type))
-            {
-                for (var i = index + 1; i <= tokensList.Count; i++)
-                {
-                    if (tokensList[i].type == TokenKind.LineFeedChar)
-                    {
-                        indexesToRemove.Add(i);
-                        index++;
-                    }
-                    else break;
-                }
-            }
 
-            if (index > 0 && tokensList[index-1].type == TokenKind.SpaceChar)
-            {
-                var oldtkn = tokensList[index];
-                oldtkn.spaceBefore = true;
-                tokensList[index] = oldtkn;
+                for (var i = index+1; i < tokensList.Count; i++)
+                {
+                    if (tokensList[i].type == TokenKind.LineFeedChar) indexesToRemove.Add(i);
+                    else break;
+                }
+                
             }
-            if (index+1 < tokensList.Count && tokensList[index+1].type == TokenKind.SpaceChar)
+            else
             {
-                var oldtkn = tokensList[index];
-                oldtkn.spaceAfter = true;
-                tokensList[index] = oldtkn;
+
+                if ((LineJunctions["justLeft"].Contains(currToken.type)
+                     || LineJunctions["bothSides"].Contains(currToken.type)) && index > 0)
+                {
+                    for (var i = index - 1; i >= 0; i--)
+                    {
+                        if (tokensList[i].type == TokenKind.LineFeedChar) indexesToRemove.Add(i);
+                        else break;
+                    }
+                }
+
+                if (LineJunctions["justRight"].Contains(currToken.type)
+                    || LineJunctions["bothSides"].Contains(currToken.type))
+                {
+                    for (var i = index + 1; i <= tokensList.Count; i++)
+                    {
+                        if (tokensList[i].type == TokenKind.LineFeedChar)
+                        {
+                            indexesToRemove.Add(i);
+                            index++;
+                        }
+                        else break;
+                    }
+                }
+
+                if (index > 0 && tokensList[index - 1].type == TokenKind.SpaceChar)
+                {
+                    var oldtkn = tokensList[index];
+                    oldtkn.spaceBefore = true;
+                    tokensList[index] = oldtkn;
+                }
+
+                if (index + 1 < tokensList.Count && tokensList[index + 1].type == TokenKind.SpaceChar)
+                {
+                    var oldtkn = tokensList[index];
+                    oldtkn.spaceAfter = true;
+                    tokensList[index] = oldtkn;
+                }
             }
 
             index++;

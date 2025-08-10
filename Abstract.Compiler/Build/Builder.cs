@@ -100,6 +100,11 @@ public static class Builder
                     }
                     var tokens = Tokenizer.ParseScript(script);
                     if (verbose) Console.WriteLine($" ({tokens.Length} tokens)");
+
+                    foreach (var i in tokens)
+                    {
+                        Console.WriteLine($"\t{i.type}\t\t{i.value}");
+                    }
                 }
 
 
