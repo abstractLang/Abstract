@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Abstract.Build\Abstract.Build.csproj" />
+    <ProjectReference Include="..\Abstract.CodeProcess\Abstract.CodeProcess.csproj" />
   </ItemGroup>
 
 </Project>
