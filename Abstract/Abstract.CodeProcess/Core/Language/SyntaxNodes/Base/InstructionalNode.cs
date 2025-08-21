@@ -1,4 +1,4 @@
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Base;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
 public class InstructionalNode : SyntaxNode
 {

@@ -1,6 +1,6 @@
-using Abstract.Parser.Core.Language.SyntaxNodes.Value;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Expression.TypeModifiers;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression.TypeModifiers;
 
 public class ArrayTypeModifierNode : ExpressionNode
 {

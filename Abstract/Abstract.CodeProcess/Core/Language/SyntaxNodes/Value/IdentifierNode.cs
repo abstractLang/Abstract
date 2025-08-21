@@ -1,4 +1,4 @@
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Value;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
 public class IdentifierNode(Token token) : ValueNode(token)
 {

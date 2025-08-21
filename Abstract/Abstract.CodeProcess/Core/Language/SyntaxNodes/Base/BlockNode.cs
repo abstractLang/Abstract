@@ -1,12 +1,12 @@
 using System.Text;
-using Abstract.Parser.Core.Language.SyntaxNodes.Base;
-using Abstract.Parser.Core.ProgData;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Control;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
 public class BlockNode : SyntaxNode
 {
-    public IEnumerable<SyntaxNode> Content => _children.Count > 2 ? _children[1..^1] : [];
+    public IEnumerable<SyntaxNode> Content => _children.Count > 2
+        ? _children[1..^1]
+        : [];
     
     public override string ToString()
     {
@@ -16,11 +16,9 @@ public class BlockNode : SyntaxNode
 
         if (_children.Count > 2)
         {
-            foreach (var i in _children[1..^1])
-            {
-                var lines = i.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var j in lines) sb.AppendLine($"\t{j}");
-            }
+            foreach (var j in _children[1..^1]
+                .Select(i => i.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
+                .SelectMany(lines => lines)) sb.AppendLine($"\t{j}");
         }
 
         sb.AppendLine(_children[^1].ToString());

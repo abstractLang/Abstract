@@ -1,12 +1,9 @@
-﻿using Abstract.Build.Core.Sources;
-using Abstract.Parser.Core.Language;
+﻿using Abstract.CodeProcess.Core.Language;
 
 namespace Abstract.CodeProcess;
 
 public class Lexer
 {
-    private Script currentSrc = null!;
-
 
     private readonly Dictionary<string, TokenType[]> lineJunctions = new()
     {
@@ -47,7 +44,7 @@ public class Lexer
         { "struct", TokenType.StructKeyword },
         { "extends", TokenType.ExtendsKeyword },
         { "packet", TokenType.PacketKeyword },
-        { "enum", TokenType.EnumKeyword },
+        { "typedef", TokenType.TypedefKeyword },
 
         { "switch", TokenType.SwitchKeyword },
         { "match", TokenType.MatchKeyword },
@@ -79,14 +76,7 @@ public class Lexer
         { "noreturn", TokenType.TypeKeyword },
         { "type", TokenType.TypeKeyword },
 
-                                            { "byte", TokenType.TypeKeyword },
-        { "i8", TokenType.TypeKeyword },    { "u8", TokenType.TypeKeyword },
-        { "i16", TokenType.TypeKeyword },   { "u16", TokenType.TypeKeyword },
-        { "i32", TokenType.TypeKeyword },   { "u32", TokenType.TypeKeyword },
-        { "i64", TokenType.TypeKeyword },   { "u64", TokenType.TypeKeyword },
-        { "i128", TokenType.TypeKeyword },  { "u128", TokenType.TypeKeyword },
-        { "iptr", TokenType.TypeKeyword },  { "uptr", TokenType.TypeKeyword },
-
+        { "byte", TokenType.TypeKeyword },
         { "f32", TokenType.TypeKeyword },   { "float", TokenType.TypeKeyword },
         { "f64", TokenType.TypeKeyword },   { "double", TokenType.TypeKeyword },
 
@@ -97,24 +87,25 @@ public class Lexer
     };
 
     private Token Tokenize(string value, TokenType type, int start, int end)
-        => new() { type = type, value = value, start = (uint)start, end = (uint)end, scriptRef = currentSrc };
+        => new() { type = type, value = value, start = (uint)start, end = (uint)end };
 
     private Token Tokenize(char value, TokenType type, int start)
         => Tokenize("" + value, type, start, start+1);
 
-    public Token[] Parse(Script source)
-    {
-        currentSrc = source;
-
-        var sourceCode = source.GetContent();
-        return ParseTokens(sourceCode);
-    }
-    
-    public Token[] ParseTokens(string source)
+    public Token[] Lex(string source)
     {
         List<Token> tokens = [];
+        
+        LexRange(source, tokens);
+        VerifyEndOfStatements(tokens);
 
-        for (int i = 0; i < source.Length; i++)
+        return [.. tokens];
+    }
+    
+    private void LexRange(string source, List<Token> tokens)
+    {
+        
+        for (var i = 0; i < source.Length; i++)
         {
             char c = source[i];
             char c2 = source.Length > i + 1 ? source[i + 1] : '\0';
@@ -373,16 +364,13 @@ public class Lexer
         }
         source = "";
 
-        tokens.Add(Tokenize("\\EOF", TokenType.EOFChar, source.Length, -1));
+        tokens.Add(Tokenize("\\EOF", TokenType.EofChar, source.Length, -1));
 
         VerifyEndOfStatements(tokens);
 
-        currentSrc = null!;
-
-        return [.. tokens];
     }
 
-    public void VerifyEndOfStatements(List<Token> tokensList)
+    private void VerifyEndOfStatements(List<Token> tokensList)
     {
 
         List<Token> tokensToEvaluate = [.. tokensList];

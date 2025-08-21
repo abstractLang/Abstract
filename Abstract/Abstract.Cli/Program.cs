@@ -1,6 +1,5 @@
-﻿using Abstract.Build;
-using Abstract.CompileTarget.Core;
-using System.Reflection;
+﻿using System.Collections.Immutable;
+using Abstract.Cli.Build;
 
 namespace Abstract.Cli;
 
@@ -11,11 +10,11 @@ public class Program
         LoadExternalResources();
 
 #if DEBUG
-        return ProcessCommand([
-            "compile", "MyProgram",
-
-            "-t", "elf",
-
+        return DigestArgs([
+            "build", "MyProgram",
+            
+            "-m", "MyProgram", "../../../../test-code",
+            
             // FIXME
             // The std lib needs to be included as
             // part of the src for now :p
@@ -23,22 +22,10 @@ public class Program
             // The project needs to be named as "Std"
             // to be able to match the std lib main
             // references
-
-            "-p", "MyProgram",
-                "../../../../test-code/main.a",
-
-            "-p", "Std",
-                "Libs/Std/Compilation.a",
-                "Libs/Std/Console.a",
-                "Libs/Std/Math.a",
-                "Libs/Std/Memory.a",
-                "Libs/Std/Meta.a",
-                "Libs/Std/Process.a",
-                "Libs/Std/System.a",
-                "Libs/Std/Types.a",
-
-            "-o", "../../../../test-code/bin/",
-            "-d", "../../../../test-code/dbg/"
+            
+            "-m", "Std", "Libs/Std",
+            
+            "-v"
            ]);
 #else
         return ProcessCommand(args);
@@ -47,27 +34,10 @@ public class Program
 
     public static void LoadExternalResources()
     {
-        // Load plug-in targets
-        var dirs = Directory.GetFiles("./");
-        foreach (var dir in dirs)
-        {
-            if (dir.StartsWith("./Abstract.CompileTarget") && dir.EndsWith(".dll") && !dir.EndsWith("Core.dll"))
-            {
-                var assembly = Assembly.Load(File.ReadAllBytes(dir));
-                var targetExtensions = assembly.GetTypes()
-                    .Where(e => e.BaseType == typeof(CompileTargetExtension));
-                
-                foreach (var i in targetExtensions)
-                {
-                    CompileTargetExtension ext = (CompileTargetExtension)Activator.CreateInstance(i)!;
-                    Builder._compileTargets.Add(ext.TargetID, ext);
-                }
-
-            }
-        }
+        // TODO Load plug-in targets
     }
 
-    public static int ProcessCommand(string[] args)
+    public static int DigestArgs(string[] args)
     {
         if (args.Length < 1)
         {
@@ -75,63 +45,54 @@ public class Program
             return 1;
         }
 
-        if (args[0] == "compile")
-            return ExecuteCompilingProcess(args[1..], false, false, false);
-
-        else if (args[0] == "run")
-            return ExecuteCompilingProcess(args[1..], true, false, true);
-
+        switch (args[0])
+        {
+            case "build" or "b":
+                DigestBuildArgs(args[1..]);
+                break;
+                
+            case "help" or "h" or "-help" or "--help" or "-h":
+                Help();
+                return 0;
+            
+            default:
+                Help();
+                return 1;
+        }
+        
         return 1;
     }
 
-    public static int ExecuteCompilingProcess(string[] args, bool justElf, bool asBuild, bool execute)
+    public static int DigestBuildArgs(string[] args)
     {
-        BuildOptions buildOps = new();
-        if (execute) buildOps.SetElfAsExecuteable();
+        var buildOps = new BuildOptions(args[0]);
 
-        buildOps.ProgramName = args[0];
-
-        string projectName = args[0];
-
-        for (var i = 1; i < args.Length; i++)
+        var i = 1;
+        while(i < args.Length)
         {
-            if (args[i] == "-o") // output flag
+            switch (args[i++])
             {
-                if (args.Length < i + 1) return 1;
+                case "-m" or "--module" when args.Length < i + 2:
+                    throw new Exception("Expected module name and path");
+                case "-m" or "--module":
+                    var name = args[i++];
+                    var path = args[i++];
+                    buildOps.AppendModule(name, path);
+                    break;
 
-                string outputFile = args[++i];
-
-                string dir = Path.GetDirectoryName(outputFile)!;
-                buildOps.SetOutput(dir);
+                case "-v" or "--verbose":
+                    buildOps.Verbose = true;
+                    break;
+                
+                default:
+                    Console.WriteLine($"Unknown argument '{args[--i]}'");
+                    i++;
+                    break;
             }
-            
-            else if (args[i] == "-d") // debug output flag
-            {
-                if (args.Length < i + 1) return 1;
-
-                string outputFile = args[++i];
-
-                string dir = Path.GetDirectoryName(outputFile)!;
-                buildOps.SetDebugOut(dir);
-            }
-
-            else if (args[i] == "-t") // target flag
-            {
-                if (args.Length < i + 1) return 1;
-                buildOps.SetTarget(args[++i]);
-            }
-
-            else if (args[i] == "-p") // project flag
-            {
-                if (args.Length < i + 1) return 1;
-                projectName = args[++i];
-            }
-
-            else buildOps.AddInputFile(projectName, args[i]);
         }
 
-
-        Builder.Execute(buildOps); // no return
+        Builder.Execute(buildOps);
+        
         return 0;
     }
 

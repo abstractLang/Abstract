@@ -1,0 +1,25 @@
+###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
+
+@public @final struct Array(type ElementT) {
+	
+	@indexerGetter @public func ElementT get(i32 i)
+	@indexerSetter @public func void set(i32 i, ElementT value)
+	@getter("Length") @public func i32 getLength()
+
+}
+
+@public @final struct List(type ElementT) {
+	
+	@indexerGetter @public func ElementT get(i32 i)
+	@indexerSetter @public func void set(i32 i, ElementT value)
+	@getter("Count") @public func i32 getCount()
+
+}
+
+@public @interface struct IDictionary(type TKey, type TValue) {
+
+	@indexerGetter @public func TValue get(TKey key)
+	@indexerSetter @public func void set(TKey key, TValue value)
+	@getter("Count") @public func i32 getCount()
+
+}

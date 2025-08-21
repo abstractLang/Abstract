@@ -1,7 +1,6 @@
-using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
-using Abstract.Parser.Core.Language.SyntaxNodes.Value;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Statement;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 
 public class LocalVariableNode : ExpressionNode
 {

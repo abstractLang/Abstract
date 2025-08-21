@@ -1,7 +1,6 @@
 using System.Text;
-using Abstract.Build.Core.Sources;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Base;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
 public abstract class SyntaxNode
 {
@@ -22,13 +21,13 @@ public abstract class SyntaxNode
     
     public void AppendChild(SyntaxNode node, int idx = -1)
     {
-        if (node != null) {
-            node._parent = this;
-            if (idx == -1)
-                _children.Add(node);
-            else
-                _children.Insert(idx, node);
-        }
+        if (node == null) return;
+        
+        node._parent = this;
+        if (idx == -1)
+            _children.Add(node);
+        else
+            _children.Insert(idx, node);
     }
     public int GetChildIndex(SyntaxNode child)
     {
@@ -50,7 +49,6 @@ public abstract class SyntaxNode
     }
     #endregion
 
-    public virtual Script GetSourceScript() => _parent.GetSourceScript();
 
     public override string ToString() => string.IsNullOrEmpty(OverrideToString) ? $"{string.Join(" ", _children)}" : OverrideToString;
     public virtual string ToTree()
@@ -58,7 +56,7 @@ public abstract class SyntaxNode
         var buf = new StringBuilder();
 
         buf.AppendLine($"{GetType().Name}");
-        for (int i = 0; i < _children.Count; i++)
+        for (var i = 0; i < _children.Count; i++)
         {
             buf.Append("  " + (i < _children.Count - 1 ? "|- " : "'- "));
             var lines = _children[i].ToTree().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);

@@ -1,7 +1,6 @@
-using Abstract.Parser.Core.Language.SyntaxNodes.Value;
-using Abstract.Parser.Core.ProgMembers;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Expression;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 
 public class BinaryExpressionNode : ExpressionNode
 {

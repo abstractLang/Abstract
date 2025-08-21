@@ -1,7 +1,7 @@
-using Abstract.Parser.Core.Language.SyntaxNodes.Base;
-using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Misc;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Misc;
 
 public class ArgumentCollectionNode : SyntaxNode
 {

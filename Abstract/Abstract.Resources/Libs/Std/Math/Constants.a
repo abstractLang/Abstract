@@ -1,0 +1,4 @@
+### ABSTRACT STANDARD LIBRARY SCRIPT ###
+
+@public const f64 PI = 3.1415926535
+@public const f64 E =  2.7182818284

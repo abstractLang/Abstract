@@ -1,0 +1,40 @@
+@public @align(align)
+struct Integer(bool signed, ComptimeInteger align) : (align > 0 and align <= 256) {
+
+	@overrideOperator("==")
+	@public @static func bool isEquals(Integer a, Integer b) {
+
+	}
+	@overrideOperator("!=")
+	@public @static func bool isUnequals(Integer a, Integer b) {
+
+	}
+	@overrideOperator("<")
+	@public @static func bool isLesser(Integer a, Integer b) {
+
+	}
+	@overrideOperator(">")
+	@public @static func bool isGreater(Integer a, Integer b) {
+		
+	}
+	@overrideOperator("<=")
+	@public @static func bool isLesserEquals(Integer a, Integer b) {
+
+	}
+	@overrideOperator(">=")
+	@public @static func bool isGreaterEquals(Integer a, Integer b) {
+		
+	}
+
+	# TODO other integer binary operations
+
+	@public @static func []byte getBytes()
+	@public @static func T fromBytes(type T, [align]byte bytes)
+}
+
+@align(32) @defineGlobal(["f32", "float"]) @public @final struct Single {}
+@align(64) @defineGlobal(["f64", "double"]) @public @final struct Double {}
+
+@align(1) @defineGlobal("bool") @public @valueOnly @final struct Boolean {}
+
+@align(32) @defineGlobal("char") @public @valueOnly @final struct Character {}

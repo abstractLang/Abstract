@@ -1,0 +1,9 @@
+@public func void main() {
+
+	foo()
+
+}
+
+func void foo() {
+
+}

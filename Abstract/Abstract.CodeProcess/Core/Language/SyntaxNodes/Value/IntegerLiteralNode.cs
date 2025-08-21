@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Value;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
 public class IntegerLiteralNode(Token token) : ValueNode(token)
 {

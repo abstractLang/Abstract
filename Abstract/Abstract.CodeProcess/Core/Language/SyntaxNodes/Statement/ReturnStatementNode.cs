@@ -1,6 +1,6 @@
-using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Statement;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Statement;
 
 public class ReturnStatementNode : StatementNode
 {

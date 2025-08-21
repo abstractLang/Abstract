@@ -1,6 +1,4 @@
-﻿using System.Globalization;
-
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Value;
+﻿namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
 public class NullLiteralNode(Token t) : ValueNode(t)
 {

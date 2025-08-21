@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Value;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
 public class FloatingLiteralNode(Token token) : ValueNode(token)
 {

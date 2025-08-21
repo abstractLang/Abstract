@@ -1,6 +1,11 @@
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Control;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
-public class NamespaceNode
+public class NamespaceNode(string identifier)
 {
+    public readonly string Identifier = identifier;
+    private readonly List<SyntaxTree> _trees = [];
+
+    public SyntaxTree[] Trees => [.. _trees];
     
+    public void AddTree(SyntaxTree tree) => _trees.Add(tree);
 }

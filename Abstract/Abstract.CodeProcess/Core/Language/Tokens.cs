@@ -1,6 +1,4 @@
-﻿using Abstract.Build.Core.Sources;
-
-namespace Abstract.Parser.Core.Language;
+﻿namespace Abstract.CodeProcess.Core.Language;
 
 public struct Token
 {
@@ -13,14 +11,12 @@ public struct Token
     public readonly (uint start, uint end) Range => (start, end);
     public readonly uint RangeLength => end - start;
 
-    public Script scriptRef;
-
     public override readonly string ToString() => $"{value} ({type})";
     public readonly string ValueString()
         => type switch
         {
             TokenType.LineFeedChar => "\n",
-            TokenType.EOFChar => "[\\EOF]",
+            TokenType.EofChar => "[\\EOF]",
             _ => value,
         };
 }
@@ -44,7 +40,7 @@ public enum TokenType : byte
     StructKeyword,          // struct
     ExtendsKeyword,         // extends
     PacketKeyword,          // packet
-    EnumKeyword,            // enum
+    TypedefKeyword,         // typedef
 
     SwitchKeyword,          // switch
     MatchKeyword,           // match
@@ -121,6 +117,7 @@ public enum TokenType : byte
     CommaChar,              // ,
     DotChar,                // .
 
-    EOFChar,                // \EOF
+    EofChar,                // \EOF
     LineFeedChar,           // \n
+    EspaceChar,             //  
 }

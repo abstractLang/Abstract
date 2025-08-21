@@ -1,0 +1,4 @@
+###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
+
+@public @comptime const Archtecture arch
+@public @comptime const HostSystem os

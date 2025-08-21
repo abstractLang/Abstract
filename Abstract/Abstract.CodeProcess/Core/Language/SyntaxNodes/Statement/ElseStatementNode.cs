@@ -1,7 +1,6 @@
-using Abstract.Parser.Core.Language.SyntaxNodes.Base;
-using Abstract.Parser.Core.Language.SyntaxNodes.Control;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Statement;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Statement;
 
 public class ElseStatementNode : StatementNode
 {

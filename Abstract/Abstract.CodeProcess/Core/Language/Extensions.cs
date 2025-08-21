@@ -1,4 +1,4 @@
-﻿namespace Abstract.Parser.Core.Language;
+﻿namespace Abstract.CodeProcess.Core.Language;
 
 public static class CharExtensions
 {

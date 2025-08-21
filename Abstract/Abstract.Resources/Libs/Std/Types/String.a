@@ -1,0 +1,22 @@
+@defineGlobal("string") @public @valueOnly @final struct String {
+
+	@explicitConvert @public @static func i8 parse_i8(string value)
+	@explicitConvert @public @static func i16 parse_i16(string value)
+	@explicitConvert @public @static func i32 parse_i32(string value)
+	@explicitConvert @public @static func i64 parse_i64(string value)
+	@explicitConvert @public @static func i128 parse_i128(string value)
+
+	@explicitConvert @public @static func u8 parse_u8(string value)
+	@explicitConvert @public @static func u16 parse_u16(string value)
+	@explicitConvert @public @static func u32 parse_u32(string value)
+	@explicitConvert @public @static func u64 parse_u64(string value)
+	@explicitConvert @public @static func u128 parse_u128(string value)
+	
+	@overrideOperator("+")
+	@public @static func string concatenate(string left, string right)
+	@overrideOperator("+")
+	@public @static func string concatenate(string base, char character)
+	@overrideOperator("+")
+	@public @static func string concatenate(string base, []char characters)
+	
+}

@@ -1,12 +1,9 @@
 # IDE cache
 **/.vscode
 **/.vs
+**/.idea
 
 # CSharp cache
 Abstract/**/obj
 Abstract/**/bin
 
-# My personal development folder where i store some code to
-# compile and test - mila
-Abstract/test-code
-Abstract/test-code/*

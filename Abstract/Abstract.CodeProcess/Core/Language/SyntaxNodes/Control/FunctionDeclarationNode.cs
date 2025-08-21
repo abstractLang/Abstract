@@ -1,8 +1,9 @@
-using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
-using Abstract.Parser.Core.Language.SyntaxNodes.Misc;
-using Abstract.Parser.Core.Language.SyntaxNodes.Value;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Misc;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Control;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 public class FunctionDeclarationNode : ControlNode
 {

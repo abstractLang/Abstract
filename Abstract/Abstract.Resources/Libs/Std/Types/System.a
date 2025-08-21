@@ -1,0 +1,22 @@
+###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
+
+#? Represents an abstract's type reference \
+@defineGlobal("type") @public @abstract struct Type {}
+
+#? Represents a value with no type restriction,
+#? the value stored in `anytype` is not opaque
+@defineGlobal("anytype") @public @abstract struct AnyType {}
+
+#? Represents a unspecified type. Should bot be used
+#? by itself, but as a opaque pointer (`*opaque`)
+@align(0) @defineGlobal("opaque") @public @abstract struct Opaque {}
+
+#? Represents no type
+@defineGlobal("void") @public @abstract @final struct Void {}
+
+#? Represents that the function do not returns
+@defineGlobal("noreturn") @public @abstract @final struct NoReturn {}
+
+
+@public @final struct Nullable(type T) {}
+@public @final struct Failable(type T) {}

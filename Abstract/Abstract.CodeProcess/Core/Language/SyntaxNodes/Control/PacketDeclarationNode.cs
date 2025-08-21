@@ -1,4 +1,4 @@
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Control;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 public class PacketDeclarationNode : ControlNode
 {

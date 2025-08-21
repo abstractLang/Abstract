@@ -1,9 +1,7 @@
-using Abstract.Parser.Core.Language.SyntaxNodes.Base;
-using Abstract.Parser.Core.ProgData.DataReference;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Expression;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 
 public abstract class ExpressionNode : InstructionalNode
 {
-    public DataRef DataReference { get; set; } = null!;
 }

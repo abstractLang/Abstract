@@ -1,0 +1,9 @@
+###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
+
+@public @comptime func type typeOf(anytype value) {}
+
+@public @comptime func iptr sizeOf(type t) {}
+@public @comptime func iptr sizeOf(anytype value) {}
+
+@public @comptime func iptr bitSizeOf(type t) {}
+@public @comptime func iptr bitSizeOf(anytype value) {}

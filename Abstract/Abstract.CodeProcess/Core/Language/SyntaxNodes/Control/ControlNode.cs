@@ -1,6 +1,6 @@
-using Abstract.Parser.Core.Language.SyntaxNodes.Base;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Control;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 public abstract class ControlNode : SyntaxNode
 {

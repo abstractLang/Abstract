@@ -1,37 +1,43 @@
-using Abstract.Parser.Core;
-using Abstract.Parser.Core.Language;
-using Abstract.Parser.Core.Language.SyntaxNodes.Base;
-using Abstract.Parser.Core.Language.SyntaxNodes.Control;
-using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
-using Abstract.Parser.Core.Language.SyntaxNodes.Expression.TypeModifiers;
-using Abstract.Parser.Core.Language.SyntaxNodes.Misc;
-using Abstract.Parser.Core.Language.SyntaxNodes.Statement;
-using Abstract.Parser.Core.Language.SyntaxNodes.Value;
+using Abstract.CodeProcess.Core;
+using Abstract.CodeProcess.Core.Language;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression.TypeModifiers;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Misc;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Statement;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
 namespace Abstract.CodeProcess;
 
-public class SyntaxTreeBuilder(ErrorHandler errHandler)
+public class Parser(ErrorHandler errHandler)
 {
 
     private ErrorHandler _errHandler = errHandler;
-    private string _currentScript = null!;
     
     private Token[] _tokens = null!;
     private uint _tokens_cursor = 0;
 
-    public ModuleNode ParseModule(string moduleName, Token[] tkns)
+    public SyntaxTree Parse(Token[] tkns)
     {
         _tokens = tkns;
 
-        var module = new ModuleNode(moduleName);
+        var tree = new SyntaxTree();
 
         while(!IsEOF())
         {
-            try { module.AppendChild(ParseRoot()); }
-            catch (Exception ex) { _errHandler.RegisterError(ex); }
+            try
+            {
+                tree.AppendChild(ParseRoot());
+            }
+            catch (Exception ex)
+            {
+                Eat();
+                _errHandler.RegisterError(ex);
+            }
         }
 
-        return module;
+        return tree;
 
     }
 
@@ -41,20 +47,6 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
        
         switch (Bite().type)
         {
-            case TokenType.NamespaceKeyword:
-            try {
-
-                node = new NamespaceNode();
-                node.AppendChild(EatAsNode()); // namespace
-                node.AppendChild(ParseIdentfier()); // <identifier.*>
-                TryEndLine();
-                node.AppendChild(ParseBlock((BlockNode block, ref bool _) => {
-                    block.AppendChild(ParseRoot()); // {...}
-                }));
-
-            } catch { DiscardLine(); throw; }
-            break;
-
             case TokenType.StructKeyword:
             try {
 
@@ -131,9 +123,9 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
             } catch { DiscardLine(); throw; }
             break;
 
-            case TokenType.EnumKeyword:
-                node = new EnumDeclarationNode();
-                node.AppendChild(EatAsNode()); // enum
+            case TokenType.TypedefKeyword:
+                node = new TypeDefinitionNode();
+                node.AppendChild(EatAsNode()); // typedef
                 node.AppendChild(ParseSingleIdentfier()); // identifier
                 if (Taste(TokenType.LeftPerenthesisChar))
                     node.AppendChild(ParseArgumentCollection()); // (T)
@@ -452,9 +444,9 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
 
                 node = new ParenthesisExpressionNode();
 
-                node.AppendChild(DietAsNode(TokenType.LeftPerenthesisChar, (t) => throw new UnexpectedTokenException(_currentScript, t)));
+                node.AppendChild(DietAsNode(TokenType.LeftPerenthesisChar, (t) => throw new Exception($"Unexpected token '{Bite()}'")));
                 node.AppendChild(ParseExpression());
-                node.AppendChild(DietAsNode(TokenType.RightParenthesisChar, (t) => throw new UnexpectedTokenException(_currentScript, t)));
+                node.AppendChild(DietAsNode(TokenType.RightParenthesisChar, (t) => throw new Exception($"Unexpected token '{Bite()}'")));
 
             } catch { DiscardUntil(TokenType.RightParenthesisChar); throw; }
             break;
@@ -556,7 +548,8 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
         var range = new RangeExpressionNode();
 
         range.AppendChild(ParseIdentfier()); // <identifier>
-        range.AppendChild(DietAsNode(TokenType.InKeyword, (t) => throw new UnexpectedTokenException(_currentScript, t))); // in
+        range.AppendChild(DietAsNode(TokenType.InKeyword, (t)
+            => throw new Exception($"Unexpected token '{Bite()}'"))); // in
 
         range.AppendChild(ParseExpression());  // <value>
 
@@ -569,14 +562,20 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
         throw new Exception($"TODO");
     }
 
-    private ImportFromNode ParseImport()
+    private FromImportNode ParseImport()
     {
-        var nodebase = new ImportFromNode();
+        var nodebase = new FromImportNode();
+        
+        nodebase.AppendChild(DietAsNode(TokenType.FromKeyword, (t)
+            => throw new Exception($"Unexpected token '{Bite()}'")));
+
+        nodebase.AppendChild(ParseIdentfier());
 
         nodebase.AppendChild(DietAsNode(TokenType.ImportKeyword, (t)
             => throw new Exception($"Unexpected token '{Bite()}'")));
 
-        if (Taste(TokenType.LeftBracketChar))
+        if (!Taste(TokenType.LeftBracketChar)) return nodebase;
+        
         {
             var collection = new ImportCollectionNode();
 
@@ -602,12 +601,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
 
             nodebase.AppendChild(collection);
         }
-
-        nodebase.AppendChild(DietAsNode(TokenType.FromKeyword, (t)
-            => throw new Exception($"Unexpected token '{Bite()}'")));
-
-        nodebase.AppendChild(ParseIdentfier());
-
+        
         return nodebase;
     }
 
@@ -726,7 +720,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
         collection.AppendChild(ParseSingleIdentfier());
 
         while (TryEatAsNode(TokenType.DotChar, out _))
-        collection.AppendChild(new IdentifierNode(Eat()));
+            collection.AppendChild(new IdentifierNode(Eat()));
 
         return collection;
     }
@@ -764,10 +758,10 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
     private Token Bite() => _tokens[_tokens_cursor];
     private bool Taste(TokenType t) => _tokens_cursor < _tokens.Length
         ? _tokens[_tokens_cursor].type == t
-        : t == TokenType.EOFChar;
+        : t == TokenType.EofChar;
     private bool Taste(params TokenType[] t) => _tokens_cursor < _tokens.Length
             ? t.Contains(_tokens[_tokens_cursor].type)
-            : t.Contains(TokenType.EOFChar);
+            : t.Contains(TokenType.EofChar);
     
     private bool TasteMore(int index, params TokenType[] t)
     {
@@ -778,7 +772,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
     {
         return _tokens.Length >= _tokens_cursor
             ? _tokens[_tokens_cursor++]
-            : new Token {type = TokenType.EOFChar, value = "\\EOF"};
+            : new Token {type = TokenType.EofChar, value = "\\EOF"};
     }
     private TokenNode EatAsNode() => new(Eat());
 
@@ -789,7 +783,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
             tkn = Eat();
             return true;
         }
-        tkn = new Token {type = TokenType.EOFChar, value = "\\EOF"};
+        tkn = new Token {type = TokenType.EofChar, value = "\\EOF"};
         return false;
     }
     private bool TryEatAsNode(TokenType t, out TokenNode node)
@@ -811,7 +805,7 @@ public class SyntaxTreeBuilder(ErrorHandler errHandler)
         return new TokenNode(Diet(t, errorCallback));
     }
 
-    private bool IsEOF() => _tokens_cursor >= _tokens.Length || _tokens[_tokens_cursor].type == TokenType.EOFChar;
+    private bool IsEOF() => _tokens_cursor >= _tokens.Length || _tokens[_tokens_cursor].type == TokenType.EofChar;
     private bool IsEndOfLine() => _tokens_cursor >= _tokens.Length || _tokens[_tokens_cursor].type == TokenType.LineFeedChar;
 
     private void TryEndLine() => TryEat(TokenType.LineFeedChar, out _);

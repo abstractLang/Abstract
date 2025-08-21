@@ -1,9 +1,0 @@
-###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
-
-namespace Process {
-
-    @public func noreturn exit(uptr statusCode) {
-    
-    }
-
-}

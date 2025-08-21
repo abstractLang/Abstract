@@ -1,7 +1,6 @@
-using Abstract.Parser.Core.Language.SyntaxNodes.Base;
-using Abstract.Parser.Core.Language.SyntaxNodes.Expression;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Value;
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
 public abstract class ValueNode : ExpressionNode
 {

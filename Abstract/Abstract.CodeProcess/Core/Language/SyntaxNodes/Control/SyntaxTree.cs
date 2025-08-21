@@ -1,6 +1,18 @@
-namespace Abstract.Parser.Core.Language.SyntaxNodes.Control;
+using System.Text;
 
-public class TreeRoot: ControlNode
+namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
+
+public class SyntaxTree: ControlNode
 {
-    
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+
+        foreach (var c in  _children)
+        {
+            sb.AppendLine(c.ToString());
+        }
+        
+        return sb.ToString();
+    }
 }
