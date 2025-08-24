@@ -131,7 +131,7 @@ public class Parser(ErrorHandler errHandler)
                     node.AppendChild(ParseArgumentCollection()); // (T)
                 
                 node.AppendChild(ParseBlock((BlockNode block, ref bool _break) => { // {...}
-                    var i = new EnumeratorItemNode();
+                    var i = new TypeDefinitionItemNode();
 
                     i.AppendChild(ParseSingleIdentfier()); // <ident>
                     if (TryEatAsNode(TokenType.EqualsChar, out var node))
@@ -507,15 +507,16 @@ public class Parser(ErrorHandler errHandler)
                     TokenType.TypeKeyword,
                     TokenType.Identifier,
                     TokenType.StarChar
-                ))
-                    node = ParseType();
+                )) node = ParseType();
 
                 node = ParseGenericCollection();
                 break;
             
             // types
             case TokenType.TypeKeyword
-            or TokenType.StarChar:
+            or TokenType.StarChar
+            or TokenType.BangChar
+            or TokenType.QuestionChar:
                 return ParseType();
 
             // null

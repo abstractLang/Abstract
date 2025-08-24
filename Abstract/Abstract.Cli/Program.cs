@@ -8,36 +8,15 @@ public class Program
     public static int Main(string[] args)
     {
         LoadExternalResources();
-
-#if DEBUG
-        return DigestArgs([
-            "build", "MyProgram",
-            
-            "-m", "MyProgram", "../../../../test-code",
-            
-            // FIXME
-            // The std lib needs to be included as
-            // part of the src for now :p
-
-            // The project needs to be named as "Std"
-            // to be able to match the std lib main
-            // references
-            
-            "-m", "Std", "Libs/Std",
-            
-            "-v"
-           ]);
-#else
-        return ProcessCommand(args);
-#endif
+        return DigestArgs(args);
     }
 
-    public static void LoadExternalResources()
+    private static void LoadExternalResources()
     {
         // TODO Load plug-in targets
     }
 
-    public static int DigestArgs(string[] args)
+    private static int DigestArgs(string[] args)
     {
         if (args.Length < 1)
         {
@@ -63,7 +42,7 @@ public class Program
         return 1;
     }
 
-    public static int DigestBuildArgs(string[] args)
+    private static int DigestBuildArgs(string[] args)
     {
         var buildOps = new BuildOptions(args[0]);
 

@@ -8,4 +8,7 @@ public class NamespaceNode(string identifier)
     public SyntaxTree[] Trees => [.. _trees];
     
     public void AddTree(SyntaxTree tree) => _trees.Add(tree);
+
+
+    public override string ToString() => identifier;
 }

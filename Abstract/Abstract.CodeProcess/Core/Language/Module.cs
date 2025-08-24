@@ -15,5 +15,6 @@ public class Module(string name)
         _namespaces.Add(node);
         return node;
     }
-    
+
+    public override string ToString() => name;
 }

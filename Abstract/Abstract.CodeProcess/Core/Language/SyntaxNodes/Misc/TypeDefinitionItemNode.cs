@@ -2,6 +2,6 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
 namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Misc;
 
-public class EnumeratorItemNode : SyntaxNode
+public class TypeDefinitionItemNode : SyntaxNode
 {
 }

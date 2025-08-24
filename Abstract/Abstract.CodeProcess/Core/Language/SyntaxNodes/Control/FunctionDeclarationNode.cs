@@ -7,7 +7,6 @@ namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 public class FunctionDeclarationNode : ControlNode
 {
-    // token 0 = FuncKeyword
     public TypeExpressionNode ReturnType => (TypeExpressionNode)_children[1];
     public IdentifierNode Identifier => (IdentifierNode)_children[2];
     public ParameterCollectionNode ParameterCollection => (ParameterCollectionNode)_children[3];

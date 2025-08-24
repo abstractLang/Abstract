@@ -4,9 +4,8 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
 namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
-public class StructureDeclarationNode : ControlNode
+public partial class StructureDeclarationNode : ControlNode
 {
-    // token 0 = StructKeyword
     public IdentifierNode Identifier => (IdentifierNode)_children[1];
     public bool HasGenericArguments => _children[2] is ParameterCollectionNode;
     public bool HasExtendsImplements => _children[HasGenericArguments ? 3 : 2] is ExtendsImplementsNode;

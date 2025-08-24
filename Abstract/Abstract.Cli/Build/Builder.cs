@@ -13,68 +13,93 @@ public static class Builder
     private static TimeSpan _regexTimeout = TimeSpan.FromMilliseconds(250);
     
     public static void Execute(BuildOptions options)
-    {
-
+    {   
+        // The best is make sure that all the build cache directories
+        // are in the right place
+        SetupBuildCache();
+        
         var verbose = options.Verbose;
         
-        Stopwatch stopwatch = new();
-        var time = stopwatch.Elapsed;
-
         var err = new ErrorHandler();
         var lexer = new Lexer();
         var parser = new Parser(err);
+        var analizer = new Analizer(err);
         
         if (verbose) Console.WriteLine("Starting build...");
-        stopwatch.Start();
-        time = stopwatch.Elapsed;
+        var completeBuild = Stopwatch.StartNew();
 
+        var parsingModules = Stopwatch.StartNew();
+        
         List<Module> modules = [];
         foreach (var mod in options.Modules)
         {
             var module = new Module(mod.name);
             modules.Add(module);
+            var mod_path = mod.path;
 
-            if (verbose) Console.WriteLine($"Processing module '{module.name}'...");
-            if (verbose) Console.Write("Searching for files... ");
-            time = stopwatch.Elapsed;
+            if (verbose) Console.WriteLine($"# Processing module '{module.name}':");
+            if (verbose) Console.Write("\tSearching for files... ");
+            var singleModule = Stopwatch.StartNew();
             
-            var files = SearchSourceFiles(
-                mod.path,
+            var nodes = SearchSourceFiles(
+                mod_path,
                 options.DirectoryQueryRegex,
                 options.ScriptQueryRegex);
-
-            time = stopwatch.Elapsed - time;
-            if (verbose) Console.WriteLine($"Done ({time})");
             
-            if (verbose) Console.WriteLine($"Processing {files.Length} files ...");
-            time = stopwatch.Elapsed;
-            foreach (var i in files)
+            if (verbose) Console.WriteLine($"Done ({singleModule.Elapsed})");
+            if (verbose) Console.Write($"\tProcessing {nodes.Length} namespaces... ");
+            singleModule.Restart();
+            
+            foreach (var (dir, scripts) in nodes)
             {
-                var fileContent = File.ReadAllText(i);
-                var lex = lexer.Lex(fileContent);
-                var tree = parser.Parse(lex);
-                
-                Console.WriteLine("#-------------------------#");
-                Console.WriteLine(tree);
-            }
+                var namespaceName = dir[mod_path.Length..]
+                    .Trim(Path.DirectorySeparatorChar)
+                    .Replace(Path.DirectorySeparatorChar, '.');
 
-            time = stopwatch.Elapsed - time;
-            if (verbose) Console.WriteLine($"Done ({time})");
+                var namespaceNode = module.AddNamespace(namespaceName);
+                
+                foreach (var i in scripts)
+                {
+                    var fileContent = File.ReadAllText(i);
+                    var lex = lexer.Lex(fileContent);
+                    var tree = parser.Parse(lex);
+
+                    namespaceNode.AddTree(tree);
+                }
+            }
+            
+            if (verbose) Console.WriteLine($"Done ({singleModule.Elapsed})");
         }
         
-        time = stopwatch.Elapsed;
-        stopwatch.Stop();
-        if (verbose) Console.WriteLine($"Build Finished ({time})");
+        parsingModules.Stop();
+        if (verbose) Console.WriteLine($"Modules parsed ({parsingModules.Elapsed})");
+        
+        analizer.Analize([.. modules]);
+        
+        completeBuild.Stop();
+        if (verbose) Console.WriteLine($"Build Finished ({completeBuild.Elapsed})");
 
     }
 
-    private static string[] SearchSourceFiles(
+    private static void SetupBuildCache()
+    {
+        string[] directories = [
+            ".abs-cache",
+            ".abs-cache/debug",
+            ".abs-cache/modules",
+        ];
+
+        foreach (var i in directories)
+            if (!Directory.Exists(i)) Directory.CreateDirectory(i);
+    }
+    
+    private static (string, string[])[] SearchSourceFiles(
         string moduleDirectory,
         string directorySearchPattern,
         string fileSearchPattern
     )
     {
-        List<string> scripts = [];
+        List<(string, string[])> scripts = [];
 
         Queue<string> queue = new();
         queue.Enqueue(moduleDirectory);
@@ -91,9 +116,11 @@ public static class Builder
             }
                 
             var files = Directory.GetFiles(parent);
-            scripts.AddRange(from f in files
+            var match = from f in files
                 where Regex.IsMatch(f, fileSearchPattern, _regexOptions, _regexTimeout)
-                select f);
+                select f;
+            
+            scripts.AddRange((parent, files));
         }
         
         return [.. scripts];

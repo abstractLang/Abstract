@@ -34,9 +34,8 @@ public class Lexer
     private Dictionary<string, TokenType> _keyword2TokenMap = new()
     {
         // keywords
-        { "namespace", TokenType.NamespaceKeyword },
-        { "import", TokenType.ImportKeyword },
         { "from", TokenType.FromKeyword },
+        { "import", TokenType.ImportKeyword },
 
         { "let", TokenType.LetKeyword },
         { "const", TokenType.ConstKeyword },

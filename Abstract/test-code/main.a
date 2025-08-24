@@ -1,9 +1,9 @@
-@public func void main() {
+@public func main() void {
 
 	foo()
 
 }
 
-func void foo() {
+func foo() void {
 
 }

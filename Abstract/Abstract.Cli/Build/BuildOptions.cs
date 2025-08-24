@@ -8,8 +8,8 @@ public class BuildOptions(string projectName)
     public readonly string ProjectName = projectName;
 
     public bool Verbose = false;
-    public string DirectoryQueryRegex = "[a-zA-Z_][a-zA-Z0-9_]*$";
-    public string ScriptQueryRegex = "[A-Za-z_][A-Za-z0-9_]*(?:\\.(?:a|abs))?$";
+    public string DirectoryQueryRegex = "^[a-zA-Z_][a-zA-Z0-9_]*$";
+    public string ScriptQueryRegex = "^[A-Za-z_][A-Za-z0-9_]*(?:\\.(?:a|abs))?$";
     
     private readonly Dictionary<string, string> _modules = [];
     public (string name, string path)[] Modules => _modules.Select(x => (x.Key, x.Value)).ToArray();
@@ -17,9 +17,13 @@ public class BuildOptions(string projectName)
 
     public void AppendModule(string name, string path)
     {
-        var rooted = Path.GetFullPath(path);
+        var post = path.Replace("res://", Path.GetDirectoryName(Environment.ProcessPath) + '/');
+        var rooted = Path.GetFullPath(post).TrimEnd(Path.DirectorySeparatorChar);
+        
         if (_modules.ContainsKey(name)) throw new Exception($"module '{name}' already exists");
         if (_modules.ContainsValue(rooted)) throw new Exception($"path '{path}' already included");
+        if (!Directory.Exists(rooted)) throw new Exception($"path '{rooted}' is not a valid directory");
+        
         _modules.Add(name, rooted);
     }
 

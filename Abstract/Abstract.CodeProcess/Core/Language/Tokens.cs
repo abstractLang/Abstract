@@ -29,10 +29,9 @@ public enum TokenType : byte
     StringLiteral,
     CharacterLiteral,
     Identifier,
-
-    NamespaceKeyword,       // namespace
-    ImportKeyword,          // import
+    
     FromKeyword,            // from
+    ImportKeyword,          // import
     TypeKeyword,
     LetKeyword,             // let
     ConstKeyword,           // const

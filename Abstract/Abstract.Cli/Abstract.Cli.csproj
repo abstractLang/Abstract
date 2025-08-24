@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Abstract.CodeProcess\Abstract.CodeProcess.csproj" />
+    <ProjectReference Include="..\Abstract.Resources\Abstract.Resources.csproj" />
   </ItemGroup>
 
 </Project>
