@@ -63,6 +63,24 @@ public class Program
                     buildOps.Verbose = true;
                     break;
                 
+                case "-d" or "--debug":
+                    var options = args[i++];
+                    if (options == "all")
+                    {
+                        buildOps.DebugDumpParsedTrees = true;
+                    }
+
+                    var optionsList = options.Split(',');
+                    foreach (var option in optionsList)
+                    {
+                        switch (option.Trim())
+                        {
+                            case "parsedTrees": buildOps.DebugDumpParsedTrees = true; break;
+                        }
+                    }
+                        
+                    break;
+                
                 default:
                     Console.WriteLine($"Unknown argument '{args[--i]}'");
                     i++;

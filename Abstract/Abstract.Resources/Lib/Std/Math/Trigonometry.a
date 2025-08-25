@@ -1,8 +1,8 @@
 ### ABSTRACT STANDARD LIBRARY SCRIPT ###
 
-@public func T sin(type T, T rad) {}
-@public func T cos(type T, T rad) {}
-@public func T tan(type T, T rad) {}
+@public func sin(type T, T rad) T {}
+@public func cos(type T, T rad) T {}
+@public func tan(type T, T rad) T {}
 
-@public func T atan(type T, T x) {}
-@public func T atan2(type T, T x, T y) {}
+@public func atan(type T, T x) T {}
+@public func atan2(type T, T x, T y) T {}

@@ -60,19 +60,39 @@ public static class Builder
                 
                 foreach (var i in scripts)
                 {
+                    err.SetFile(i);
                     var fileContent = File.ReadAllText(i);
                     var lex = lexer.Lex(fileContent);
                     var tree = parser.Parse(lex);
-
+                    
                     namespaceNode.AddTree(tree);
                 }
+                
+                if (options.DebugDumpParsedTrees)
+                {
+                    List<string> nmsp = [ ];
+                    if (!string.IsNullOrEmpty(module.name)) nmsp.AddRange(module.name.Split('.'));
+                    if (!string.IsNullOrEmpty(namespaceName)) nmsp.AddRange(namespaceName.Split('.'));
+                        
+                    File.WriteAllText(
+                        $"./.abs-cache/debug/{string.Join('.', nmsp)}.generated.a",
+                        namespaceNode.ContentToString());
+                }
+
             }
             
             if (verbose) Console.WriteLine($"Done ({singleModule.Elapsed})");
         }
+        err.SetFile(null);
         
         parsingModules.Stop();
         if (verbose) Console.WriteLine($"Modules parsed ({parsingModules.Elapsed})");
+
+        if (err.ErrorCount > 0)
+        {
+            err.Dump();
+            Environment.Exit(1);
+        }
         
         analizer.Analize([.. modules]);
         
@@ -88,7 +108,13 @@ public static class Builder
             ".abs-cache/debug",
             ".abs-cache/modules",
         ];
+        string[] reset = [
+            ".abs-cache/debug",
+        ];
 
+        foreach (var i in reset)
+            if (Directory.Exists(i)) Directory.Delete(i, true);
+        
         foreach (var i in directories)
             if (!Directory.Exists(i)) Directory.CreateDirectory(i);
     }
@@ -111,13 +137,15 @@ public static class Builder
             var directories = Directory.GetDirectories(parent);
             foreach (var d in directories)
             {
-                if (Regex.IsMatch(d, directorySearchPattern, _regexOptions, _regexTimeout))
+                var i = Path.GetFileName(d);
+                if (Regex.IsMatch(i, directorySearchPattern, _regexOptions, _regexTimeout))
                     queue.Enqueue(d);
             }
-                
+            
             var files = Directory.GetFiles(parent);
             var match = from f in files
-                where Regex.IsMatch(f, fileSearchPattern, _regexOptions, _regexTimeout)
+                let i = Path.GetFileName(f)
+                where Regex.IsMatch(i, fileSearchPattern, _regexOptions, _regexTimeout)
                 select f;
             
             scripts.AddRange((parent, files));

@@ -11,6 +11,9 @@ public class BuildOptions(string projectName)
     public string DirectoryQueryRegex = "^[a-zA-Z_][a-zA-Z0-9_]*$";
     public string ScriptQueryRegex = "^[A-Za-z_][A-Za-z0-9_]*(?:\\.(?:a|abs))?$";
     
+    // Debug options
+    public bool DebugDumpParsedTrees = false;
+    
     private readonly Dictionary<string, string> _modules = [];
     public (string name, string path)[] Modules => _modules.Select(x => (x.Key, x.Value)).ToArray();
 

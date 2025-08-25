@@ -21,6 +21,7 @@ public class Parser(ErrorHandler errHandler)
     public SyntaxTree Parse(Token[] tkns)
     {
         _tokens = tkns;
+        _tokens_cursor = 0;
 
         var tree = new SyntaxTree();
 
@@ -30,11 +31,7 @@ public class Parser(ErrorHandler errHandler)
             {
                 tree.AppendChild(ParseRoot());
             }
-            catch (Exception ex)
-            {
-                Eat();
-                _errHandler.RegisterError(ex);
-            }
+            catch (Exception ex) { Eat(); _errHandler.RegisterError(ex); }
         }
 
         return tree;
@@ -80,15 +77,16 @@ public class Parser(ErrorHandler errHandler)
 
                 node = new FunctionDeclarationNode();
                 node.AppendChild(EatAsNode()); // func
-                node.AppendChild(ParseType()); // <type>
                 node.AppendChild(ParseSingleIdentfier()); // <identifier>
                 node.AppendChild(ParseParameterCollection()); // (..., ...)
+                node.AppendChild(ParseType()); // <type>
+                
                 TryEndLine();
-                if (Taste(TokenType.LeftBracketChar))
-                    node.AppendChild(ParseBlock((BlockNode n, ref bool _)
-                        => n.AppendChild(ParseFunctionBody()))); // {...}
+                node.AppendChild(ParseBlock((BlockNode n, ref bool _)
+                    => n.AppendChild(ParseFunctionBody()))); // {...}
             
-            } catch { DiscardLine(); throw; }
+            }
+            catch { DiscardLine(); throw; }
             break;
 
             case TokenType.PacketKeyword:

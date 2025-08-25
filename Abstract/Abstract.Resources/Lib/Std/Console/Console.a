@@ -1,9 +1,9 @@
 ###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
 
-@public func void write(anytype content) {}
-#@public func void write([]anytype content)
+@public func write(anytype content) void {}
+#@public func write([]anytype content) void
 
-@public func void writeln(anytype content) {}
-#@public func void writeln([]anytype content)
+@public func writeln(anytype content) void {}
+#@public func writeln([]anytype content) void
     
-@public func string read() {}
+@public func read() string {}

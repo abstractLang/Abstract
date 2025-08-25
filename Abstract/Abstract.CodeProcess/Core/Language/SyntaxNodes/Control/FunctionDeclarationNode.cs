@@ -7,9 +7,11 @@ namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 public class FunctionDeclarationNode : ControlNode
 {
-    public TypeExpressionNode ReturnType => (TypeExpressionNode)_children[1];
-    public IdentifierNode Identifier => (IdentifierNode)_children[2];
-    public ParameterCollectionNode ParameterCollection => (ParameterCollectionNode)_children[3];
-    public bool HasBody => _children.Count == 5;
-    public BlockNode? Body => HasBody ? (BlockNode)_children[4] : null;
+    public IdentifierNode Identifier => (IdentifierNode)_children[1];
+    public ParameterCollectionNode ParameterCollection => (ParameterCollectionNode)_children[2];
+    public TypeExpressionNode? ReturnType => HasType ? (TypeExpressionNode)_children[3] : null;
+    
+    public bool HasType => _children.Count > 3 && _children[4] is not BlockNode;
+    public bool HasBody => HasType ? _children.Count == 5 : _children.Count == 4;
+    public BlockNode? Body => HasBody ? (BlockNode)_children[HasType ? 4 : 3] : null;
 }

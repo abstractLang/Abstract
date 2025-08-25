@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 public class NamespaceNode(string identifier)
@@ -11,4 +13,13 @@ public class NamespaceNode(string identifier)
 
 
     public override string ToString() => identifier;
+
+    public string ContentToString()
+    {
+        var sb = new StringBuilder();
+
+        foreach (var t in _trees) sb.AppendLine(t.ToString());
+        
+        return sb.ToString();
+    }
 }
