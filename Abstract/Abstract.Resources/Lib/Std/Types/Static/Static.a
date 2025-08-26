@@ -1,4 +1,3 @@
 ###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
 
 @public @valueOnly @final struct StringBuffer(uptr bufferLength) {}
-@public @valueOnly @final struct StringSpan {}

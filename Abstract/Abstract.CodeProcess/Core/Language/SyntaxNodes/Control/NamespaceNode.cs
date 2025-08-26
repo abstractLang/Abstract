@@ -4,7 +4,7 @@ namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 public class NamespaceNode(string identifier)
 {
-    public readonly string Identifier = identifier;
+    public readonly string[] Identifier = identifier.Split('.');
     private readonly List<SyntaxTree> _trees = [];
 
     public SyntaxTree[] Trees => [.. _trees];

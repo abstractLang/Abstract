@@ -1,8 +1,11 @@
 ### ABSTRACT STANDARD LIBRARY SCRIPT ###
 
-@public func sin(type T, T rad) T {}
-@public func cos(type T, T rad) T {}
-@public func tan(type T, T rad) T {}
+@constExp @public func sin(type T, T rad) T {}
+@constExp @public func cos(type T, T rad) T {}
+@constExp @public func tan(type T, T rad) T {}
 
-@public func atan(type T, T x) T {}
-@public func atan2(type T, T x, T y) T {}
+@constExp @public func asin(type T, T rad) T {}
+@constExp @public func acos(type T, T rad) T {}
+@constExp @public func atan(type T, T x) T {}
+
+@constExp @public func atan2(type T, T x, T y) T {}
