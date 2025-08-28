@@ -7,21 +7,21 @@ namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 public class TypeDefinitionNode : ControlNode
 {
     public IdentifierNode Identifier => (IdentifierNode)_children[1];
-    public BlockNode Block => (BlockNode)_children[2];
+    public BlockNode Body => (BlockNode)_children[2];
 
     public override string ToString()
     {
         var sb = new StringBuilder();
 
         sb.Append($"typedef {Identifier} ");
-        if (!Block.Content.Any())
+        if (!Body.Content.Any())
         {
             sb.Append("{}");
             return sb.ToString();
         }
         sb.AppendLine("{");
 
-        var blockList = Block.Content.ToArray();
+        var blockList = Body.Content.ToArray();
         for (var i = 0; i < blockList.Length; i++)
         {
             var b = blockList[i];

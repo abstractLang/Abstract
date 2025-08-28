@@ -1,0 +1,9 @@
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
+
+namespace Abstract.CodeProcess.Core.Language.EvaluationData;
+
+public class TypedefItemObject(string[] g, TypeDefinitionItemNode synnode)
+    : LangObject(g)
+{
+    public readonly TypeDefinitionItemNode syntaxNode = synnode;
+}

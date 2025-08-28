@@ -7,3 +7,5 @@
 Abstract/**/obj
 Abstract/**/bin
 
+# Abstract cache
+Abstract/test-code/.abs-cache
