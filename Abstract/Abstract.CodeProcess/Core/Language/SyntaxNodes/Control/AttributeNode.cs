@@ -5,13 +5,10 @@ namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 public class AttributeNode : ControlNode
 {
-    public bool Evaluated { get; set; } = false;
-
     public override string ToString()
     {
         var sb = new StringBuilder();
-
-        if (Evaluated)sb.Append('#');
+        
         sb.Append('@');
         sb.Append(Children[1]);
         sb.Append('(');

@@ -1,6 +1,6 @@
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
-namespace Abstract.CodeProcess.Core.Language.EvaluationData;
+namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 
 public class NamespaceObject(string[] g, NamespaceNode synnode)
     : LangObject(g)

@@ -1,4 +1,4 @@
-namespace Abstract.CodeProcess.Core.Language.EvaluationData;
+namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 
 public class FunctionGroupObject(string[] g): LangObject(g)
 {

@@ -2,7 +2,11 @@ using System.Text;
 using Abstract.CodeProcess.Core;
 using Abstract.CodeProcess.Core.Language;
 using Abstract.CodeProcess.Core.Language.EvaluationData;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.AttributeReferences;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
 namespace Abstract.CodeProcess;
 
@@ -11,16 +15,18 @@ public class Analizer(ErrorHandler handler)
     private ErrorHandler _errorHandler = handler;
 
     private Dictionary<string[], LangObject> _globalReferenceTable = new(new IdentifierComparer());
-    private List<AttributeNode> onHoldAttributes = [];
+    private List<AttributeReference> onHoldAttributes = [];
     
     
     public void Analize(Module[] modules)
     {
         SearchReferences(modules);
-
+        
         DumpGlobalReferenceTable();
     }
 
+    #region Stage One
+    
     private void SearchReferences(Module[] modules)
     {
         foreach (var m in modules)
@@ -51,7 +57,7 @@ public class Analizer(ErrorHandler handler)
     {
         if (node is AttributeNode @attr)
         {
-            onHoldAttributes.Add(attr);
+            onHoldAttributes.Add(EvaluateAttribute(attr));
             return;
         }
 
@@ -74,7 +80,7 @@ public class Analizer(ErrorHandler handler)
     {
         if (node is AttributeNode @attr)
         {
-            onHoldAttributes.Add(@attr);
+            onHoldAttributes.Add(EvaluateAttribute(attr));
             return;
         }
 
@@ -92,7 +98,7 @@ public class Analizer(ErrorHandler handler)
 
     }
     
-
+    
     private FunctionObject RegisterFunction(LangObject parent, FunctionDeclarationNode funcnode)
     {
         string[] g = [..parent.Global, funcnode.Identifier.Value];
@@ -154,6 +160,59 @@ public class Analizer(ErrorHandler handler)
         return vari;
     }
     
+    private static AttributeReference EvaluateAttribute(AttributeNode node)
+    {
+        var identifierNode = (node.Children[1] as IdentifierCollectionNode)!;
+        if (identifierNode.incomplete) goto _default; // All buildins are complete!
+        if (identifierNode.Children.Length > 1) goto _default; // All buildins are single-world!
+        var attribname = (identifierNode.Children[0] as IdentifierNode)!.Value;
+
+        var builtin = attribname switch
+        {
+            "static" => BuiltinAttributes.Static,
+            "defineGlobal" => BuiltinAttributes.DefineGlobal,
+            "align" => BuiltinAttributes.Align,
+            "constExp" => BuiltinAttributes.ConstExp,
+
+            "public" => BuiltinAttributes.Public,
+            "private" => BuiltinAttributes.Private,
+            "internal" => BuiltinAttributes.Internal,
+            "final" => BuiltinAttributes.Final,
+            "abstract" => BuiltinAttributes.Abstract,
+            "interface" => BuiltinAttributes.Interface,
+            "extern" => BuiltinAttributes.Extern,
+            "virtual" => BuiltinAttributes.Virtual,
+            "override" => BuiltinAttributes.Override,
+            "allowAccessTo" => BuiltinAttributes.AllowAccessTo,
+            "denyAccessTo" => BuiltinAttributes.DenyAccessTo,
+
+            "inline" => BuiltinAttributes.Inline,
+            "noinline" => BuiltinAttributes.Noinline,
+            "comptime" => BuiltinAttributes.Comptime,
+            "runtime" => BuiltinAttributes.Runtime,
+            "callconv" => BuiltinAttributes.CallConv,
+
+            "getter" => BuiltinAttributes.Getter,
+            "setter" => BuiltinAttributes.Setter,
+
+            "explicitConvert" => BuiltinAttributes.ExplicitConvert,
+            "implicitConvert" => BuiltinAttributes.ImplicitConvert,
+            "overrideOperator" => BuiltinAttributes.OverrideOperator,
+            "indexerGetter" => BuiltinAttributes.IndexerGetter,
+            "indexerSetter" => BuiltinAttributes.IndexerSetter,
+
+            _ => BuiltinAttributes._undefined
+        };
+        if (builtin == BuiltinAttributes._undefined) goto _default;
+        return new BuiltInAttributeReference(node, builtin);
+        
+        _default:
+        return new UnsolvedAttributeReference(node);
+    }
+    
+    #endregion
+    #region Stage Two
+    #endregion
  
     private void DumpGlobalReferenceTable()
     {
@@ -192,4 +251,5 @@ public class Analizer(ErrorHandler handler)
             return HashCode.Combine(val);
         }
     }
+    
 }

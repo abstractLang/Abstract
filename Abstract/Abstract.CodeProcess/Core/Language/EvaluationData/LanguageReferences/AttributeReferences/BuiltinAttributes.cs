@@ -1,0 +1,43 @@
+namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.AttributeReferences;
+
+public enum BuiltinAttributes
+{
+    _undefined = 0,
+        
+    // General
+    Static,
+    DefineGlobal,
+    Align,
+    ConstExp,
+        
+    // Protection and inheritance
+    Public,
+    Private,
+    Internal,
+    Final,
+    Abstract,
+    Interface,
+    Extern,
+    Virtual,
+    Override,
+    AllowAccessTo,
+    DenyAccessTo,
+        
+    // Optimization
+    Inline,
+    Noinline,
+    Comptime,
+    Runtime,
+    CallConv,
+        
+    // Properties
+    Getter,
+    Setter,
+        
+    // Conversions and operators
+    ExplicitConvert,
+    ImplicitConvert,
+    OverrideOperator,
+    IndexerGetter,
+    IndexerSetter,
+}
