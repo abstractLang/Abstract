@@ -1,6 +1,6 @@
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 
-namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
+namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObjects;
 
 public class ParameterObject(TypeReference type, string name) : LangObject(null!)
 {

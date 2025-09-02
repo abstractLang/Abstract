@@ -1,5 +1,6 @@
 using System.Text;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Metadata;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
@@ -26,12 +27,15 @@ public class FunctionObject(string[] g, FunctionDeclarationNode synnode)
     public bool Extern { get; set; } = false;
     
     public ParameterObject[] Parameters => [.. _parameters];
+    public LocalVariableObject[] Locals => [.. _locals];
     
 
     public readonly FunctionDeclarationNode syntaxNode = synnode;
     private List<ParameterObject> _parameters = [];
+    private List<LocalVariableObject> _locals = [];
 
     public void AddParameter(ParameterObject parameter) => _parameters.Add(parameter);
+    public void AddParameter(LocalVariableObject local) => _locals.Add(local);
 
     public override string ToString()
     {
@@ -46,10 +50,8 @@ public class FunctionObject(string[] g, FunctionDeclarationNode synnode)
 
         sb.AppendLine($"Function:");
 
-        foreach (var p in _parameters)
-        {
-            sb.AppendLine($"\t{p}");
-        }
+        foreach (var p in _parameters) sb.AppendLine($"\t{p}");
+        foreach (var l in _locals) sb.AppendLine($"\t{l}");
         
         return sb.ToString();
     }

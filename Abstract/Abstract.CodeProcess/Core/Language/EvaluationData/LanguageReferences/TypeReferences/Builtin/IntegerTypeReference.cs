@@ -18,5 +18,5 @@ public class IntegerTypeReference : BuiltInTypeReference
         PtrSized = true;
     }
 
-    public override string ToString() => (Signed ? 's' : 'u') + (PtrSized ? "ptr" : $"{BitSize}");
+    public override string ToString() => (Signed ? 'i' : 'u') + (PtrSized ? "ptr" : $"{BitSize}");
 }

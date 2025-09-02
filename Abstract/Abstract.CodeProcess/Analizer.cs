@@ -4,12 +4,14 @@ using Abstract.CodeProcess.Core;
 using Abstract.CodeProcess.Core.Language;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.AttributeReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression.TypeModifiers;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Misc;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
@@ -430,7 +432,10 @@ public class Analizer(ErrorHandler handler)
                     {
                         case "iptr": return new IntegerTypeReference(true);
                         case "uptr": return new IntegerTypeReference(false);
-                    }
+                        case "void": return new VoidTypeReference();
+                        case "type": return new TypeTypeReference();
+                        case "anytype": return new AnytypeTypeReference();
+;                    }
 
                     if (value[0] is 'i' or 'u' && value[1..].All(char.IsNumber))
                     {
@@ -441,8 +446,11 @@ public class Analizer(ErrorHandler handler)
 
                     return new UnsolvedTypeReference(id);
                 
-                // TODO support for arrays
-                // TODO support for pointers
+                case ArrayTypeModifierNode @ar:
+                    return new SliceTypeReference(SolveShallowType(ar.Type));
+                
+                case ReferenceTypeModifierNode @rf:
+                    return new ReferenceTypeReference(SolveShallowType(rf.Type));
                 
                 default: throw new NotImplementedException();
             }
