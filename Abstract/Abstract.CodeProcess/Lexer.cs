@@ -150,8 +150,9 @@ public class Lexer
             // Check single characters
             if (c == '\n') {
                 if (tokens.Count > 0 && tokens[^1].type != TokenType.LineFeedChar)
-                tokens.Add(Tokenize("\\n", TokenType.LineFeedChar, i, -1));
+                    tokens.Add(Tokenize("\\n", TokenType.LineFeedChar, i, -1));
             }
+            
             else if (c == '(') tokens.Add(Tokenize(c, TokenType.LeftPerenthesisChar, i));
             else if (c == ')') tokens.Add(Tokenize(c, TokenType.RightParenthesisChar, i));
             else if (c == '{') tokens.Add(Tokenize(c, TokenType.LeftBracketChar, i));
@@ -353,6 +354,7 @@ public class Lexer
                 // unrecognized character
                 else
                 {
+                    throw new NotImplementedException();
                     // FIXME implement error handlers
                     // try { throw new UnrecognizedCharacterException(c, i); }
                     // catch (SyntaxException e) { currentSrc.ThrowError(e); }

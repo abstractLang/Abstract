@@ -1,6 +1,6 @@
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
 
-public interface IVirtualModifier
+public interface IOverrideAttribute
 {
-    public bool Virtual { get; set; }
+    public bool Override { get; set; }
 }

@@ -1,6 +1,6 @@
-@defineGlobal(["f32", "float"]) @align(32)
+@defineGlobal("f32", "float") @align(32)
 @public @final struct Single {}
-@defineGlobal(["f64", "double"]) @align(64)
+@defineGlobal("f64", "double") @align(64)
 @public @final struct Double {}
 
 @defineGlobal("bool") @align(1)

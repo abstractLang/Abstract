@@ -21,4 +21,7 @@ public abstract class LangObject(string[] global)
         _children.Add(child);
         child._parent = this;
     }
+
+    public abstract override string ToString();
 }
+

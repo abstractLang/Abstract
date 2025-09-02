@@ -1,12 +1,7 @@
-namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
+namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
 
-public interface IPublicModifier
+public interface IInternalModifier
 {
-    
-    public bool Public { get; set; }
-    public bool Static { get; set; }
     public bool Internal { get; set; }
-    public bool Abstract { get; set; }
-
     
 }

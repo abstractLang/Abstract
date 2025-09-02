@@ -6,4 +6,6 @@ public class TypedefItemObject(string[] g, TypeDefinitionItemNode synnode)
     : LangObject(g)
 {
     public readonly TypeDefinitionItemNode syntaxNode = synnode;
+
+    public override string ToString() => $"{syntaxNode}";
 }

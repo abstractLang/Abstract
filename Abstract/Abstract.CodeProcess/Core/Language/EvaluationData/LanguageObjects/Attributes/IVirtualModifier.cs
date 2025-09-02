@@ -1,6 +1,6 @@
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
 
-public interface IStaticModifier
+public interface IVirtualModifier
 {
-    public bool Static { get; set; }
+    public bool Virtual { get; set; }
 }

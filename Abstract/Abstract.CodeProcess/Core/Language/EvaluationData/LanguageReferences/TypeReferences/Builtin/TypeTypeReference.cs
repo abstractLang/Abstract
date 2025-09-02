@@ -1,6 +1,6 @@
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
 
-public class AnytypeTypeReference : TypeReference
+public class TypeTypeReference : TypeReference
 {
-    public override string ToString() => "anytype";
+    public override string ToString() => "type";
 }

@@ -1,9 +1,22 @@
-namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
+namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
 
-public class IntegerTypeReference(bool signess, byte size) : BuiltInTypeReference
+public class IntegerTypeReference : BuiltInTypeReference
 {
-    public readonly bool Signed = signess;
-    public readonly byte BitSize = size;
+    public readonly bool Signed;
+    public readonly bool PtrSized;
+    public readonly byte BitSize = 0;
 
-    public override string ToString() => (Signed ? 's' : 'u') + $"{BitSize}";
+    public IntegerTypeReference(bool signed, byte size)
+    {
+        Signed = signed;
+        PtrSized = false;
+        BitSize = size;
+    }
+    public IntegerTypeReference(bool signed)
+    {
+        Signed = signed;
+        PtrSized = true;
+    }
+
+    public override string ToString() => (Signed ? 's' : 'u') + (PtrSized ? "ptr" : $"{BitSize}");
 }

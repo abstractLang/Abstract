@@ -1,9 +1,18 @@
 @public func main() void {
 
-	foo()
+	foo(5)
 
 }
 
-func foo() void {
+func foo(u8 entropy, Randomizer rng) void {
+
+	let i32 value = 42
+	let i32 smtgidk = 500
+	
+	value *= 5 + smtgidk * emtropy
+
+}
+
+struct Randomizer {
 
 }

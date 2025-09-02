@@ -93,7 +93,7 @@ public class Program
         return 0;
     }
 
-    public static void Help()
+    private static void Help()
     {
         Console.WriteLine("No argument provided.");
         Console.WriteLine("Try 'help' to more details.\n");
