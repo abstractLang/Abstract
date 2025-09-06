@@ -3,14 +3,15 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 
-public abstract class LangObject(string[] global)
+public abstract class LangObject(string[] global, string name)
 {
     private readonly List<AttributeReference> _attributes = [];
     private LangObject _parent = null!;
     private readonly List<LangObject> _children = [];
  
     public readonly string[] Global = global;
-    public LangObject Parent => _parent;
+    public readonly string Name = name;
+    public LangObject Parent { get =>_parent; set => _parent = value; }
     public LangObject[] Children => [.. _children];
     public AttributeReference[] Attributes => [.. _attributes];
     

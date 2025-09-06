@@ -4,8 +4,8 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 
-public class TypedefObject(string[] g, TypeDefinitionNode synnode)
-    : LangObject(g),
+public class TypedefObject(string[] g, string n, TypeDefinitionNode synnode)
+    : LangObject(g, n),
         IPublicModifier,
         IStaticModifier,
         IInternalModifier,
@@ -24,7 +24,7 @@ public class TypedefObject(string[] g, TypeDefinitionNode synnode)
     public override string ToString()
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"Typedef '{string.Join('.', Global)}':");
+        sb.AppendLine($"Typedef '{Name}' ('{string.Join('.', Global)}'):");
 
         foreach (var c in Children)
         {

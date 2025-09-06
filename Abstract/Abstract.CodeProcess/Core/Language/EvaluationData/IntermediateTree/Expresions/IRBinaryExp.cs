@@ -1,0 +1,47 @@
+using System.Text;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
+
+namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
+
+public class IRBinaryExp(
+    BinaryExpressionNode origin,
+    IRBinaryExp.Operators ope,
+    IRExpression left,
+    IRExpression right) : IRExpression(origin)
+{
+
+    public Operators Operator { get; set; } = ope;
+    public IRExpression Left { get; set; } = left;
+    public IRExpression Right { get; set; } = right;
+    
+    public override string ToString()
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine($"({Operator.ToString().ToLower()}");
+        sb.AppendLine(Left.ToString().TabAll());
+        sb.Append(Right.ToString().TabAll());
+        sb.Append(')');
+        
+        return sb.ToString();
+    }
+    
+    public enum Operators
+    {
+        Add,
+        Subtract,
+        Multiply,
+        Divide,
+        Reminder,
+        
+        Bitwise_And,
+        Bitwise_Or,
+        Bitwise_Xor,
+        Left_Shift,
+        Right_Shift,
+        
+        Logical_And,
+        Logical_Or,
+    }
+}

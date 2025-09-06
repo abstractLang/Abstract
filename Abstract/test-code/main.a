@@ -1,6 +1,7 @@
 @public func main() void {
 
-	foo(5)
+	let Randomizer myRandomizer
+	foo(5, myRandomizer)
 
 }
 
@@ -9,7 +10,7 @@ func foo(u8 entropy, Randomizer rng) void {
 	let i32 value = 42
 	let i32 smtgidk = 500
 	
-	value *= 5 + smtgidk * emtropy
+	value *= 5 + smtgidk * entropy
 
 }
 

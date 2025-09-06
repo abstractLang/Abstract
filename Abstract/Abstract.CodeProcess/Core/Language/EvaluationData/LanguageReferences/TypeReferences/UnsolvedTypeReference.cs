@@ -6,5 +6,5 @@ public class UnsolvedTypeReference(SyntaxNode node) : TypeReference
 {
     public readonly SyntaxNode syntaxNode = node;
 
-    public override string ToString() => $"unsolved({syntaxNode})";
+    public override string ToString() => $"UType<{syntaxNode}>";
 }

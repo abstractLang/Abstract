@@ -82,9 +82,12 @@ public class Parser(ErrorHandler errHandler)
                 node.AppendChild(ParseType()); // <type>
                 
                 TryEndLine();
-                node.AppendChild(ParseBlock((BlockNode n, ref bool _)
-                    => n.AppendChild(ParseFunctionBody()))); // {...}
-            
+                if (Taste(TokenType.LeftBracketChar))
+                {
+                    node.AppendChild(ParseBlock((BlockNode n, ref bool _)
+                        => n.AppendChild(ParseFunctionBody()))); // {...}
+                }
+
             }
             catch { DiscardLine(); throw; }
             break;

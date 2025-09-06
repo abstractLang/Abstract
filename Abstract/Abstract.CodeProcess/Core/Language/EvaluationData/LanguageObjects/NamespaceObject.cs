@@ -4,8 +4,8 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 
-public class NamespaceObject(string[] g, NamespaceNode synnode)
-    : LangObject(g),
+public class NamespaceObject(string[] g, string n, NamespaceNode synnode)
+    : LangObject(g, n),
         IStaticModifier
 {
     public bool Static { get => true; set { } }
@@ -15,7 +15,7 @@ public class NamespaceObject(string[] g, NamespaceNode synnode)
     public override string ToString()
     {
         var sb = new StringBuilder();
-        sb.AppendLine($"Namespace '{string.Join('.', Global)}':");
+        sb.AppendLine($"Namespace '{Name}' ('{string.Join('.', Global)}'):");
 
         foreach (var c in Children)
         {

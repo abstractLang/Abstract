@@ -1,4 +1,5 @@
 using System.Text;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Metadata;
@@ -6,8 +7,8 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 
-public class FunctionObject(string[] g, FunctionDeclarationNode synnode)
-    : LangObject(g),
+public class FunctionObject(string[] g, string n, FunctionDeclarationNode synnode)
+    : LangObject(g, n),
         IPublicModifier,
         IStaticModifier,
         IInternalModifier,
@@ -25,17 +26,24 @@ public class FunctionObject(string[] g, FunctionDeclarationNode synnode)
     public bool Virtual { get; set; } = false;
     public bool Override { get; set; } = false;
     public bool Extern { get; set; } = false;
+    public bool Generic { get; set; } = false;
     
     public ParameterObject[] Parameters => [.. _parameters];
-    public LocalVariableObject[] Locals => [.. _locals];
+    public IRBlock? Body = null;
     
 
     public readonly FunctionDeclarationNode syntaxNode = synnode;
     private List<ParameterObject> _parameters = [];
-    private List<LocalVariableObject> _locals = [];
 
-    public void AddParameter(ParameterObject parameter) => _parameters.Add(parameter);
-    public void AddParameter(LocalVariableObject local) => _locals.Add(local);
+    public void AddParameter(params ParameterObject[] parameter)
+    {
+        var lastidx = _parameters.Count;
+        foreach (var p in parameter)
+        {
+            _parameters.Add(p);
+            p.index = lastidx++;
+        }
+    }
 
     public override string ToString()
     {
@@ -47,11 +55,19 @@ public class FunctionObject(string[] g, FunctionDeclarationNode synnode)
         if (Virtual) sb.Append("virtual ");
         if (Override) sb.Append("override ");
         if (Extern) sb.Append("extern ");
+        if (Generic) sb.Append("generic ");
 
         sb.AppendLine($"Function:");
 
-        foreach (var p in _parameters) sb.AppendLine($"\t{p}");
-        foreach (var l in _locals) sb.AppendLine($"\t{l}");
+        foreach (var p in _parameters)
+            sb.AppendLine($"\t{p}");
+
+        if (Body == null) sb.AppendLine("\t[Bodyless]");
+        else
+        {
+            var lines = Body.ToString().Split(Environment.NewLine);
+            foreach (var l in lines) sb.AppendLine($"\t{l}");
+        }
         
         return sb.ToString();
     }

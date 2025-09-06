@@ -2,10 +2,12 @@ using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeR
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObjects;
 
-public class LocalVariableObject(string name)//: LangObject(null!)
+public class LocalVariableObject(TypeReference typeref, string name)//: LangObject(null!)
 {
     public TypeReference Type { get; set; }
     public readonly string Name = name;
 
-    public override string ToString() => $"Local '{Name}': {Type}";
+    public int index = 0;
+
+    public override string ToString() => $"$({index:D2}) Local '{Name}': {Type}";
 }

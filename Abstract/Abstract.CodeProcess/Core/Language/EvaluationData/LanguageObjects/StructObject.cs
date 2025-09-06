@@ -4,8 +4,8 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 
-public class StructObject(string[] g, StructureDeclarationNode synnode)
-    : LangObject(g),
+public class StructObject(string[] g, string n, StructureDeclarationNode synnode)
+    : LangObject(g, n),
         IPublicModifier,
         IStaticModifier,
         IInternalModifier,
@@ -29,7 +29,7 @@ public class StructObject(string[] g, StructureDeclarationNode synnode)
         if (Internal) sb.Append("internal ");
         sb.Append(Abstract ? "abstract " : "concrete ");
 
-        sb.AppendLine($"Structure '{string.Join('.', Global)}':");
+        sb.AppendLine($"Structure '{Name}' ('{string.Join('.', Global)}'):");
         
         foreach (var c in Children)
         {

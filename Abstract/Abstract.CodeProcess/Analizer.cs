@@ -2,10 +2,17 @@ using System.Diagnostics;
 using System.Text;
 using Abstract.CodeProcess.Core;
 using Abstract.CodeProcess.Core.Language;
+using Abstract.CodeProcess.Core.Language.EvaluationData;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObjects;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.AttributeReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.CodeReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
@@ -28,14 +35,19 @@ public class Analizer(ErrorHandler handler)
     
     public void Analize(Module[] modules)
     {
+        // Stage 1
         SearchReferences(modules);
+        // Stage 2
         ScanHeadersMetadata();
+        // Stage 3
+        ScanExecutionBodies();
         
         // Debug shit
         DumpGlobalTable();
         DumpEvaluatedData();
     }
 
+    
     #region Stage One
     
     /*
@@ -57,7 +69,7 @@ public class Analizer(ErrorHandler handler)
                     name.AddRange(n.Identifier);
 
                 string[] g = [.. name];
-                var obj = new NamespaceObject(g, n);
+                var obj = new NamespaceObject(g, n.Identifier[0], n);
                 
                 _globalReferenceTable.Add(g, obj);
                 _namespaces.Add(obj);
@@ -129,14 +141,14 @@ public class Analizer(ErrorHandler handler)
         FunctionGroupObject? funcg = null;
         if (!_globalReferenceTable.TryGetValue(g, out var a))
         {
-            funcg = new FunctionGroupObject(g);
+            funcg = new FunctionGroupObject(g, funcnode.Identifier.Value);
             parent?.AppendChild(funcg);
             _globalReferenceTable.Add(g, funcg);
         }
 
         var peepoop = funcg ?? (FunctionGroupObject)a!;
 
-        FunctionObject f = new(g, funcnode);
+        FunctionObject f = new(g, funcnode.Identifier.Value, funcnode);
         peepoop.AddOverload(f);
         
         return f;
@@ -147,7 +159,7 @@ public class Analizer(ErrorHandler handler)
             ? [..parent.Global, structnode.Identifier.Value]
             : [structnode.Identifier.Value];
         
-        StructObject struc = new(g, structnode);
+        StructObject struc = new(g, structnode.Identifier.Value, structnode);
         parent?.AppendChild(struc);
         _globalReferenceTable.Add(g, struc);
 
@@ -162,7 +174,7 @@ public class Analizer(ErrorHandler handler)
             ? [..parent.Global, packetnode.Identifier.Value]
             : [packetnode.Identifier.Value];
         
-        PacketObject packet = new(g, packetnode);
+        PacketObject packet = new(g, packetnode.Identifier.Value, packetnode);
         parent?.AppendChild(packet);
         _globalReferenceTable.Add(g, packet);
 
@@ -177,7 +189,7 @@ public class Analizer(ErrorHandler handler)
             ? [..parent.Global, typedef.Identifier.Value]
             : [typedef.Identifier.Value];
         
-        TypedefObject typd = new(g, typedef);
+        TypedefObject typd = new(g, typedef.Identifier.Value, typedef);
         parent?.AppendChild(typd);
         _globalReferenceTable.Add(g, typd);
                 
@@ -192,7 +204,7 @@ public class Analizer(ErrorHandler handler)
             ? [..parent.Global, typedefitem.Identifier.Value]
             : [typedefitem.Identifier.Value];
         
-        TypedefItemObject typdi = new(g, typedefitem);
+        TypedefItemObject typdi = new(g, typedefitem.Identifier.Value, typedefitem);
         parent?.AppendChild(typdi);
         _globalReferenceTable.Add(g, typdi);
         
@@ -204,7 +216,7 @@ public class Analizer(ErrorHandler handler)
             ? [..parent.Global, variable.Identifier.Value]
             : [variable.Identifier.Value];
         
-        VariableObject vari = new(g, variable);
+        VariableObject vari = new(g, variable.Identifier.Value, variable);
         vari.Constant = variable.IsConstant;
         parent?.AppendChild(vari);
         _globalReferenceTable.Add(g, vari);
@@ -216,7 +228,7 @@ public class Analizer(ErrorHandler handler)
     {
         string[] g = parent != null ? [..parent.Global, alias] : [alias];
         
-        AliasedObject aliased = new(g, target);
+        AliasedObject aliased = new(g, alias, target);
         parent?.AppendChild(aliased);
         _globalReferenceTable.Add(g, aliased);
     }
@@ -291,17 +303,13 @@ public class Analizer(ErrorHandler handler)
             if (langObj is FunctionGroupObject @funcg)
             {
                 foreach (var o in funcg.Overloads)
-                    ProcessHeader(o, langObj.Parent);
+                    ProcessHeader(o);
             }
-            else ProcessHeader(langObj, langObj.Parent);
+            else ProcessHeader(langObj);
         }
     }
-    private void ProcessHeader(LangObject reference, LangObject parent)
+    private void ProcessHeader(LangObject reference)
     {
-        // Prefer `parent` instead of `reference.Parent` as the first
-        // indicates the logical parent, that may not be the same as
-        // the actual parent node
-
         switch (reference)
         {
             case FunctionObject @a: UnwrapFunctionMeta(a); break;
@@ -310,7 +318,7 @@ public class Analizer(ErrorHandler handler)
         
         // Handling quick inheritance
         if (reference is IStaticModifier @refStatic and not StructObject
-            && parent is IStaticModifier @parentStatic)
+            && reference.Parent is IStaticModifier @parentStatic)
         {
             refStatic.Static = parentStatic.Static;
         }
@@ -395,6 +403,10 @@ public class Analizer(ErrorHandler handler)
         {
             var typeref = SolveShallowType(i.Type);
             var name = i.Identifier.Value;
+
+            if (typeref is
+                TypeTypeReference or
+                AnytypeTypeReference) function.Generic = true;
             
             function.AddParameter(new ParameterObject(typeref, name));
         }
@@ -403,14 +415,233 @@ public class Analizer(ErrorHandler handler)
     private void UnwrapStructureMeta(StructObject structure)
     {
     }
+    
+    #endregion
+    #region Stage Three
+    
+    /*
+     * Stage Three:
+     *  Processes every funtion body into a intermediate
+     *  representation that will be used for data storage,
+     *  compile time execution, runtime evaluation and
+     *  high-level optimizations.
+     */
 
+    private void ScanExecutionBodies()
+    {
+        foreach (var i in _globalReferenceTable)
+        {
+            switch (i.Value)
+            {
+                case FunctionObject @funcobj:
+                    ScanFunctionExecutionBody(funcobj);
+                    break;
+                
+                case FunctionGroupObject @funcgroup:
+                {
+                    foreach (var i2 in funcgroup.Overloads)
+                        ScanFunctionExecutionBody(i2);
+
+                    break;
+                }
+            }
+        }
+    }
+
+    private void ScanFunctionExecutionBody(FunctionObject function)
+    {
+        var body = GetFunctionBody(function.syntaxNode);
+        if (body == null) return;
+
+        function.Body = UnwrapExecutionContext_Block(function, body);
+    }
+
+    private static BlockNode? GetFunctionBody(FunctionDeclarationNode functionNode)
+    {
+        // Function body options ([..] means constant):
+        //  [func <ident> <params>] <type> <body>      (len 5, type: 3, body: 4)
+        //  [func <ident> <params>] <type>             (len 4, type: 3, body:  )
+        //  [func <ident> <params>] <body>             (len 4, type:  , body: 3)
+        //  [func <ident> <params>]                    (len 3, type:  , body:  )
+        
+        var funContent = functionNode.Children;
+        var funLen = funContent.Length;
+
+        if (funLen >= 4) return funContent[funLen-1] as BlockNode;
+        return null;
+
+    }
+
+    private IRBlock UnwrapExecutionContext_Block(LangObject parent, BlockNode block)
+    {
+        var rootBlock = new IRBlock(block);
+        var execctx = new ExecutionContextData(parent, rootBlock);
+
+        foreach (var i in block.Content)
+        {
+            var res = UnwrapExecutionContext_Statement(i, execctx);
+            if (res != null) rootBlock.Content.Add(res);
+        }
+
+        return rootBlock;
+    }
+    private IRNode? UnwrapExecutionContext_Statement(SyntaxNode node, ExecutionContextData ctx)
+    {
+        switch (node)
+        {
+            case LocalVariableNode @localvar:
+            {
+                // LocalVariableNode is also handled in the expression function,
+                // this is because if it is just a declaration, we need to return
+                // null to ignore it, but if it is used inside a expression, we
+                // must return a reference to the local variable!
+                
+                var typenode = localvar.TypedIdentifier.Type;
+                var identnode = localvar.TypedIdentifier.Identifier;
+                    
+                ctx.AddLocal(new LocalVariableObject(SolveShallowType(typenode), identnode.Value));
+                return null;
+            }
+
+            case AssignmentExpressionNode @assign:
+            {
+                return new IRAssign(
+                    assign,
+                    UnwrapExecutionContext_Expression(assign.Left, ctx),
+                    UnwrapExecutionContext_Expression(assign.Right, ctx));
+            }
+            
+            default: return UnwrapExecutionContext_Expression(node, ctx);
+        }
+    }
+
+    private IRExpression UnwrapExecutionContext_Expression(SyntaxNode node, ExecutionContextData ctx)
+    {
+        switch (node)
+        {
+            case LocalVariableNode @localvar:
+            {
+                var newLocal = new LocalVariableObject(
+                    SolveShallowType(localvar.TypedIdentifier.Type),
+                    localvar.TypedIdentifier.Identifier.Value);
+                
+                ctx.AddLocal(newLocal);
+                return new IRSolvedReference(
+                    localvar.TypedIdentifier.Identifier,
+                    new LocalReference(newLocal));
+            }
+
+            case FunctionCallExpressionNode @funccal:
+            {
+                return new IRInvoke(funccal,
+                    UnwrapExecutionContext_Expression(funccal.FunctionReference, ctx),
+                    funccal.Arguments.Select(i
+                        => UnwrapExecutionContext_Expression(i, ctx)).ToArray());
+            }
+
+            case BinaryExpressionNode @bexp:
+            {
+                return new IRBinaryExp(bexp,
+                    bexp.Operator switch
+                    {
+                        "+" => IRBinaryExp.Operators.Add,
+                        "-" => IRBinaryExp.Operators.Subtract,
+                        "*" => IRBinaryExp.Operators.Multiply,
+                        "/" => IRBinaryExp.Operators.Divide,
+                        "%" => IRBinaryExp.Operators.Reminder,
+                        
+                        "&" => IRBinaryExp.Operators.Bitwise_And,
+                        "|" => IRBinaryExp.Operators.Bitwise_Or,
+                        "^" => IRBinaryExp.Operators.Bitwise_Xor,
+                        
+                        "<<" => IRBinaryExp.Operators.Left_Shift,
+                        ">>" => IRBinaryExp.Operators.Right_Shift,
+                        
+                        "or" => IRBinaryExp.Operators.Logical_Or,
+                        "and" => IRBinaryExp.Operators.Logical_And,
+                        
+                        _ => throw new NotImplementedException(),
+                    },
+                    UnwrapExecutionContext_Expression(bexp.Left, ctx),
+                    UnwrapExecutionContext_Expression(bexp.Right, ctx));
+            }
+            
+            
+            case IdentifierCollectionNode @identc: return SearchReference(identc, ctx);
+            case IdentifierNode @ident: return SearchReference(ident, ctx);
+                
+            case IntegerLiteralNode @intlit: return new IRIntegerLiteral(intlit, intlit.Value);
+            
+            default: throw new NotImplementedException();
+        };
+    }
+
+    private IRReference SearchReference(ExpressionNode node, ExecutionContextData ctx)
+    {
+        string[] reference = node switch
+        {
+            IdentifierCollectionNode @idc => idc.Values,
+            IdentifierNode @idn => [idn.Value],
+            _ => throw new NotImplementedException(),
+        };
+        
+        LanguageReference? foundReference = null;
+        
+        if (reference.Length == 0) goto end;
+        if (reference.Length == 1)
+        {
+            var local = ctx.Locals.FirstOrDefault(e => e.Name == reference[0]);
+            if (local != null)
+            {
+                foundReference = new LocalReference(local);
+                goto end;
+            }
+            var param = ctx.Parameters.FirstOrDefault(e => e.Name == reference[0]);
+            if (param != null)
+            {
+                foundReference = new ParameterReference(param);
+                goto end;
+            }
+        }
+
+        { // Check siblings
+            var siblings = ctx.Parent.Parent.Children;
+            var sibling = siblings
+                .FirstOrDefault(e => IdentifierComparer.IsEquals([e.Name], reference));
+            if (sibling != null)
+            {
+                foundReference = GetObjectReference(sibling);
+                goto end;
+            }
+        }
+        { // Check global references
+            var global = _globalReferenceTable.Values
+                .FirstOrDefault(e => IdentifierComparer.IsEquals(e.Global, reference));
+            if (global != null)
+            {
+                foundReference = GetObjectReference(global);
+                goto end;
+            }
+        }
+
+        end:
+        return foundReference != null
+            ? new IRSolvedReference(node, foundReference)
+            : new IRUnknownReference(node);
+    }
+
+    #endregion
+    
+    
+    #region Multi Stage
+    
     /// <summary>
     /// Try to solve constant type forms (arrays, pointers, builtin types, etc.)
     /// and returns `UnsolvedTypeReference` if evaluation-dependent.
     /// </summary>
     /// <param name="node">The type representation</param>
     /// <returns>The evaluation result</returns>
-    private TypeReference SolveShallowType(SyntaxNode node)
+    private static TypeReference SolveShallowType(SyntaxNode node)
     {
         while (true)
         {
@@ -454,21 +685,21 @@ public class Analizer(ErrorHandler handler)
                 
                 default: throw new NotImplementedException();
             }
-
-            break;
         }
     }
 
-    #endregion
-    #region Stage Three
-    
-    /*
-     * Stage Three:
-     *  Processes every funtion body into a intermediate
-     *  representation that will be used for data storage,
-     *  compile time execution, runtime evaluation and
-     *  high-level optimizations.
-     */
+    private static LanguageReference GetObjectReference(LangObject obj)
+    {
+        return obj switch
+        {
+            FunctionObject @f => new SolvedFunctionReference(f),
+            FunctionGroupObject @fg => new SolvedFunctionGroupReference(fg),
+            
+            StructObject @s => new SolvedStructTypeReference(s),
+            
+            _ => throw new NotImplementedException(),
+        };
+    }
     
     #endregion
     
@@ -509,11 +740,12 @@ public class Analizer(ErrorHandler handler)
     
     private class IdentifierComparer : IEqualityComparer<string[]>
     {
-        public bool Equals(string[]? x, string[]? y)
+        public static bool IsEquals(string[]? x, string[]? y)
         {
             if (x is null || y is null) return false;
             return x.SequenceEqual(y);
         }
+        public bool Equals(string[]? x, string[]? y) => IdentifierComparer.IsEquals(x, y);
 
         public int GetHashCode(string[] key)
         {

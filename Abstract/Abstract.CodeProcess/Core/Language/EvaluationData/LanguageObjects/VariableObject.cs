@@ -4,8 +4,8 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 
-public class VariableObject(string[] g, TopLevelVariableNode synnode)
-    : LangObject(g),
+public class VariableObject(string[] g, string n, TopLevelVariableNode synnode)
+    : LangObject(g, n),
         IPublicModifier,
         IStaticModifier,
         IInternalModifier,
@@ -29,7 +29,7 @@ public class VariableObject(string[] g, TopLevelVariableNode synnode)
         sb.Append(Abstract ? "abstract " : "concrete ");
 
         sb.Append(Constant ? "Constant " : "Variable ");
-        sb.AppendLine($"'{string.Join('.', Global)}'");
+        sb.AppendLine($"'{Name}' ('{string.Join('.', Global)}')");
         
         return sb.ToString();
     }
