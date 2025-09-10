@@ -4,4 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Abstract.Realizer\Abstract.Realizer\Abstract.Realizer.csproj" />
+  </ItemGroup>
 </Project>

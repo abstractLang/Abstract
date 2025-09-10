@@ -284,6 +284,7 @@ public class Parser(ErrorHandler errHandler)
 
     private ExpressionNode ParseExpression(bool canFallTrough = true)
     {
+        var t = _tokens[_tokens_cursor];
         var node = ParseAssignmentExpression();
 
         if (
@@ -297,19 +298,19 @@ public class Parser(ErrorHandler errHandler)
     }
 
     #region Recursive expression parsing
-
+    
     private ExpressionNode ParseAssignmentExpression()
     {
-        var node = ParseBooleanOperationExpression();
+        var node = ParseAdditiveExpression();
 
         if (!Taste(
-            TokenType.EqualsChar, // =
-            TokenType.AddAssigin, // +=
-            TokenType.SubAssigin, // -=
-            TokenType.MulAssigin, // *=
-            TokenType.DivAssigin, // /=
-            TokenType.RestAssigin // %=
-        )) return node;
+                TokenType.EqualsChar, // =
+                TokenType.AddAssigin, // +=
+                TokenType.SubAssigin, // -=
+                TokenType.MulAssigin, // *=
+                TokenType.DivAssigin, // /=
+                TokenType.RestAssigin // %=
+            )) return node;
         
         var n = new AssignmentExpressionNode();
         n.AppendChild(node);
@@ -320,9 +321,48 @@ public class Parser(ErrorHandler errHandler)
         return node;
     }
 
-    private ExpressionNode ParseBooleanOperationExpression()
+    
+    private ExpressionNode ParseAdditiveExpression()
     {
         var node = ParseMultiplicativeExpression();
+
+        if (!Taste(
+                TokenType.CrossChar, // +
+                TokenType.MinusChar // -
+            )) return node;
+        
+        var n = new BinaryExpressionNode();
+        n.AppendChild(node);
+        n.AppendChild(EatAsNode());
+        n.AppendChild(ParseAdditiveExpression());
+        node = n;
+
+        return node;
+    }
+    
+    private ExpressionNode ParseMultiplicativeExpression()
+    {
+        var node = ParseBooleanOperationExpression();
+
+        if (!Taste(
+                TokenType.StarChar, // *
+                TokenType.SlashChar, // /
+                TokenType.PercentChar, // %
+                TokenType.PowerOperator // **
+            )) return node;
+        
+        var n = new BinaryExpressionNode();
+        n.AppendChild(node);
+        n.AppendChild(EatAsNode());
+        n.AppendChild(ParseMultiplicativeExpression());
+        node = n;
+
+        return node;
+    }
+
+    private ExpressionNode ParseBooleanOperationExpression()
+    {
+        var node = ParseUnaryExpression();
 
         if (!Taste(
             TokenType.EqualOperator, // ==
@@ -343,53 +383,15 @@ public class Parser(ErrorHandler errHandler)
 
         return node;
     }
-
-    private ExpressionNode ParseMultiplicativeExpression()
-    {
-        var node = ParseAdditiveExpression();
-
-        if (!Taste(
-            TokenType.StarChar, // *
-            TokenType.SlashChar, // /
-            TokenType.PercentChar, // %
-            TokenType.PowerOperator // **
-        )) return node;
-        
-        var n = new BinaryExpressionNode();
-        n.AppendChild(node);
-        n.AppendChild(EatAsNode());
-        n.AppendChild(ParseMultiplicativeExpression());
-        node = n;
-
-        return node;
-    }
-
-    private ExpressionNode ParseAdditiveExpression()
-    {
-        var node = ParseUnaryExpression();
-
-        if (!Taste(
-            TokenType.CrossChar, // +
-            TokenType.MinusChar // -
-        )) return node;
-        
-        var n = new BinaryExpressionNode();
-        n.AppendChild(node);
-        n.AppendChild(EatAsNode());
-        n.AppendChild(ParseAdditiveExpression());
-        node = n;
-
-        return node;
-    }
-
+    
     private ExpressionNode ParseUnaryExpression()
     {
         ExpressionNode node;
 
         if(Taste(
-            TokenType.CrossChar, // +
-            TokenType.MinusChar  // -
-        ))
+               TokenType.CrossChar, // +
+               TokenType.MinusChar  // -
+           ))
         {
             node = new UnaryExpressionNode();
             node.AppendChild(EatAsNode());
@@ -398,7 +400,7 @@ public class Parser(ErrorHandler errHandler)
         else node = ParseValue();
 
         return node;
-    }
+    }    
 
     #endregion
 

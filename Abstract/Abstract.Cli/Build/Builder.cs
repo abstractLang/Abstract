@@ -24,6 +24,7 @@ public static class Builder
         var lexer = new Lexer();
         var parser = new Parser(err);
         var analizer = new Analizer(err);
+        var compressor = new Compressor();
         
         if (verbose) Console.WriteLine("Starting build...");
         var completeBuild = Stopwatch.StartNew();
@@ -94,7 +95,13 @@ public static class Builder
             Environment.Exit(1);
         }
         
-        analizer.Analize([.. modules]);
+        var analysis = Stopwatch.StartNew();
+        var progObj = analizer.Analize([.. modules]);
+        
+        analysis.Stop();
+        if (verbose) Console.WriteLine($"Analysis done ({analysis.Elapsed})");
+
+        compressor.CompressProgramObject(progObj);
         
         completeBuild.Stop();
         if (verbose) Console.WriteLine($"Build Finished ({completeBuild.Elapsed})");

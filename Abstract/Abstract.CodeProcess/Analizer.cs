@@ -33,7 +33,7 @@ public class Analizer(ErrorHandler handler)
     private List<AttributeReference> onHoldAttributes = [];
     
     
-    public void Analize(Module[] modules)
+    public ProgramObject Analize(Module[] modules)
     {
         // Stage 1
         SearchReferences(modules);
@@ -41,10 +41,14 @@ public class Analizer(ErrorHandler handler)
         ScanHeadersMetadata();
         // Stage 3
         ScanExecutionBodies();
+        // Stage 4
+        DoSemanticAnalysis();
         
         // Debug shit
         DumpGlobalTable();
         DumpEvaluatedData();
+
+        return new ProgramObject([.. _namespaces]);
     }
 
     
@@ -499,16 +503,33 @@ public class Analizer(ErrorHandler handler)
                 var typenode = localvar.TypedIdentifier.Type;
                 var identnode = localvar.TypedIdentifier.Identifier;
                     
-                ctx.AddLocal(new LocalVariableObject(SolveShallowType(typenode), identnode.Value));
+                ctx.AddLocal(new LocalVariableObject(
+                    SolveTypeLazy(localvar.TypedIdentifier.Type, ctx),
+                    identnode.Value));
                 return null;
             }
 
             case AssignmentExpressionNode @assign:
             {
-                return new IRAssign(
-                    assign,
-                    UnwrapExecutionContext_Expression(assign.Left, ctx),
-                    UnwrapExecutionContext_Expression(assign.Right, ctx));
+                var left = UnwrapExecutionContext_Expression(assign.Left, ctx);
+                var right = UnwrapExecutionContext_Expression(assign.Right, ctx);
+                IRBinaryExp.Operators? op = null;
+                
+                switch (assign.Operator)
+                { 
+                    case "=": break;
+
+                    case "+=": op = IRBinaryExp.Operators.Add; break;
+                    case "-=": op = IRBinaryExp.Operators.Subtract; break;
+                    case "*=": op = IRBinaryExp.Operators.Multiply; break;
+                    case "/=": op = IRBinaryExp.Operators.Divide; break;
+                    case "%=": op = IRBinaryExp.Operators.Reminder; break;
+                    
+                    default: throw new NotImplementedException();
+                }
+                
+                if (op != null) right = new IRBinaryExp(assign, op.Value, left, right);
+                return new IRAssign(assign, left, right);
             }
             
             default: return UnwrapExecutionContext_Expression(node, ctx);
@@ -522,7 +543,7 @@ public class Analizer(ErrorHandler handler)
             case LocalVariableNode @localvar:
             {
                 var newLocal = new LocalVariableObject(
-                    SolveShallowType(localvar.TypedIdentifier.Type),
+                    SolveTypeLazy(localvar.TypedIdentifier.Type, ctx),
                     localvar.TypedIdentifier.Identifier.Value);
                 
                 ctx.AddLocal(newLocal);
@@ -578,6 +599,8 @@ public class Analizer(ErrorHandler handler)
 
     private IRReference SearchReference(ExpressionNode node, ExecutionContextData ctx)
     {
+        if (node is TypeExpressionNode) node = (ExpressionNode)node.Children[0];
+        
         string[] reference = node switch
         {
             IdentifierCollectionNode @idc => idc.Values,
@@ -625,11 +648,112 @@ public class Analizer(ErrorHandler handler)
         }
 
         end:
+        if (foundReference is SolvedFunctionGroupReference g)
+            foundReference = GetObjectReference(g.FunctionGroup.Overloads[0]);
+        
         return foundReference != null
             ? new IRSolvedReference(node, foundReference)
             : new IRUnknownReference(node);
     }
 
+    private TypeReference SolveTypeLazy(ExpressionNode node, ExecutionContextData ctx)
+    {
+        var shallow = SolveShallowType(node);
+        if (shallow is not UnsolvedTypeReference) return shallow;
+
+        var reef = SearchReference(node, ctx);
+        if (reef is not IRSolvedReference @solv) return new UnsolvedTypeReference(node);
+        return (solv.Reference as TypeReference) ?? new UnsolvedTypeReference(node);
+    }
+    
+    #endregion
+    #region Stage Four
+
+    /*
+     * Stage Four:
+     *  Semantic analysis, solving automatic type inference, type conversion,
+     *  operator overloading, function overloading, etc.
+     */
+
+    private void DoSemanticAnalysis()
+    {
+        foreach (var fung in _globalReferenceTable
+                     .Select(e => e.Value)
+                     .OfType<FunctionGroupObject>())
+        {
+            foreach (var fun in fung.Overloads)
+            {
+                if (fun.Body != null)
+                    BlockSemaAnal(fun.Body);                
+            }
+        }
+    } 
+
+    private void BlockSemaAnal(IRBlock block)
+    {
+        for (var i = 0; i < block.Content.Count; i++)
+            block.Content[i] = NodeSemaAnal(block.Content[i]);
+    }
+
+    private IRNode NodeSemaAnal(IRNode node)
+    {
+        return node switch
+        {
+            IRInvoke @iv => NodeSemaAnal_Invoke(iv),
+            IRAssign @ass => NodeSemaAnal_Assign(ass),
+            IRBinaryExp @be => NodeSemaAnal_BinExp(be),
+            
+            IRSolvedReference 
+                or IRIntegerLiteral => node,
+            
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    private IRNode NodeSemaAnal_Invoke(IRInvoke node)
+    {
+        // TODO handle invoke sema
+        return node;
+    }
+
+    private IRNode NodeSemaAnal_Assign(IRAssign node)
+    {
+        // TODO handle assignment
+
+        node.Target = (IRExpression)NodeSemaAnal(node.Target);
+        node.Value = (IRExpression)NodeSemaAnal(node.Value);
+        
+        return node;
+    }
+
+    private IRNode NodeSemaAnal_BinExp(IRBinaryExp node)
+    {
+        if (node is { Left: IRIntegerLiteral @leftInt, Right: IRIntegerLiteral @rightInt })
+        {
+            return new IRIntegerLiteral(node.Origin, node.Operator switch {
+                
+                IRBinaryExp.Operators.Add => leftInt.Value + rightInt.Value,
+                IRBinaryExp.Operators.Subtract => leftInt.Value - rightInt.Value,
+                IRBinaryExp.Operators.Multiply => leftInt.Value * rightInt.Value,
+                IRBinaryExp.Operators.Divide => leftInt.Value / rightInt.Value,
+                IRBinaryExp.Operators.Reminder => leftInt.Value % rightInt.Value,
+                
+                IRBinaryExp.Operators.Bitwise_And => leftInt.Value & rightInt.Value,
+                IRBinaryExp.Operators.Bitwise_Or => leftInt.Value | rightInt.Value,
+                IRBinaryExp.Operators.Bitwise_Xor => leftInt.Value ^ rightInt.Value,
+                IRBinaryExp.Operators.Left_Shift => leftInt.Value << (int)rightInt.Value,
+                IRBinaryExp.Operators.Right_Shift => leftInt.Value >> (int)rightInt.Value,
+                
+                IRBinaryExp.Operators.Logical_And or
+                IRBinaryExp.Operators.Logical_Or or
+                _ => throw new NotImplementedException(),
+            });
+        }
+        
+        // TODO handle idk
+        return node;
+    }
+    
     #endregion
     
     

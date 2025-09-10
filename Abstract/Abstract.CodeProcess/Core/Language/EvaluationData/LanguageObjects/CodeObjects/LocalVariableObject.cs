@@ -4,10 +4,10 @@ namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Code
 
 public class LocalVariableObject(TypeReference typeref, string name)//: LangObject(null!)
 {
-    public TypeReference Type { get; set; }
+    public TypeReference Type { get; set; } = typeref;
     public readonly string Name = name;
 
     public int index = 0;
 
-    public override string ToString() => $"$({index:D2}) Local '{Name}': {Type}";
+    public override string ToString() => $"$({index:D2}) Local '{Name}': {Type?.ToString() ?? "<!nil>"}";
 }

@@ -1,16 +1,21 @@
 @public func main() void {
 
-	let Randomizer myRandomizer
-	foo(5, myRandomizer)
+	let u32 seed
+	let Randomizer rng
+	foo(5, seed)
 
 }
 
-func foo(u8 entropy, Randomizer rng) void {
+func foo(u8 entropy, u32 seed) void {
 
 	let i32 value = 42
 	let i32 smtgidk = 500
 	
 	value *= 5 + smtgidk * entropy
+	value = 5 * 10
+	value = 10 / 2
+	value = 34565432 % 100
+	
 
 }
 

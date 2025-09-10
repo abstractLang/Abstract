@@ -9,5 +9,5 @@ public class ParameterObject(TypeReference type, string name) : LangObject(null!
 
     public int index = 0;
     
-    public override string ToString() => $"$({index:D2}) Parameter '{Name}': {Type}";
+    public override string ToString() => $"$({index:D2}) Parameter '{Name}': {Type?.ToString() ?? "<!nil>"}";
 }

@@ -1,0 +1,3 @@
+[submodule "Abstract/Abstract.Realizer"]
+	path = Abstract/Abstract.Realizer
+	url = git@github.com:abstractLang/AbstractRealizer.git
