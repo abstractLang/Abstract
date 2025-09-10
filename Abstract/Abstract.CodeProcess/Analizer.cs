@@ -354,7 +354,9 @@ public class Analizer(ErrorHandler handler)
                     if (reference is IOverrideAttribute @o) o.Override = true; break;
                 case BuiltinAttributes.Extern:
                     if (reference is IExternModifier @e) e.Extern = true; break;
-
+                case BuiltinAttributes.ConstExp:
+                    if (reference is FunctionObject @c) c.ConstExp = true; break;
+                
                 case BuiltinAttributes.DefineGlobal:
                 {
                     var node = builtInAttribute.syntaxNode;
@@ -372,9 +374,9 @@ public class Analizer(ErrorHandler handler)
                         RegisterAlias(null, reference, strlit.RawContent);
                     }
                 } break;
-                    
+                
+                // TODO builtin attributes
                 case BuiltinAttributes.Align:
-                case BuiltinAttributes.ConstExp:
                 case BuiltinAttributes.AllowAccessTo:
                 case BuiltinAttributes.DenyAccessTo:
                 case BuiltinAttributes.Inline:
@@ -648,9 +650,6 @@ public class Analizer(ErrorHandler handler)
         }
 
         end:
-        if (foundReference is SolvedFunctionGroupReference g)
-            foundReference = GetObjectReference(g.FunctionGroup.Overloads[0]);
-        
         return foundReference != null
             ? new IRSolvedReference(node, foundReference)
             : new IRUnknownReference(node);
@@ -718,16 +717,39 @@ public class Analizer(ErrorHandler handler)
 
     private IRNode NodeSemaAnal_Assign(IRAssign node)
     {
-        // TODO handle assignment
-
         node.Target = (IRExpression)NodeSemaAnal(node.Target);
         node.Value = (IRExpression)NodeSemaAnal(node.Value);
+        
+        if (node is { Value: IRIntegerLiteral @intval, Target: IRSolvedReference @solved }) 
+        {
+            switch (solved.Reference)
+            {
+                case LocalReference @loc:
+                {
+                    if (loc.Local.Type is IntegerTypeReference @inttype)
+                        node.Value = new IRIntegerLiteral(intval.Origin,
+                            intval.Value, inttype.PtrSized? null : inttype.BitSize);
+                } break;
+                case ParameterReference @arg:
+                {
+                    if (arg.Parameter.Type is IntegerTypeReference @inttype)
+                        node.Value = new IRIntegerLiteral(intval.Origin,
+                            intval.Value, inttype.PtrSized? null : inttype.BitSize);
+                } break;
+                
+                default: throw new NotImplementedException();
+            }
+        }
+        // TODO type target inference
         
         return node;
     }
 
     private IRNode NodeSemaAnal_BinExp(IRBinaryExp node)
     {
+        node.Left = (IRExpression)NodeSemaAnal(node.Left);
+        node.Right = (IRExpression)NodeSemaAnal(node.Right);
+        
         if (node is { Left: IRIntegerLiteral @leftInt, Right: IRIntegerLiteral @rightInt })
         {
             return new IRIntegerLiteral(node.Origin, node.Operator switch {

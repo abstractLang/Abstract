@@ -24,9 +24,9 @@ public class Compressor
     public void CompressProgramObject(ProgramObject programObject)
     {
         _membersMap = [];
-        var realizerModule = new ModuleBuilder("root");
+        var realizerModule = new ProgramBuilder();
         
-        CreateMembers(realizerModule, programObject);
+        CreateModules(realizerModule, programObject);
 
         foreach (var (source, builder) in _membersMap
                      .Where(e => e.Key is FunctionObject)
@@ -38,11 +38,15 @@ public class Compressor
         File.WriteAllText(".abs-cache/debug/compression.txt", realizerModule.GetRoot().ToString());
     }
 
-    private void CreateMembers(ModuleBuilder mod, ProgramObject programObject)
+    private void CreateModules(ProgramBuilder prg, ProgramObject programObject)
     {
         foreach (var i in programObject.Namespaces)
-            CreateMembersRecursive(mod.GetRoot(), null!, i);
+        {
+            var m = prg.AddModule(null!);
+            CreateMembersRecursive(m, null!, i);
+        }
     }
+    
     private void CreateMembersRecursive(NamespaceBuilder parent, LangObject? langParent, LangObject langObject)
     {
         switch (langObject)
@@ -139,10 +143,23 @@ public class Compressor
                 UnwrapFunctionBody_Call_Reference(builder, source, iv.Target);
 
                 break;
-            
+
             case IRIntegerLiteral @itlit:
-                builder.Writer.LdConstIptr((ulong)itlit.Value);
-                break;
+            {
+                if (itlit.PtrSized) builder.Writer.LdConstIptr((ulong)itlit.Value);
+                //else if (itlit.Size == null) Console.WriteLine("bruh");//throw new Exception("Integer literal should have a assigned size");
+                else switch (itlit.Size)
+                {
+                    case 1:   builder.Writer.LdConstI1(!itlit.Value.IsZero); break;
+                    case 8:   builder.Writer.LdConstI8((byte)itlit.Value); break;
+                    case 16:  builder.Writer.LdConstI16((ushort)itlit.Value); break;
+                    case 32:  builder.Writer.LdConstI32((uint)itlit.Value); break;
+                    case 64:  builder.Writer.LdConstI64((ulong)itlit.Value); break;
+                    case 128: builder.Writer.LdConstI128((UInt128)itlit.Value); break;
+                    
+                    default: builder.Writer.LdConstI((byte)(itlit.Size ?? 255), itlit.Value); break;
+                }
+            } break;
 
             case IRSolvedReference @solvref:
             {
@@ -175,12 +192,12 @@ public class Compressor
                     case IRBinaryExp.Operators.Subtract: builder.Writer.Sub(); break;
                     case IRBinaryExp.Operators.Multiply: builder.Writer.Mul(false); break;
                     case IRBinaryExp.Operators.Divide: builder.Writer.Div(false); break;
+                    case IRBinaryExp.Operators.Reminder: builder.Writer.Rem(false); break;
                     default: throw new Exception();
                 }
             } break;
             
-            default:
-                throw new NotImplementedException();
+            default: throw new NotImplementedException();
         }
     }
     

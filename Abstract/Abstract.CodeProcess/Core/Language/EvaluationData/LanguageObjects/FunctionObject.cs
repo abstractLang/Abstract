@@ -27,6 +27,7 @@ public class FunctionObject(string[] g, string n, FunctionDeclarationNode synnod
     public bool Override { get; set; } = false;
     public bool Extern { get; set; } = false;
     public bool Generic { get; set; } = false;
+    public bool ConstExp { get; set; } = false;
     
     public ParameterObject[] Parameters => [.. _parameters];
     public IRBlock? Body = null;

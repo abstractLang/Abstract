@@ -14,7 +14,7 @@ func foo(u8 entropy, u32 seed) void {
 	value *= 5 + smtgidk * entropy
 	value = 5 * 10
 	value = 10 / 2
-	value = 34565432 % 100
+	value = 34565432 % 100 + 5
 	
 
 }
@@ -22,3 +22,5 @@ func foo(u8 entropy, u32 seed) void {
 struct Randomizer {
 
 }
+
+
