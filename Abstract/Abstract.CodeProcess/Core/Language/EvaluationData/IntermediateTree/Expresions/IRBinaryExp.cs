@@ -1,5 +1,5 @@
 using System.Text;
-using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
@@ -14,6 +14,9 @@ public class IRBinaryExp(
     public Operators Operator { get; set; } = ope;
     public IRExpression Left { get; set; } = left;
     public IRExpression Right { get; set; } = right;
+
+
+    public TypeReference? ResultType { get; set; } = null;
     
     public override string ToString()
     {

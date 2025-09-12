@@ -7,12 +7,13 @@ using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.CodeReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.Integer;
 using Abstract.Realizer.Builder;
 using Abstract.Realizer.Builder.Language.Omega;
 using Abstract.Realizer.Builder.ProgramMembers;
 using Abstract.Realizer.Builder.References;
+using IntegerTypeReference = Abstract.Realizer.Builder.References.IntegerTypeReference;
 using TypeReference = Abstract.Realizer.Builder.References.TypeReference;
-using IntReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.IntegerTypeReference;
 
 namespace Abstract.CodeProcess;
 
@@ -98,7 +99,7 @@ public class Compressor
         {
             TypeReference typeref = p.Type switch
             {
-                IntReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
+                RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
                 SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
                 UnsolvedTypeReference => throw new UnreachableException("parameter type should not be unsolved at this step!"),
                 _ => throw new NotImplementedException(),
@@ -111,7 +112,7 @@ public class Compressor
             {
                 TypeReference typeref = l.Type switch
                 {
-                    IntReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
+                    RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
                     SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
                     UnsolvedTypeReference => throw new UnreachableException("Local type should not be unsolved at this step!"),
                     _ => throw new NotImplementedException(),
@@ -196,6 +197,21 @@ public class Compressor
                     default: throw new Exception();
                 }
             } break;
+            
+            
+            case IRSignCast @sigcast:
+                UnwrapFunctionBody_IRNode(builder, source, sigcast.Value);
+                builder.Writer.Sigcast(sigcast.Signed);
+                break;
+            case IRIntExtend @ex:
+                UnwrapFunctionBody_IRNode(builder, source, ex.Value);
+                builder.Writer.Extend((byte)ex.Size);
+                break;
+            case IRIntTrunc @tr:
+                UnwrapFunctionBody_IRNode(builder, source, tr.Value);
+                builder.Writer.Trunc((byte)tr.Size);
+                break;
+            
             
             default: throw new NotImplementedException();
         }

@@ -1,6 +1,6 @@
 @public func main() void {
 
-	let u32 seed
+	let u64 seed
 	let Randomizer rng
 	foo(5, seed)
 
