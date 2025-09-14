@@ -2,30 +2,31 @@
 
 public struct Token
 {
-    public string value;
+    public ReadOnlyMemory<char> value;
     public TokenType type;
 
+    public uint line;
     public uint start;
     public uint end;
 
-    public readonly (uint start, uint end) Range => (start, end);
-    public readonly uint RangeLength => end - start;
+    public readonly (uint line, uint start, uint end) Range => (line, start, end);
+    public readonly uint Length => end - start;
 
-    public override readonly string ToString() => $"{value} ({type})";
-    public readonly string ValueString()
-        => type switch
+    public readonly override string ToString() => $"'{ValueString()}' ({type}) at {line+1}:{start}";
+    public readonly string ValueString() => type switch
         {
             TokenType.LineFeedChar => "\n",
             TokenType.EofChar => "[\\EOF]",
-            _ => value,
+            _ => value.ToString(),
         };
 }
 public enum TokenType : byte
 {
     Undefined,              // undefined token (default value)
-
+    
     IntegerNumberLiteral,
     FloatingNumberLiteral,
+    
     StringLiteral,
     CharacterLiteral,
     Identifier,
@@ -54,6 +55,7 @@ public enum TokenType : byte
     BreakKeyword,           // break
 
     AsKeyword,              // as
+    NewKeyword,             // new
 
     ReturnKeyword,          // return
 

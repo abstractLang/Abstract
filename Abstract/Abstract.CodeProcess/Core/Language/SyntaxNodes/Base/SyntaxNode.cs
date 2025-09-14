@@ -7,10 +7,10 @@ public abstract class SyntaxNode
     protected SyntaxNode _parent = null!;
 
     public SyntaxNode Parent => _parent;
-    public virtual (uint start, uint end) Range => OverrideRange.HasValue
+    public virtual (uint line_start, uint line_end, uint start, uint end) Range => OverrideRange.HasValue
         ? OverrideRange!.Value
-        : (_children[0].Range.start, _children[^1].Range.end);
-    public (uint start, uint end)? OverrideRange { get; set; } = null;
+        : (_children[0].Range.line_start, _children[^1].Range.line_end, _children[0].Range.start, _children[^1].Range.end);
+    public (uint line_start, uint line_end, uint start, uint end)? OverrideRange { get; set; } = null;
     public string? OverrideToString { get; set; } = null;
 
 

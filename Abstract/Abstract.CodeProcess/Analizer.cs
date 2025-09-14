@@ -595,6 +595,17 @@ public class Analizer(ErrorHandler handler)
             case IdentifierNode @ident: return SearchReference(ident, ctx);
                 
             case IntegerLiteralNode @intlit: return new IRIntegerLiteral(intlit, intlit.Value);
+
+            case NewObjectNode @newobj:
+            {
+                var ctor = new IRNewObject(newobj,
+                    SolveTypeLazy(newobj.Type, ctx),
+                    newobj.Arguments.Select(i => UnwrapExecutionContext_Expression(i, ctx)).ToArray());
+                
+                
+                
+                return ctor;
+            } break;
             
             default: throw new NotImplementedException();
         };
@@ -602,8 +613,6 @@ public class Analizer(ErrorHandler handler)
 
     private IRReference SearchReference(ExpressionNode node, ExecutionContextData ctx)
     {
-        if (node is TypeExpressionNode) node = (ExpressionNode)node.Children[0];
-        
         string[] reference = node switch
         {
             IdentifierCollectionNode @idc => idc.Values,
@@ -655,16 +664,69 @@ public class Analizer(ErrorHandler handler)
             ? new IRSolvedReference(node, foundReference)
             : new IRUnknownReference(node);
     }
+    private IRReference SearchReference(ExpressionNode node, LangObject obj)
+    {
+        string[] reference = node switch
+        {
+            IdentifierCollectionNode @idc => idc.Values,
+            IdentifierNode @idn => [idn.Value],
+            _ => throw new NotImplementedException(),
+        };
+        
+        LanguageReference? foundReference = null;
+        
+        if (reference.Length == 0) goto end;
 
-    private TypeReference SolveTypeLazy(ExpressionNode node, ExecutionContextData ctx)
+        { // Check siblings
+            var siblings = obj.Parent.Children;
+            var sibling = siblings
+                .FirstOrDefault(e => IdentifierComparer.IsEquals([e.Name], reference));
+            if (sibling != null)
+            {
+                foundReference = GetObjectReference(sibling);
+                goto end;
+            }
+        }
+        { // Check global references
+            var global = _globalReferenceTable.Values
+                .FirstOrDefault(e => IdentifierComparer.IsEquals(e.Global, reference));
+            if (global != null)
+            {
+                foundReference = GetObjectReference(global);
+                goto end;
+            }
+        }
+
+        end:
+        return foundReference != null
+            ? new IRSolvedReference(node, foundReference)
+            : new IRUnknownReference(node);
+    }
+
+    
+    private TypeReference SolveTypeLazy(ExpressionNode node, ExecutionContextData? ctx)
     {
         var shallow = SolveShallowType(node);
         if (shallow is not UnsolvedTypeReference) return shallow;
 
+        if (ctx == null) return new UnsolvedTypeReference(node);
+        
         var reef = SearchReference(node, ctx);
         if (reef is not IRSolvedReference @solv) return new UnsolvedTypeReference(node);
         return (solv.Reference as TypeReference) ?? new UnsolvedTypeReference(node);
     }
+    private TypeReference SolveTypeLazy(ExpressionNode node, LangObject? obj)
+    {
+        var shallow = SolveShallowType(node);
+        if (shallow is not UnsolvedTypeReference) return shallow;
+
+        if (obj == null) return new UnsolvedTypeReference(node);
+        
+        var reef = SearchReference(node, obj);
+        if (reef is not IRSolvedReference @solv) return new UnsolvedTypeReference(node);
+        return (solv.Reference as TypeReference) ?? new UnsolvedTypeReference(node);
+    }
+    
     
     #endregion
     #region Stage Four
@@ -677,17 +739,32 @@ public class Analizer(ErrorHandler handler)
 
     private void DoSemanticAnalysis()
     {
-        foreach (var fung in _globalReferenceTable
-                     .Select(e => e.Value)
-                     .OfType<FunctionGroupObject>())
+        var funclist = _globalReferenceTable
+            .Select(e => e.Value)
+            .OfType<FunctionGroupObject>().SelectMany(e => e.Overloads)
+            .ToArray();
+        
+        // Header analysis
+        foreach (var fun in funclist)
         {
-            foreach (var fun in fung.Overloads)
-            {
-                if (fun.Body != null)
-                    BlockSemaAnal(fun.Body);                
-            }
+            FunctionSemaAnal(fun);
+        }
+        
+        // Excution analysis
+        foreach (var fun in funclist)
+        {
+            if (fun.Body != null) BlockSemaAnal(fun.Body);
         }
     } 
+    private void FunctionSemaAnal(FunctionObject function)
+    {
+        foreach (var i in function.Parameters)
+        {
+            if (i.Type is not UnsolvedTypeReference @unsolv) continue;
+            i.Type = SolveTypeLazy(unsolv.syntaxNode, function);
+        }
+    }
+    
 
     private void BlockSemaAnal(IRBlock block)
     {
@@ -702,6 +779,7 @@ public class Analizer(ErrorHandler handler)
             IRInvoke @iv => NodeSemaAnal_Invoke(iv),
             IRAssign @ass => NodeSemaAnal_Assign(ass),
             IRBinaryExp @be => NodeSemaAnal_BinExp(be),
+            IRNewObject @no => NodeSemaAnal_NewObj(no),
             
             IRSolvedReference 
                 or IRIntegerLiteral => node,
@@ -765,6 +843,15 @@ public class Analizer(ErrorHandler handler)
                                     throw new UnreachableException();
                                 }
                                 break;
+
+
+                            case SolvedStructTypeReference @solvedstruct:
+                            {
+                                if (argtype is SolvedStructTypeReference @solvedstructarg)
+                                    suitability[i] = solvedstruct.CalculateSuitability(solvedstructarg);
+                                else suitability[i] = 0;
+                            } break;
+                            
                             
                             default: throw new NotImplementedException();
                         }
@@ -858,6 +945,18 @@ public class Analizer(ErrorHandler handler)
         return node;
     }
 
+    private IRNode NodeSemaAnal_NewObj(IRNewObject node)
+    {
+        // TODO i prefer handle constructor overloading when
+        //  we have actual constructable structures working
+
+        for (var i = 0; i < node.InlineAssignments.Count; i++)
+        {
+            node.InlineAssignments[i] = (IRAssign)NodeSemaAnal_Assign(node.InlineAssignments[i]);
+        }
+
+        return node;
+    }
 
     /// <summary>
     /// With a desired type and a value node,

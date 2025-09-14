@@ -1,10 +1,10 @@
-using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 
-public class UnsolvedTypeReference(SyntaxNode node) : TypeReference
+public class UnsolvedTypeReference(ExpressionNode node) : TypeReference
 {
-    public readonly SyntaxNode syntaxNode = node;
+    public readonly ExpressionNode syntaxNode = node;
 
     public override string ToString() => $"UType<{syntaxNode}>";
 }

@@ -7,4 +7,11 @@ public class SolvedStructTypeReference(StructObject struc) : TypeReference
     public readonly StructObject Struct = struc;
 
     public override string ToString() => $"Type<{Struct.Global}>";
+
+    public int CalculateSuitability(SolvedStructTypeReference to)
+    {
+        if (Struct == to.Struct) return 2;
+        // TODO check casting possibility
+        return 0;
+    }
 }

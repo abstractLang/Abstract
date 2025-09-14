@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 
 namespace Abstract.CodeProcess.Core;
 
@@ -40,10 +41,12 @@ public class ErrorHandler
             s.AppendLine($"{f.Key}:");
             foreach (var e in f.Value)
             {
-                s.AppendLine($"- {e.Message} {e.StackTrace?.Split("\n", StringSplitOptions.RemoveEmptyEntries)[0]}");
+                s.AppendLine($"- {e.Message}");
+                Console.ForegroundColor = ConsoleColor.Gray;
+                s.AppendLine($"    {e.StackTrace?.Split("\n", StringSplitOptions.RemoveEmptyEntries)[0]}");
+                Console.ResetColor();
             }
         }
-        
 
         Console.WriteLine(s.ToString());
     }

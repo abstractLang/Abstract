@@ -12,7 +12,8 @@ public abstract class ValueNode : ExpressionNode
 
     public Token token;
 
-    public override (uint start, uint end) Range => token.Range;
+    public override (uint line_start, uint line_end, uint start, uint end) Range
+        => (token.Range.line, token.Range.line, token.Range.start, token.Range.end);
 
     public override string ToString() => "Unhandled value node";
     public override string ToTree() => ToString();

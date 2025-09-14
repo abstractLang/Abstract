@@ -441,7 +441,71 @@ public class Parser(ErrorHandler errHandler)
             } catch { DiscardLine(); throw; }
             break;
 
-            // parenthesis enclosed expression
+            // Constructor invoke
+            case TokenType.NewKeyword:
+            {
+                
+                // Possible constructor syntax
+                //  new <Type>(args...)
+                //  new <Type(generic...)>(args...)
+                
+                node = new NewObjectNode();
+                node.AppendChild(EatAsNode()); // new
+                
+                // ParseType will parse it as a generic.
+                // After it the compiler must verify
+                // if there is a following argument block.
+                // If not, it must dissect the returned
+                // type expression.
+                
+                var type = ParseType();
+
+                if (Taste(TokenType.LeftPerenthesisChar))
+                {
+                    node.AppendChild(type);
+                    node.AppendChild(ParseArgumentCollection());
+                }
+                else
+                {
+                    if (type is FunctionCallExpressionNode)
+                    {
+                        var typeExp = type.Children[0];
+                        var argsExp = type.Children[1];
+
+                        type.RemoveChild(typeExp);
+                        type.RemoveChild(argsExp);
+                        
+                        node.AppendChild(typeExp);
+                        node.AppendChild(argsExp);
+                    }
+                }
+
+                if (TryEatAsNode(TokenType.LeftBracketChar, out var n))
+                {
+                    var block = new BlockNode();
+                    block.AppendChild(n);
+
+                    while (!IsEOF() && !Taste(TokenType.RightBracketChar))
+                    {
+                        var i = new AssignmentExpressionNode();
+
+                        i.AppendChild(ParseIdentfier());
+                        i.AppendChild(DietAsNode(TokenType.EqualsChar,
+                            t => throw new Exception("Expected assignment operator")));
+                        i.AppendChild(ParseExpression());
+                        EndLine();
+                        
+                        block.AppendChild(i);
+                    }
+                    
+                    block.AppendChild(DietAsNode(TokenType.RightBracketChar,
+                        (t) => throw new Exception($"Expected closing bracket, found {t}")));
+                    node.AppendChild(block);
+                }
+                
+            } break;
+            
+            // Parenthesis enclosed expression
             case TokenType.LeftPerenthesisChar:
             try {
 
@@ -526,7 +590,7 @@ public class Parser(ErrorHandler errHandler)
             case TokenType.NullKeyword:
                 return new NullLiteralNode(Eat());
 
-            default: throw new Exception($"Unexpected token '{Bite()}'");
+            default: throw new Exception($"Unexpected token {Bite()}");
         }
 
         return node;
@@ -559,8 +623,7 @@ public class Parser(ErrorHandler errHandler)
 
         return range;
     }
-
-
+    
     private SyntaxNode ParsePacketBody()
     {
         throw new Exception($"TODO");
@@ -635,7 +698,7 @@ public class Parser(ErrorHandler errHandler)
     {
         var collection = new ArgumentCollectionNode();
         collection.AppendChild(DietAsNode(TokenType.LeftPerenthesisChar,
-            (t) => throw new Exception($"Unexpected token '{Bite()}'")));
+            (t) => throw new Exception($"Unexpected token {Bite()}")));
         TryEndLine();
 
         if (!IsEOF() && Bite().type != TokenType.RightParenthesisChar)
@@ -649,18 +712,15 @@ public class Parser(ErrorHandler errHandler)
         }
 
         collection.AppendChild(DietAsNode(TokenType.RightParenthesisChar,
-            (t) => throw new Exception($"Unexpected token '{Bite()}'")));
+            (t) => throw new Exception($"Unexpected token {Bite()}")));
 
         return collection;
     }
 
 
-    private TypeExpressionNode ParseType()
+    private ExpressionNode ParseType()
     {
-        var type = new TypeExpressionNode();
-
-        if (Taste(TokenType.TypeKeyword))
-            type.AppendChild(new IdentifierNode(Eat()));
+        if (Taste(TokenType.TypeKeyword)) return new IdentifierNode(Eat());
 
         else if (TryEatAsNode(TokenType.LeftSquareBracketChar, out var leftBrac))
         {
@@ -675,7 +735,7 @@ public class Parser(ErrorHandler errHandler)
             (t) => throw new Exception($"Unexpected token '{Bite()}'")));
 
             arrayMod.AppendChild(ParseType());
-            type.AppendChild(arrayMod);
+            return arrayMod;
         }
 
         else if (TryEatAsNode(TokenType.QuestionChar, out var question))
@@ -684,7 +744,7 @@ public class Parser(ErrorHandler errHandler)
 
             nullableMod.AppendChild(question);
             nullableMod.AppendChild(ParseType());
-            type.AppendChild(nullableMod);
+            return nullableMod;
         }
 
         else if (TryEatAsNode(TokenType.BangChar, out var bang))
@@ -693,7 +753,7 @@ public class Parser(ErrorHandler errHandler)
 
             failableMod.AppendChild(bang);
             failableMod.AppendChild(ParseType());
-            type.AppendChild(failableMod);
+            return failableMod;
         }
 
         else if (TryEatAsNode(TokenType.StarChar, out var star))
@@ -702,12 +762,10 @@ public class Parser(ErrorHandler errHandler)
 
             refMod.AppendChild(star);
             refMod.AppendChild(ParseType());
-            type.AppendChild(refMod);
+            return refMod;
         }
 
-        else type.AppendChild(ParseExpression());
-        
-        return type;
+        return ParseExpression();
     }
     private TypedIdentifierNode ParseTypedIdentifier()
     {
@@ -752,7 +810,7 @@ public class Parser(ErrorHandler errHandler)
         }
 
         block.AppendChild(DietAsNode(TokenType.RightBracketChar,
-            (t) => throw new Exception($"Unexpected token '{Bite()}'")));
+            (t) => throw new Exception($"Unexpected token {Bite()}")));
 
         return block;
     }
@@ -776,7 +834,7 @@ public class Parser(ErrorHandler errHandler)
     {
         return _tokens.Length >= _tokens_cursor
             ? _tokens[_tokens_cursor++]
-            : new Token {type = TokenType.EofChar, value = "\\EOF"};
+            : new Token {type = TokenType.EofChar, value = "\\EOF".AsMemory()};
     }
     private TokenNode EatAsNode() => new(Eat());
 
@@ -787,7 +845,7 @@ public class Parser(ErrorHandler errHandler)
             tkn = Eat();
             return true;
         }
-        tkn = new Token {type = TokenType.EofChar, value = "\\EOF"};
+        tkn = new Token {type = TokenType.EofChar, value = "\\EOF".AsMemory()};
         return false;
     }
     private bool TryEatAsNode(TokenType t, out TokenNode node)
@@ -816,7 +874,7 @@ public class Parser(ErrorHandler errHandler)
     private void EndLine()
     {
         if (IsEndOfLine()) Eat();
-        else throw new Exception($"Unexpected token '{Bite()}'. Expected end of line");
+        else throw new Exception($"Unexpected token {Bite()}. Expected end of line");
     }
     private void DiscardLine()
     {

@@ -13,7 +13,8 @@ using Abstract.Realizer.Builder.Language.Omega;
 using Abstract.Realizer.Builder.ProgramMembers;
 using Abstract.Realizer.Builder.References;
 using IntegerTypeReference = Abstract.Realizer.Builder.References.IntegerTypeReference;
-using TypeReference = Abstract.Realizer.Builder.References.TypeReference;
+using AbstractTypeReference = Abstract.Realizer.Builder.References.TypeReference;
+using BuilderTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.TypeReference;
 
 namespace Abstract.CodeProcess;
 
@@ -46,32 +47,62 @@ public class Compressor
             var m = prg.AddModule(null!);
             CreateMembersRecursive(m, null!, i);
         }
+        CreateMembersRecursive_Post();
     }
     
-    private void CreateMembersRecursive(NamespaceBuilder parent, LangObject? langParent, LangObject langObject)
+    private void CreateMembersRecursive(INamespaceOrStructureBuilder parent, LangObject? langParent, LangObject langObject)
     {
         switch (langObject)
         {
-            case NamespaceObject @nsobj:
+            case NamespaceObject @nsobj  when parent is NamespaceBuilder @parentnmsp:
             {
                 var name = string.Join('.', nsobj.Global[(langParent?.Global.Length ?? 0) ..]);
-                var nmsp = parent.AddNamespace(name);
+                var nmsp = parentnmsp.AddNamespace(name);
                 _membersMap.Add(langObject, nmsp);
                 foreach (var i in nsobj.Children)
                     CreateMembersRecursive(nmsp, nsobj, i);
                 
             } break;
-
-            case StructObject @stobj:
+            case StructObject @stobj     when parent is NamespaceBuilder @parentnmsp:
             {
                 var name = string.Join('.', stobj.Global[(langParent?.Global.Length ?? 0) ..]);
-                var s = parent.AddStructure(name);
+                var s = parentnmsp.AddStructure(name);
                 _membersMap.Add(langObject, s);
 
                 foreach (var i in stobj.Children)
-                    CreateMembersRecursive(parent, stobj, i);
+                    CreateMembersRecursive(s, stobj, i);
                 
             } break;
+            case FunctionObject @fnobj   when parent is NamespaceBuilder @parentnmsp:
+            {
+                var name = string.Join('.', fnobj.Global[(langParent?.Global.Length ?? 0) ..]);
+                var fn = parentnmsp.AddFunction(name);
+                _membersMap.Add(langObject, fn);
+                
+            } break;
+            case VariableObject @vobj    when parent is NamespaceBuilder @parentnmsp:
+            {
+                var name = string.Join('.', vobj.Global[(langParent?.Global.Length ?? 0) ..]);
+                var fn = parentnmsp.AddStaticField(name);
+                _membersMap.Add(langObject, fn);
+                
+            } break;
+            
+            case FunctionObject @fnobj   when parent is StructureBuilder @parentstruc:
+            {
+                var name = string.Join('.', fnobj.Global[(langParent?.Global.Length ?? 0) ..]);
+                var fn = parentstruc.AddField(name);
+                _membersMap.Add(langObject, fn);
+                
+            } break;
+            case VariableObject @vobj    when parent is StructureBuilder @parentstruc:
+            {
+                var name = string.Join('.', vobj.Global[(langParent?.Global.Length ?? 0) ..]);
+                var fn = parentstruc.AddField(name);
+                _membersMap.Add(langObject, fn);
+                
+            } break;
+            
             
             case FunctionGroupObject @fgobj:
             {
@@ -79,25 +110,27 @@ public class Compressor
                     CreateMembersRecursive(parent, langParent, i);
             } break;
             
-            case FunctionObject @fnobj:
-            {
-                var name = string.Join('.', fnobj.Global[(langParent?.Global.Length ?? 0) ..]);
-                var fn = parent.AddFunction(name);
-                _membersMap.Add(langObject, fn);
-                
-            } break;
             
-            default: throw new NotImplementedException();
+            default: throw new UnreachableException();
         };
     }
 
+    private void CreateMembersRecursive_Post()
+    {
+        foreach (var i in _membersMap
+                     .Where(e => e.Value is FieldBuilder))
+        {
+            // Fuck i fucking forgot to fucking implement fiel types
+            //((FieldBuilder)i.Value).Type = GetTypeReferenceBuilder(((VariableObject)i.Key).);
+        }
+    }
 
     private void UnwrapFunctions(FunctionBuilder builder, FunctionObject source)
     {
 
         foreach (var p in source.Parameters)
         {
-            TypeReference typeref = p.Type switch
+            AbstractTypeReference typeref = p.Type switch
             {
                 RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
                 SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
@@ -110,7 +143,7 @@ public class Compressor
         if (source.Body != null)
             foreach (var l in source.Body.Locals)
             {
-                TypeReference typeref = l.Type switch
+                AbstractTypeReference typeref = l.Type switch
                 {
                     RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
                     SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
@@ -197,6 +230,12 @@ public class Compressor
                     default: throw new Exception();
                 }
             } break;
+
+            case IRNewObject @newobj:
+            {
+                builder.Writer.LdNewObject((TypeBuilder)GetTypeReferenceBuilder(newobj.Type));
+                foreach (var ia in newobj.InlineAssignments) UnwrapFunctionBody_IRNode(builder, source, ia);
+            } break;
             
             
             case IRSignCast @sigcast:
@@ -243,5 +282,16 @@ public class Compressor
             default: throw new NotImplementedException();
         }
     }
+    
     private ProgramMemberBuilder GetObjectBuilder(LangObject obj) => _membersMap[obj];
+
+    private ProgramMemberBuilder GetTypeReferenceBuilder(BuilderTypeReference tref)
+    {
+        return tref switch
+        {
+            SolvedStructTypeReference @st => GetObjectBuilder(st.Struct),
+
+            _ => throw new NotImplementedException(),
+        };
+    }
 }

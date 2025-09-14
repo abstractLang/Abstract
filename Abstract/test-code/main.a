@@ -1,12 +1,14 @@
 @public func main() void {
 
 	let u64 seed
-	let Randomizer rng
-	foo(5, seed)
+	let Randomizer rng = new Randomizer() {
+		seed = 0x123456789ABCDEF0
+	}
+	foo(5, rng)
 
 }
 
-func foo(u8 entropy, u32 seed) void {
+func foo(u8 entropy, Randomizer rng) void {
 
 	let i32 value = 42
 	let i32 smtgidk = 500
@@ -20,6 +22,8 @@ func foo(u8 entropy, u32 seed) void {
 }
 
 struct Randomizer {
+
+	@public let u64 seed
 
 }
 
