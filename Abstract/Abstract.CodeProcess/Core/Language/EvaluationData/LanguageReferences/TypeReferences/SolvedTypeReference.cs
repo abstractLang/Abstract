@@ -6,7 +6,7 @@ public class SolvedStructTypeReference(StructObject struc) : TypeReference
 {
     public readonly StructObject Struct = struc;
 
-    public override string ToString() => $"Type<{Struct.Global}>";
+    public override string ToString() => $"Struct<{string.Join('.', Struct.Global)}>";
 
     public int CalculateSuitability(SolvedStructTypeReference to)
     {

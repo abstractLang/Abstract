@@ -5,6 +5,7 @@ using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresi
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.CodeReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FieldReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.Integer;
@@ -29,12 +30,21 @@ public class Compressor
         var realizerModule = new ProgramBuilder();
         
         CreateModules(realizerModule, programObject);
+        _membersMap.TrimExcess();
 
-        foreach (var (source, builder) in _membersMap
-                     .Where(e => e.Key is FunctionObject)
-                     .Select(e => ((e.Key as FunctionObject)!, (e.Value as FunctionBuilder)!)))
+        foreach (var (source, b) in _membersMap)
         {
-            UnwrapFunctions(builder, source);
+            switch (b)
+            {
+                case FunctionBuilder @builder:
+                    UnwrapFunction(builder, (FunctionObject)source);
+                    break;
+                
+                case FieldBuilder @builder:
+                    UnwrapField(builder, (FieldObject)source);
+                    break;
+            }
+
         }
         
         File.WriteAllText(".abs-cache/debug/compression.txt", realizerModule.GetRoot().ToString());
@@ -47,7 +57,6 @@ public class Compressor
             var m = prg.AddModule(null!);
             CreateMembersRecursive(m, null!, i);
         }
-        CreateMembersRecursive_Post();
     }
     
     private void CreateMembersRecursive(INamespaceOrStructureBuilder parent, LangObject? langParent, LangObject langObject)
@@ -80,7 +89,7 @@ public class Compressor
                 _membersMap.Add(langObject, fn);
                 
             } break;
-            case VariableObject @vobj    when parent is NamespaceBuilder @parentnmsp:
+            case FieldObject @vobj    when parent is NamespaceBuilder @parentnmsp:
             {
                 var name = string.Join('.', vobj.Global[(langParent?.Global.Length ?? 0) ..]);
                 var fn = parentnmsp.AddStaticField(name);
@@ -95,7 +104,7 @@ public class Compressor
                 _membersMap.Add(langObject, fn);
                 
             } break;
-            case VariableObject @vobj    when parent is StructureBuilder @parentstruc:
+            case FieldObject @vobj    when parent is StructureBuilder @parentstruc:
             {
                 var name = string.Join('.', vobj.Global[(langParent?.Global.Length ?? 0) ..]);
                 var fn = parentstruc.AddField(name);
@@ -115,17 +124,9 @@ public class Compressor
         };
     }
 
-    private void CreateMembersRecursive_Post()
-    {
-        foreach (var i in _membersMap
-                     .Where(e => e.Value is FieldBuilder))
-        {
-            // Fuck i fucking forgot to fucking implement fiel types
-            //((FieldBuilder)i.Value).Type = GetTypeReferenceBuilder(((VariableObject)i.Key).);
-        }
-    }
-
-    private void UnwrapFunctions(FunctionBuilder builder, FunctionObject source)
+    
+    
+    private void UnwrapFunction(FunctionBuilder builder, FunctionObject source)
     {
 
         foreach (var p in source.Parameters)
@@ -157,6 +158,17 @@ public class Compressor
 
     }
 
+    private void UnwrapField(FieldBuilder builder, FieldObject source)
+    {
+        builder.Type = source.Type switch
+        {
+            RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
+            SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
+            UnsolvedTypeReference => throw new UnreachableException("Local type should not be unsolved at this step!"),
+            _ => throw new NotImplementedException(),
+        };
+    }
+    
     private void UnwrapFunctionBody(OmegaBytecodeBuilder builder, FunctionObject source)
     {
         var block = source.Body ?? throw new NullReferenceException();
@@ -197,7 +209,6 @@ public class Compressor
 
             case IRSolvedReference @solvref:
             {
-
                 switch (solvref.Reference)
                 {
                     case LocalReference @loc:
@@ -264,6 +275,10 @@ public class Compressor
         {
             case LocalReference @l:
                 builder.Writer.StLocal((short)l.Local.index);
+                break;
+            
+            case SolvedFieldReference @f:
+                builder.Writer.StField((FieldBuilder)GetObjectBuilder(f.Field));
                 break;
             
             default: throw new NotImplementedException();

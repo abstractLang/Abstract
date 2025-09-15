@@ -1,10 +1,11 @@
 using System.Text;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 
-public class VariableObject(string[] g, string n, TopLevelVariableNode synnode)
+public class FieldObject(string[] g, string n, TopLevelVariableNode synnode, TypeReference t)
     : LangObject(g, n),
         IPublicModifier,
         IStaticModifier,
@@ -16,6 +17,8 @@ public class VariableObject(string[] g, string n, TopLevelVariableNode synnode)
     public bool Static { get; set; } = false;
     public bool Internal { get; set; } = false;
     public bool Abstract { get; set; } = false;
+    
+    public TypeReference Type { get; set; } = t;
     
     public readonly TopLevelVariableNode syntaxNode = synnode;
     
@@ -29,7 +32,7 @@ public class VariableObject(string[] g, string n, TopLevelVariableNode synnode)
         sb.Append(Abstract ? "abstract " : "concrete ");
 
         sb.Append(Constant ? "Constant " : "Variable ");
-        sb.AppendLine($"'{Name}' ('{string.Join('.', Global)}')");
+        sb.AppendLine($"'{Name}' ('{string.Join('.', Global)}') : {Type}");
         
         return sb.ToString();
     }

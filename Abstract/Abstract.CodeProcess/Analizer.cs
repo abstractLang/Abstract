@@ -12,6 +12,7 @@ using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObje
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.AttributeReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.CodeReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FieldReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
@@ -38,6 +39,9 @@ public class Analizer(ErrorHandler handler)
     {
         // Stage 1
         SearchReferences(modules);
+        _namespaces.TrimExcess();
+        _globalReferenceTable.TrimExcess();
+        
         // Stage 2
         ScanHeadersMetadata();
         // Stage 3
@@ -103,8 +107,8 @@ public class Analizer(ErrorHandler handler)
             FunctionDeclarationNode @funcnode => RegisterFunction(parent, funcnode),
             PacketDeclarationNode @packetnode => RegisterPacket(parent, packetnode),
             StructureDeclarationNode @structnode => RegisterStructure(parent, structnode),
-            TypeDefinitionNode @structnode => RegisterTypedef(parent, structnode),
-            TopLevelVariableNode @structnode => RegisterVariable(parent, structnode),
+            TypeDefinitionNode @typedefnode => RegisterTypedef(parent, typedefnode),
+            TopLevelVariableNode @fieldnode => RegisterField(parent, fieldnode),
             
             _ => throw new NotImplementedException()
         };
@@ -215,13 +219,13 @@ public class Analizer(ErrorHandler handler)
         
         return typdi;
     }
-    private VariableObject RegisterVariable(LangObject? parent, TopLevelVariableNode variable)
+    private FieldObject RegisterField(LangObject? parent, TopLevelVariableNode variable)
     {
         string[] g = parent != null
             ? [..parent.Global, variable.Identifier.Value]
             : [variable.Identifier.Value];
         
-        VariableObject vari = new(g, variable.Identifier.Value, variable);
+        FieldObject vari = new(g, variable.Identifier.Value, variable, SolveShallowType(variable.Type));
         vari.Constant = variable.IsConstant;
         parent?.AppendChild(vari);
         _globalReferenceTable.Add(g, vari);
@@ -598,11 +602,22 @@ public class Analizer(ErrorHandler handler)
 
             case NewObjectNode @newobj:
             {
-                var ctor = new IRNewObject(newobj,
-                    SolveTypeLazy(newobj.Type, ctx),
-                    newobj.Arguments.Select(i => UnwrapExecutionContext_Expression(i, ctx)).ToArray());
+                List<IRAssign> asisgns = [];
+
+                var typer = SolveTypeLazy(newobj.Type, ctx) as SolvedStructTypeReference
+                            ?? throw new UnreachableException();
                 
+                foreach (var i in newobj.Inlined.Content)
+                {
+                    if (i is not AssignmentExpressionNode @ass) throw new UnreachableException();
+                    asisgns.Add(new IRAssign(ass,
+                        SearchReferenceStrictlyInside(ass.Left, typer.Struct),
+                        UnwrapExecutionContext_Expression(ass.Right, ctx)));
+                }
                 
+                var ctor = new IRNewObject(newobj, typer,
+                    newobj.Arguments.Select(i => UnwrapExecutionContext_Expression(i, ctx)).ToArray(),
+                    [..asisgns]);
                 
                 return ctor;
             } break;
@@ -622,20 +637,25 @@ public class Analizer(ErrorHandler handler)
         
         LanguageReference? foundReference = null;
         
-        if (reference.Length == 0) goto end;
-        if (reference.Length == 1)
+        switch (reference.Length)
         {
-            var local = ctx.Locals.FirstOrDefault(e => e.Name == reference[0]);
-            if (local != null)
+            case 0: goto end;
+            case 1:
             {
-                foundReference = new LocalReference(local);
-                goto end;
-            }
-            var param = ctx.Parameters.FirstOrDefault(e => e.Name == reference[0]);
-            if (param != null)
-            {
-                foundReference = new ParameterReference(param);
-                goto end;
+                var local = ctx.Locals.FirstOrDefault(e => e.Name == reference[0]);
+                if (local != null)
+                {
+                    foundReference = new LocalReference(local);
+                    goto end;
+                }
+                var param = ctx.Parameters.FirstOrDefault(e => e.Name == reference[0]);
+                if (param != null)
+                {
+                    foundReference = new ParameterReference(param);
+                    goto end;
+                }
+
+                break;
             }
         }
 
@@ -703,6 +723,34 @@ public class Analizer(ErrorHandler handler)
             : new IRUnknownReference(node);
     }
 
+    private IRReference SearchReferenceStrictlyInside(ExpressionNode node, LangObject container)
+    {
+        string[] reference = node switch
+        {
+            IdentifierCollectionNode @idc => idc.Values,
+            IdentifierNode @idn => [idn.Value],
+            _ => throw new NotImplementedException(),
+        };
+        
+        LanguageReference? foundReference = null;
+        
+        switch (reference.Length)
+        {
+            case 0: goto end;
+            case 1:
+            {
+                var child = container.Children.FirstOrDefault(e => e.Name == reference[0]);
+                if (child != null) foundReference = GetObjectReference(child);
+                goto end;
+            }
+        }
+
+        end:
+        return foundReference != null
+            ? new IRSolvedReference(node, foundReference)
+            : new IRUnknownReference(node);
+    }
+    
     
     private TypeReference SolveTypeLazy(ExpressionNode node, ExecutionContextData? ctx)
     {
@@ -745,9 +793,21 @@ public class Analizer(ErrorHandler handler)
             .ToArray();
         
         // Header analysis
-        foreach (var fun in funclist)
+        foreach (var obj in _globalReferenceTable.Values)
         {
-            FunctionSemaAnal(fun);
+            switch (obj)
+            {
+                case FunctionGroupObject @functionGroup:
+                    foreach (var fun in @functionGroup.Overloads) FunctionSemaAnal(fun);
+                    break;
+                case FunctionObject @fun:
+                    FunctionSemaAnal(fun);
+                    break;
+                case FieldObject @field:
+                    FieldSemaAnal(field);
+                    break;
+            }
+            
         }
         
         // Excution analysis
@@ -756,6 +816,7 @@ public class Analizer(ErrorHandler handler)
             if (fun.Body != null) BlockSemaAnal(fun.Body);
         }
     } 
+    
     private void FunctionSemaAnal(FunctionObject function)
     {
         foreach (var i in function.Parameters)
@@ -764,7 +825,12 @@ public class Analizer(ErrorHandler handler)
             i.Type = SolveTypeLazy(unsolv.syntaxNode, function);
         }
     }
-    
+
+    private void FieldSemaAnal(FieldObject field)
+    {
+        if (field.Type is not UnsolvedTypeReference @unsolv) return;
+        field.Type = SolveTypeLazy(unsolv.syntaxNode, field);
+    }
 
     private void BlockSemaAnal(IRBlock block)
     {
@@ -900,6 +966,7 @@ public class Analizer(ErrorHandler handler)
         var leftTypeRef = GetEffectiveTypeReference(node.Left);
         node.Right = SolveTypeCast(leftTypeRef, (IRExpression)NodeSemaAnal(node.Right));
         
+        // Operate literals at comptime
         if (node is { Left: IRIntegerLiteral @leftInt, Right: IRIntegerLiteral @rightInt })
         {
             return new IRIntegerLiteral(node.Origin, node.Operator switch {
@@ -935,10 +1002,18 @@ public class Analizer(ErrorHandler handler)
         }
         
         else if (ltype is RuntimeIntegerTypeReference @left2 &&
-            rtype is ComptimeIntegerTypeReference) node.ResultType = left2;
+                 rtype is ComptimeIntegerTypeReference)
+        {
+            node.ResultType = left2;
+            node.Right = new IRIntegerLiteral(node.Right.Origin, ((IRIntegerLiteral)node.Right).Value, left2.BitSize);
+        }
         
-        else if (ltype is ComptimeIntegerTypeReference &&
-            rtype is RuntimeIntegerTypeReference @right2) node.ResultType = right2;
+        else if (ltype is ComptimeIntegerTypeReference @left3 &&
+                 rtype is RuntimeIntegerTypeReference @right3)
+        {
+            node.Left = new IRIntegerLiteral(node.Left.Origin, ((IRIntegerLiteral)node.Left).Value, right3.BitSize);
+            node.ResultType = right3;
+        }
         
         else throw new NotImplementedException();
         
@@ -950,9 +1025,16 @@ public class Analizer(ErrorHandler handler)
         // TODO i prefer handle constructor overloading when
         //  we have actual constructable structures working
 
-        for (var i = 0; i < node.InlineAssignments.Count; i++)
+        for (var i = 0; i < node.InlineAssignments.Length; i++)
         {
-            node.InlineAssignments[i] = (IRAssign)NodeSemaAnal_Assign(node.InlineAssignments[i]);
+            var v = node.InlineAssignments[i];
+
+            v.Target = (IRExpression)NodeSemaAnal(v.Target);
+            v.Value = (IRExpression)NodeSemaAnal(v.Value);
+            
+            v.Value = SolveTypeCast(GetEffectiveTypeReference(v.Target), v.Value);
+            
+            node.InlineAssignments[i] = v;
         }
 
         return node;
@@ -1050,7 +1132,6 @@ public class Analizer(ErrorHandler handler)
             }
         }
     }
-
     private static LanguageReference GetObjectReference(LangObject obj)
     {
         return obj switch
@@ -1060,10 +1141,12 @@ public class Analizer(ErrorHandler handler)
             
             StructObject @s => new SolvedStructTypeReference(s),
             
+            FieldObject @v => new SolvedFieldReference(v),
+            
             _ => throw new NotImplementedException(),
         };
     }
-
+    
     private static TypeReference GetEffectiveTypeReference(IRExpression expr)
     {
         switch (expr)
@@ -1073,8 +1156,11 @@ public class Analizer(ErrorHandler handler)
             case IRSolvedReference @solvedFuck:
                 return solvedFuck.Reference switch
                 {
+                    
                     IntegerTypeReference @intt => intt,
                     SolvedStructTypeReference @structt => structt,
+                    SolvedFieldReference @field => field.Field.Type,
+                    
                     LocalReference @local => local.Local.Type,
                     ParameterReference @param => param.Parameter.Type,
                     
@@ -1121,7 +1207,7 @@ public class Analizer(ErrorHandler handler)
                 PacketObject => "Pack",
                 TypedefObject => "TDef",
                 TypedefItemObject => "DefV",
-                VariableObject => "TVar",
+                FieldObject => "TVar",
                 AliasedObject => "Alia",
                 _ => throw new NotImplementedException()
             };
