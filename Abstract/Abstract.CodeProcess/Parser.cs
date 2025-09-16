@@ -712,7 +712,7 @@ public class Parser(ErrorHandler errHandler)
         }
 
         collection.AppendChild(DietAsNode(TokenType.RightParenthesisChar,
-            (t) => throw new Exception($"Unexpected token {Bite()}")));
+            (t) => throw new Exception($"Unexpected token {t}")));
 
         return collection;
     }

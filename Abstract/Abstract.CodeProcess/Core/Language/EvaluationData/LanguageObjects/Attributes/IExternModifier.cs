@@ -2,5 +2,5 @@ namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attr
 
 public interface IExternModifier
 {
-    public bool Extern { get; set; }
+    public string? Extern { get; set; }
 }

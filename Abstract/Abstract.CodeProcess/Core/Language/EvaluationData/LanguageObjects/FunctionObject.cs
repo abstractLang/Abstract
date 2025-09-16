@@ -25,7 +25,7 @@ public class FunctionObject(string[] g, string n, FunctionDeclarationNode synnod
     public bool Abstract { get; set; } = false;
     public bool Virtual { get; set; } = false;
     public bool Override { get; set; } = false;
-    public bool Extern { get; set; } = false;
+    public string? Extern { get; set; } = null;
     public bool Generic { get; set; } = false;
     public bool ConstExp { get; set; } = false;
     
@@ -55,7 +55,7 @@ public class FunctionObject(string[] g, string n, FunctionDeclarationNode synnod
         sb.Append(Abstract ? "abstract " : "concrete ");
         if (Virtual) sb.Append("virtual ");
         if (Override) sb.Append("override ");
-        if (Extern) sb.Append("extern ");
+        if (Extern != null) sb.Append($"import_extern(\"{Extern}\") ");
         if (Generic) sb.Append("generic ");
 
         sb.AppendLine($"Function:");

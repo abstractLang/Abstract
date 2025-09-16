@@ -17,11 +17,13 @@ public enum BuiltinAttributes
     Final,
     Abstract,
     Interface,
-    Extern,
     Virtual,
     Override,
     AllowAccessTo,
     DenyAccessTo,
+    
+    // Low level and linkage
+    Extern,
         
     // Optimization
     Inline,

@@ -1,11 +1,11 @@
 @public func main() void {
 
-	let u64 seed
 	let Randomizer rng = new Randomizer() {
 		seed = 0x123456789ABCDEF0
 	}
 	foo(5, rng)
 
+	writeln(rng.seed)
 }
 
 func foo(u8 entropy, Randomizer rng) void {
@@ -28,3 +28,8 @@ struct Randomizer {
 }
 
 
+# For now, write and writeln will be
+# just imported from a extern source
+
+@extern("write_u64")   func write(u64 value) void
+@extern("writeln_u64") func writeln(u64 value) void

@@ -4,6 +4,7 @@ using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.CodeReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FieldReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
@@ -36,7 +37,7 @@ public class Compressor
         {
             switch (b)
             {
-                case FunctionBuilder @builder:
+                case BaseFunctionBuilder @builder:
                     UnwrapFunction(builder, (FunctionObject)source);
                     break;
                 
@@ -85,7 +86,11 @@ public class Compressor
             case FunctionObject @fnobj   when parent is NamespaceBuilder @parentnmsp:
             {
                 var name = string.Join('.', fnobj.Global[(langParent?.Global.Length ?? 0) ..]);
-                var fn = parentnmsp.AddFunction(name);
+                
+                BaseFunctionBuilder fn = fnobj.Extern == null
+                    ? parentnmsp.AddFunction(name)
+                    : parentnmsp.AddExternImportedFunction(name);
+                
                 _membersMap.Add(langObject, fn);
                 
             } break;
@@ -126,7 +131,7 @@ public class Compressor
 
     
     
-    private void UnwrapFunction(FunctionBuilder builder, FunctionObject source)
+    private void UnwrapFunction(BaseFunctionBuilder builder, FunctionObject source)
     {
 
         foreach (var p in source.Parameters)
@@ -141,20 +146,35 @@ public class Compressor
             builder.AddParameter(p.Name, typeref);
         }
 
-        if (source.Body != null)
-            foreach (var l in source.Body.Locals)
+        switch (builder)
+        {
+            case FunctionBuilder @fb:
             {
-                AbstractTypeReference typeref = l.Type switch
-                {
-                    RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
-                    SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
-                    UnsolvedTypeReference => throw new UnreachableException("Local type should not be unsolved at this step!"),
-                    _ => throw new NotImplementedException(),
-                };
-                builder.AddLocal(typeref);
-            }
+                
+                if (source.Body == null) return;
         
-        UnwrapFunctionBody(builder.GetOrCreateOmegaBuilder(), source);
+                foreach (var l in source.Body.Locals)
+                {
+                    AbstractTypeReference typeref = l.Type switch
+                    {
+                        RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
+                        SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
+                        UnsolvedTypeReference => throw new UnreachableException("Local type should not be unsolved at this step!"),
+                        _ => throw new NotImplementedException(),
+                    };
+                    builder.AddLocal(typeref);
+                }
+                UnwrapFunctionBody(fb.GetOrCreateOmegaBuilder(), source);
+                
+            } break;
+            
+            case ImportedFunctionBuilder @ifb:
+            {
+                ifb.Symbol = source.Extern;
+                if (source.Body != null) throw new UnreachableException("Externaly imported functions cannot contains a body");
+            } break;
+        }
+        
 
     }
 
@@ -193,7 +213,7 @@ public class Compressor
             case IRIntegerLiteral @itlit:
             {
                 if (itlit.PtrSized) builder.Writer.LdConstIptr((ulong)itlit.Value);
-                //else if (itlit.Size == null) Console.WriteLine("bruh");//throw new Exception("Integer literal should have a assigned size");
+                //else if (itlit.Size == null) throw new Exception("Integer literal should have a assigned size");
                 else switch (itlit.Size)
                 {
                     case 1:   builder.Writer.LdConstI1(!itlit.Value.IsZero); break;
@@ -208,17 +228,13 @@ public class Compressor
             } break;
 
             case IRSolvedReference @solvref:
+                UnwrtapFunctionBody_LoadReference(builder, solvref.Reference);
+                break;
+
+            case IRReferenceAccess @refaccess:
             {
-                switch (solvref.Reference)
-                {
-                    case LocalReference @loc:
-                        builder.Writer.LdLocal((short)loc.Local.index); break;
-                    case ParameterReference @arg:
-                        builder.Writer.LdLocal((short)(-((short)arg.Parameter.index) - 1)); break;
-                    
-                    default: throw new NotFiniteNumberException();
-                }
-                
+                UnwrtapFunctionBody_LoadReference(builder, refaccess.A);
+                UnwrapFunctionBody_IRNode(builder, source, refaccess.B);
             } break;
 
             case IRAssign @assig:
@@ -291,10 +307,30 @@ public class Compressor
         switch (solved.Reference)
         {
             case SolvedFunctionReference @f:
-                builder.Writer.Call((FunctionBuilder)GetObjectBuilder(f.Function));
+                builder.Writer.Call((BaseFunctionBuilder)GetObjectBuilder(f.Function));
                 break;
                     
             default: throw new NotImplementedException();
+        }
+    }
+
+    private void UnwrtapFunctionBody_LoadReference(OmegaBytecodeBuilder builder, LanguageReference refe)
+    {
+        switch (refe)
+        {
+            case LocalReference @loc:
+                builder.Writer.LdLocal((short)loc.Local.index);
+                break;
+            
+            case ParameterReference @arg:
+                builder.Writer.LdLocal((short)(-((short)arg.Parameter.index) - 1));
+                break;
+            
+            case FieldReference @fie:
+                builder.Writer.LdField((FieldBuilder)GetObjectBuilder(((SolvedFieldReference)fie).Field));
+                break;
+                    
+            default: throw new NotFiniteNumberException();
         }
     }
     

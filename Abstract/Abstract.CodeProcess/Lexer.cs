@@ -257,11 +257,12 @@ public class Lexer
                             }
 
                             // test end of string
-                            else if (src.NextIs('"'))
+                            else if (src.Peek() == '"')
                             {
                                 if (src.Dirty) tokens.Add(Tokenize(TokenType.StringLiteral, src.GetSlice()));
+                                src.Next();
                                 tokens.Add(Tokenize(TokenType.DoubleQuotes, src.GetSlice()));
-                                break;
+;                               break;
                             }
                             else src.Next();
                         }

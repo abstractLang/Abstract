@@ -32,15 +32,13 @@ public class Analizer(ErrorHandler handler)
 
     private List<NamespaceObject> _namespaces = [];
     private Dictionary<string[], LangObject> _globalReferenceTable = new(new IdentifierComparer());
-    private List<AttributeReference> onHoldAttributes = [];
+    private Stack<List<AttributeReference>> _onHoldAttributes = null!;
     
     
     public ProgramObject Analize(Module[] modules)
     {
         // Stage 1
         SearchReferences(modules);
-        _namespaces.TrimExcess();
-        _globalReferenceTable.TrimExcess();
         
         // Stage 2
         ScanHeadersMetadata();
@@ -69,6 +67,10 @@ public class Analizer(ErrorHandler handler)
     
     private void SearchReferences(Module[] modules)
     {
+        _namespaces = [];
+        _globalReferenceTable = [];
+        _onHoldAttributes = [];
+        
         foreach (var m in modules)
         {
             foreach (var n in m.Namespaces)
@@ -85,20 +87,34 @@ public class Analizer(ErrorHandler handler)
                 SearchNamespaceRecursive(obj);
             }
         }
+        
+        _namespaces.TrimExcess();
+        _globalReferenceTable.TrimExcess();
+        _onHoldAttributes = null!;
     }
 
     private void SearchNamespaceRecursive(NamespaceObject nmsp)
     {
+        _onHoldAttributes.Push([]);
         foreach (var t in nmsp.syntaxNode.Trees)
         {
             foreach (var n in t.Children) SearchGenericScopeRecursive(nmsp, (ControlNode)n);
-        }  
+        }
+
+        var poppedList = _onHoldAttributes.Pop();
+        if (poppedList.Count == 0) return;
+        
+        foreach (var unbinded in poppedList)
+        {
+            try { throw new Exception($"Attribute {unbinded} not assigned to any member"); }
+            catch (Exception e) { _errorHandler.RegisterError(e); }
+        }
     }
     private void SearchGenericScopeRecursive(LangObject parent, ControlNode node)
     {
         if (node is AttributeNode @attr)
         {
-            onHoldAttributes.Add(EvaluateAttribute(attr));
+            _onHoldAttributes.Peek().Add(EvaluateAttribute(attr));
             return;
         }
 
@@ -113,16 +129,16 @@ public class Analizer(ErrorHandler handler)
             _ => throw new NotImplementedException()
         };
 
-        if (onHoldAttributes.Count <= 0) return;
-        obj.AppendAttributes([.. onHoldAttributes]);
-        onHoldAttributes.Clear();
+        if (_onHoldAttributes.Count <= 0) return;
+        obj.AppendAttributes([.. _onHoldAttributes.Peek()]);
+        _onHoldAttributes.Peek().Clear();
 
     }
     private void SearchTypedefScopeRecursive(LangObject parent, ControlNode node)
     {
         if (node is AttributeNode @attr)
         {
-            onHoldAttributes.Add(EvaluateAttribute(attr));
+            _onHoldAttributes.Peek().Add(EvaluateAttribute(attr));
             return;
         }
 
@@ -134,9 +150,9 @@ public class Analizer(ErrorHandler handler)
             _ => throw new NotImplementedException()
         };
 
-        if (onHoldAttributes.Count <= 0) return;
-        obj.AppendAttributes([.. onHoldAttributes]);
-        onHoldAttributes.Clear();
+        if (_onHoldAttributes.Count <= 0) return;
+        obj.AppendAttributes([.. _onHoldAttributes.Peek()]);
+        _onHoldAttributes.Peek().Clear();
 
     }
     
@@ -172,8 +188,22 @@ public class Analizer(ErrorHandler handler)
         parent?.AppendChild(struc);
         _globalReferenceTable.Add(g, struc);
 
-        foreach (var i in structnode.Body.Content)
-            SearchGenericScopeRecursive(struc, (ControlNode)i);
+        do
+        {
+            _onHoldAttributes.Push([]);
+            
+            foreach (var i in structnode.Body.Content)
+                SearchGenericScopeRecursive(struc, (ControlNode)i);
+            
+            var poppedList = _onHoldAttributes.Pop();
+            if (poppedList.Count == 0) break;
+        
+            foreach (var unbinded in poppedList)
+            {
+                try { throw new Exception($"Attribute {unbinded} not assigned to any member"); }
+                catch (Exception e) { _errorHandler.RegisterError(e); }
+            }
+        } while (false);
 
         return struc;
     }
@@ -187,8 +217,22 @@ public class Analizer(ErrorHandler handler)
         parent?.AppendChild(packet);
         _globalReferenceTable.Add(g, packet);
 
-        foreach (var i in packetnode.Body.Content)
-            SearchGenericScopeRecursive(packet, (ControlNode)i);
+        do
+        {
+            _onHoldAttributes.Push([]);
+            
+            foreach (var i in packetnode.Body.Content)
+                SearchGenericScopeRecursive(packet, (ControlNode)i);
+            
+            var poppedList = _onHoldAttributes.Pop();
+            if (poppedList.Count == 0) break;
+        
+            foreach (var unbinded in poppedList)
+            {
+                try { throw new Exception($"Attribute {unbinded} not assigned to any member"); }
+                catch (Exception e) { _errorHandler.RegisterError(e); }
+            }
+        } while (false);
 
         return packet;
     }
@@ -201,9 +245,22 @@ public class Analizer(ErrorHandler handler)
         TypedefObject typd = new(g, typedef.Identifier.Value, typedef);
         parent?.AppendChild(typd);
         _globalReferenceTable.Add(g, typd);
-                
-        foreach (var i in typedef.Body.Content)
-            SearchTypedefScopeRecursive(typd, (ControlNode)i);
+
+        do
+        {
+            _onHoldAttributes.Push([]);
+            foreach (var i in typedef.Body.Content)
+                SearchTypedefScopeRecursive(typd, (ControlNode)i);
+
+            var poppedList = _onHoldAttributes.Pop();
+            if (poppedList.Count == 0) break;
+
+            foreach (var unbinded in poppedList)
+            {
+                try { throw new Exception($"Attribute {unbinded} not assigned to any member"); }
+                catch (Exception e) { _errorHandler.RegisterError(e); }
+            }
+        } while (false);
 
         return typd;
     }
@@ -262,12 +319,13 @@ public class Analizer(ErrorHandler handler)
             "final" => BuiltinAttributes.Final,
             "abstract" => BuiltinAttributes.Abstract,
             "interface" => BuiltinAttributes.Interface,
-            "extern" => BuiltinAttributes.Extern,
             "virtual" => BuiltinAttributes.Virtual,
             "override" => BuiltinAttributes.Override,
             "allowAccessTo" => BuiltinAttributes.AllowAccessTo,
             "denyAccessTo" => BuiltinAttributes.DenyAccessTo,
 
+            "extern" => BuiltinAttributes.Extern,
+            
             "inline" => BuiltinAttributes.Inline,
             "noinline" => BuiltinAttributes.Noinline,
             "comptime" => BuiltinAttributes.Comptime,
@@ -357,8 +415,6 @@ public class Analizer(ErrorHandler handler)
                     if (reference is IVirtualModifier @v) v.Virtual = true; break;
                 case BuiltinAttributes.Override:
                     if (reference is IOverrideAttribute @o) o.Override = true; break;
-                case BuiltinAttributes.Extern:
-                    if (reference is IExternModifier @e) e.Extern = true; break;
                 case BuiltinAttributes.ConstExp:
                     if (reference is FunctionObject @c) c.ConstExp = true; break;
                 
@@ -368,18 +424,35 @@ public class Analizer(ErrorHandler handler)
                     // attribute node structure:
                     // <@/> <identifier/> <(> <args.../> <)/>
                     
-                    if (node.Children.Length != 3) throw new Exception("'DefineGlobal' expected arguments");
+                    if (node.Children.Length != 3) throw new Exception("'DefineGlobal' expected 1+ arguments");
                     var args = (node.Children[2] as ArgumentCollectionNode)!.Arguments;
                     
-                    foreach (var arg in args)
+                    for (var argi = 0; argi < args.Length; argi++)
                     {
-                        if (arg is not StringLiteralNode @strlit)
-                            throw new Exception("'DefineGlobal' expected Strings");
+                        if (args[argi] is not StringLiteralNode @strlit)
+                            throw new Exception($"'DefineGlobal' expected argument {argi} as ComptimeString");
                         
                         RegisterAlias(null, reference, strlit.RawContent);
                     }
                 } break;
-                
+
+                case BuiltinAttributes.Extern:
+                {
+                    var node = builtInAttribute.syntaxNode;
+                    
+                    if (reference is not IExternModifier @externModifier)
+                        throw new Exception($"Attribute {attr} is not suitable to {reference.GetType().Name}");
+                    
+                    if (node.Children.Length != 3) throw new Exception("'Extern' expected 1 arguments");
+                    var args = (node.Children[2] as ArgumentCollectionNode)!.Arguments;
+                    if (args.Length != 1) throw new Exception($"'Extern' expected 1 arguments, found {args.Length}");
+
+                    if (args[0] is not StringLiteralNode @strlit)
+                        throw new Exception("'Extern' expected argument 0 as ComptimeString");
+
+                    externModifier.Extern = strlit.RawContent;
+                } break;
+
                 // TODO builtin attributes
                 case BuiltinAttributes.Align:
                 case BuiltinAttributes.AllowAccessTo:
@@ -626,6 +699,7 @@ public class Analizer(ErrorHandler handler)
         };
     }
 
+    
     private IRReference SearchReference(ExpressionNode node, ExecutionContextData ctx)
     {
         string[] reference = node switch
@@ -635,54 +709,80 @@ public class Analizer(ErrorHandler handler)
             _ => throw new NotImplementedException(),
         };
         
-        LanguageReference? foundReference = null;
+        List<LanguageReference> referenceChain = [];
+        LangObject? langobj = null;
         
-        switch (reference.Length)
-        {
-            case 0: goto end;
-            case 1:
-            {
-                var local = ctx.Locals.FirstOrDefault(e => e.Name == reference[0]);
-                if (local != null)
-                {
-                    foundReference = new LocalReference(local);
-                    goto end;
-                }
-                var param = ctx.Parameters.FirstOrDefault(e => e.Name == reference[0]);
-                if (param != null)
-                {
-                    foundReference = new ParameterReference(param);
-                    goto end;
-                }
+        if (reference.Length == 0) goto end;
 
+        do
+        {
+            // capturing root
+            var res1 = SearchReference_ExecCtx(reference[0], ctx);
+            if (res1.HasValue)
+            {
+                referenceChain.Add(res1.Value.Item1);
+                switch (res1.Value.Item2)
+                {
+                    case RuntimeIntegerTypeReference: goto end;
+                        
+                    case SolvedStructTypeReference @sst: langobj = sst.Struct; break; 
+                    default: throw new NotImplementedException();
+                }
+                break;
+            }
+
+            var res2 = SearchReference_ChildrenOf(reference[0], ctx.Parent.Parent);
+            if (res2.HasValue)
+            {
+                referenceChain.Add(res2.Value.Item1);
+                langobj = res2.Value.Item2;
+                break;
+            }
+
+            var res3 = SearchReference_Global(reference);
+            if (res3 != null) referenceChain.Add(res3);
+            goto end;
+            
+        } while (false);
+
+        if (reference.Length == 1) goto end;
+        foreach (var i in reference[1..])
+        {
+            var res = SearchReference_ChildrenOf(i, langobj);
+            if (res.HasValue)
+            {
+                referenceChain.Add(res.Value.Item1);
+                langobj = res.Value.Item2;
+            }
+            else
+            {
+                referenceChain.Clear();
                 break;
             }
         }
-
-        { // Check siblings
-            var siblings = ctx.Parent.Parent.Children;
-            var sibling = siblings
-                .FirstOrDefault(e => IdentifierComparer.IsEquals([e.Name], reference));
-            if (sibling != null)
-            {
-                foundReference = GetObjectReference(sibling);
-                goto end;
-            }
-        }
-        { // Check global references
-            var global = _globalReferenceTable.Values
-                .FirstOrDefault(e => IdentifierComparer.IsEquals(e.Global, reference));
-            if (global != null)
-            {
-                foundReference = GetObjectReference(global);
-                goto end;
-            }
-        }
-
+        
         end:
-        return foundReference != null
-            ? new IRSolvedReference(node, foundReference)
-            : new IRUnknownReference(node);
+
+        switch (referenceChain.Count)
+        {
+            case 0: return new IRUnknownReference(node);
+            case 1: return new IRSolvedReference(node, referenceChain[0]);
+            default:
+            {
+                var cnode = ((IdentifierCollectionNode)node)!.Children;
+
+                var first = new IRSolvedReference(cnode[^1], referenceChain[^1]);
+                IRReference last = first;
+            
+                for (var i = referenceChain.Count - 2; i >= 0; i--)
+                {
+                    var e = referenceChain[i];
+                    last = new IRReferenceAccess(cnode[i], referenceChain[i], last);
+                }
+
+                return last;
+            }
+        }
     }
     private IRReference SearchReference(ExpressionNode node, LangObject obj)
     {
@@ -693,36 +793,96 @@ public class Analizer(ErrorHandler handler)
             _ => throw new NotImplementedException(),
         };
         
-        LanguageReference? foundReference = null;
+        List<LanguageReference> referenceChain = [];
+        LangObject? langobj = null;
         
         if (reference.Length == 0) goto end;
 
-        { // Check siblings
-            var siblings = obj.Parent.Children;
-            var sibling = siblings
-                .FirstOrDefault(e => IdentifierComparer.IsEquals([e.Name], reference));
-            if (sibling != null)
+        do
+        {
+            // capturing root
+            var res1 = SearchReference_ChildrenOf(reference[0], obj.Parent);
+            if (res1.HasValue)
             {
-                foundReference = GetObjectReference(sibling);
-                goto end;
+                referenceChain.Add(res1.Value.Item1);
+                break;
             }
-        }
-        { // Check global references
-            var global = _globalReferenceTable.Values
-                .FirstOrDefault(e => IdentifierComparer.IsEquals(e.Global, reference));
-            if (global != null)
-            {
-                foundReference = GetObjectReference(global);
-                goto end;
-            }
-        }
 
+            var res2 = SearchReference_Global(reference);
+            if (res2 != null) referenceChain.Add(res2);
+            goto end;
+            
+        } while (false);
+
+        if (reference.Length == 1) goto end;
+        foreach (var i in reference[1..])
+        {
+            var res = SearchReference_ChildrenOf(i, langobj);
+            if (res.HasValue)
+            {
+                referenceChain.Add(res.Value.Item1);
+                langobj = res.Value.Item2;
+            }
+            else
+            {
+                referenceChain.Clear();
+                break;
+            }
+        }
+        
         end:
-        return foundReference != null
-            ? new IRSolvedReference(node, foundReference)
-            : new IRUnknownReference(node);
+
+        switch (referenceChain.Count)
+        {
+            case 0: return new IRUnknownReference(node);
+            case 1: return new IRSolvedReference(node, referenceChain[0]);
+            default:
+            {
+                var cnode = ((IdentifierCollectionNode)node)!.Children;
+
+                var first = new IRSolvedReference(cnode[^1], referenceChain[^1]);
+                IRReference last = first;
+            
+                for (var i = referenceChain.Count - 1; i >= 1; i--)
+                {
+                
+                    var e = referenceChain[i];
+                    last = new IRReferenceAccess(cnode[i], referenceChain[i], last);
+                }
+
+                return first;
+            }
+        }
+    }
+    
+    private (LanguageReference, LangObject)? SearchReference_ChildrenOf(string part, LangObject parent)
+    {
+        var siblings = parent.Children;
+        var found = siblings.FirstOrDefault(e => IdentifierComparer.IsEquals([e.Name], [part]));
+        if (found == null) return null;
+
+        return (GetObjectReference(found), found);
+        
+    }
+    private (LanguageReference, TypeReference)? SearchReference_ExecCtx(string part, ExecutionContextData ctx)
+    {
+        var local = ctx.Locals.FirstOrDefault(e => e.Name == part);
+        if (local != null) return (new LocalReference(local), local.Type);
+        
+        var param = ctx.Parameters.FirstOrDefault(e => e.Name == part);
+        if (param != null) return (new ParameterReference(param), param.Type);
+
+        return null;
     }
 
+    private LanguageReference? SearchReference_Global(string[] parts)
+    {
+        var member = _globalReferenceTable.Values
+            .FirstOrDefault(e => IdentifierComparer.IsEquals(e.Global, parts));
+        return (member == null) ? null : GetObjectReference(member);
+    }
+    
+    
     private IRReference SearchReferenceStrictlyInside(ExpressionNode node, LangObject container)
     {
         string[] reference = node switch
@@ -847,8 +1007,11 @@ public class Analizer(ErrorHandler handler)
             IRBinaryExp @be => NodeSemaAnal_BinExp(be),
             IRNewObject @no => NodeSemaAnal_NewObj(no),
             
-            IRSolvedReference 
+            IRReferenceAccess
+                or IRSolvedReference
                 or IRIntegerLiteral => node,
+            
+            IRUnknownReference => throw new UnreachableException("All references must already been handled"),
             
             _ => throw new NotImplementedException(),
         };
@@ -890,19 +1053,19 @@ public class Analizer(ErrorHandler handler)
                             case IntegerTypeReference when arguments[i] is IRIntegerLiteral:
                                 suitability[i] = 2; break;
                             
-                            case RuntimeIntegerTypeReference @runtimei_param:
-                                if (argtype is RuntimeIntegerTypeReference @runtimei_arg)
+                            case RuntimeIntegerTypeReference runtimeiParam:
+                                if (argtype is RuntimeIntegerTypeReference runtimeiArg)
                                 {
-                                    if (runtimei_param.PtrSized && runtimei_arg.PtrSized 
-                                    && runtimei_param.Signed == runtimei_arg.Signed)
+                                    if (runtimeiParam.PtrSized && runtimeiArg.PtrSized 
+                                    && runtimeiParam.Signed == runtimeiArg.Signed)
                                     {
                                         suitability[i] = 2;
                                         break;
                                     }
 
-                                    if (runtimei_param.Signed == runtimei_arg.Signed)
+                                    if (runtimeiParam.Signed == runtimeiArg.Signed)
                                     {
-                                        suitability[i] = runtimei_param.BitSize == runtimei_arg.BitSize ? 2 : 1;
+                                        suitability[i] = runtimeiParam.BitSize == runtimeiArg.BitSize ? 2 : 1;
                                         break;
                                     }
                                     
@@ -1039,7 +1202,7 @@ public class Analizer(ErrorHandler handler)
 
         return node;
     }
-
+    
     /// <summary>
     /// With a desired type and a value node,
     /// returns a node that explicitly solves
@@ -1051,27 +1214,27 @@ public class Analizer(ErrorHandler handler)
     /// <returns></returns>
     private IRExpression SolveTypeCast(TypeReference typeTo, IRExpression value)
     {
-        if (typeTo is RuntimeIntegerTypeReference @typeto_ri)
+        if (typeTo is RuntimeIntegerTypeReference typetoRi)
         {
             if (value is IRIntegerLiteral @lit)
-                    return new IRIntegerLiteral(lit.Origin, lit.Value, typeto_ri.PtrSized? null : typeto_ri.BitSize);
+                    return new IRIntegerLiteral(lit.Origin, lit.Value, typetoRi.PtrSized? null : typetoRi.BitSize);
 
             var valType = GetEffectiveTypeReference(value);
-            if (valType is RuntimeIntegerTypeReference @value_ri)
+            if (valType is RuntimeIntegerTypeReference valueRi)
             {
-                if (typeto_ri.BitSize == value_ri.BitSize) {}
+                if (typetoRi.BitSize == valueRi.BitSize) {}
                 
-                else if (typeto_ri.BitSize > value_ri.BitSize)
-                   value = new IRIntExtend(value.Origin, value, typeto_ri.BitSize);
+                else if (typetoRi.BitSize > valueRi.BitSize)
+                   value = new IRIntExtend(value.Origin, value, typetoRi.BitSize);
                 
-                else if (typeto_ri.BitSize < value_ri.BitSize)
+                else if (typetoRi.BitSize < valueRi.BitSize)
                 {
                     // TODO check value range
-                    value = new IRIntTrunc(value.Origin, value, typeto_ri.BitSize);
+                    value = new IRIntTrunc(value.Origin, value, typetoRi.BitSize);
                 }
                 
-                if (typeto_ri.Signed == value_ri.Signed) {}
-                else value = new IRSignCast(value.Origin, value, typeto_ri.Signed);
+                if (typetoRi.Signed == valueRi.Signed) {}
+                else value = new IRSignCast(value.Origin, value, typetoRi.Signed);
             }
         }
         
@@ -1166,6 +1329,9 @@ public class Analizer(ErrorHandler handler)
                     
                     _ => throw new NotImplementedException()
                 };
+            
+            case IRReferenceAccess @access: return GetEffectiveTypeReference(access.B);
+
             
             case IRBinaryExp @exp:
                 return exp.ResultType ?? throw new UnreachableException(
