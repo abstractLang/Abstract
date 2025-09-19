@@ -13,7 +13,7 @@ func foo(u8 entropy, Randomizer rng) void {
 	let i32 value = 42
 	let i32 smtgidk = 500
 	
-	value *= 5 + smtgidk * entropy
+	value *= 5 + smtgidk * rng.seed * entropy
 	value = 5 * 10
 	value = 10 / 2
 	value = 34565432 % 100 + 5
@@ -29,7 +29,7 @@ struct Randomizer {
 
 
 # For now, write and writeln will be
-# just imported from a extern source
+# just imported from a external source
 
 @extern("write_u64")   func write(u64 value) void
 @extern("writeln_u64") func writeln(u64 value) void

@@ -192,21 +192,21 @@ public class Compressor
     private void UnwrapFunctionBody(OmegaBytecodeBuilder builder, FunctionObject source)
     {
         var block = source.Body ?? throw new NullReferenceException();
-        UnwrapFunctionBody_IRNode(builder, source, block);
+        UnwrapFunctionBody_IRNode(builder, block);
     }
 
     // Bruh switch hell
-    private void UnwrapFunctionBody_IRNode(OmegaBytecodeBuilder builder, FunctionObject source, IRNode node)
+    private void UnwrapFunctionBody_IRNode(OmegaBytecodeBuilder builder, IRNode node)
     {
         switch (node)
         {
             case IRBlock @b:
-                foreach (var i in  b.Content) UnwrapFunctionBody_IRNode(builder, source, i);
+                foreach (var i in  b.Content) UnwrapFunctionBody_IRNode(builder, i);
                 break;
             
             case IRInvoke @iv:
-                foreach (var i in iv.Arguments) UnwrapFunctionBody_IRNode(builder, source, i);
-                UnwrapFunctionBody_Call_Reference(builder, source, iv.Target);
+                UnwrapFunctionBody_Call(builder, iv.Target);
+                foreach (var i in iv.Arguments) UnwrapFunctionBody_IRNode(builder, i);
 
                 break;
 
@@ -228,25 +228,23 @@ public class Compressor
             } break;
 
             case IRSolvedReference @solvref:
-                UnwrtapFunctionBody_LoadReference(builder, solvref.Reference);
+                UnwrapFunctionBody_Load_Reference(builder, solvref.Reference);
                 break;
 
             case IRReferenceAccess @refaccess:
             {
-                UnwrtapFunctionBody_LoadReference(builder, refaccess.A);
-                UnwrapFunctionBody_IRNode(builder, source, refaccess.B);
+                UnwrapFunctionBody_Load_Reference(builder, refaccess.A);
+                UnwrapFunctionBody_IRNode(builder, refaccess.B);
             } break;
 
             case IRAssign @assig:
             {
-                UnwrapFunctionBody_IRNode(builder, source, assig.Value);
-                UnwrapFunctionBody_Store_Reference(builder, source, assig.Target);
+                UnwrapFunctionBody_Store(builder, assig.Target);
+                UnwrapFunctionBody_IRNode(builder, assig.Value);
             } break;
 
             case IRBinaryExp @bexp:
             {
-                UnwrapFunctionBody_IRNode(builder, source, bexp.Left);
-                UnwrapFunctionBody_IRNode(builder, source, bexp.Right);
                 switch (bexp.Operator)
                 {
                     case IRBinaryExp.Operators.Add: builder.Writer.Add(); break;
@@ -256,26 +254,29 @@ public class Compressor
                     case IRBinaryExp.Operators.Reminder: builder.Writer.Rem(false); break;
                     default: throw new Exception();
                 }
+                
+                UnwrapFunctionBody_IRNode(builder, bexp.Left);
+                UnwrapFunctionBody_IRNode(builder, bexp.Right);
             } break;
 
             case IRNewObject @newobj:
             {
                 builder.Writer.LdNewObject((TypeBuilder)GetTypeReferenceBuilder(newobj.Type));
-                foreach (var ia in newobj.InlineAssignments) UnwrapFunctionBody_IRNode(builder, source, ia);
+                foreach (var ia in newobj.InlineAssignments) UnwrapFunctionBody_IRNode(builder, ia);
             } break;
             
             
             case IRSignCast @sigcast:
-                UnwrapFunctionBody_IRNode(builder, source, sigcast.Value);
                 builder.Writer.Sigcast(sigcast.Signed);
+                UnwrapFunctionBody_IRNode(builder, sigcast.Value);
                 break;
             case IRIntExtend @ex:
-                UnwrapFunctionBody_IRNode(builder, source, ex.Value);
                 builder.Writer.Extend((byte)ex.Size);
+                UnwrapFunctionBody_IRNode(builder, ex.Value);
                 break;
             case IRIntTrunc @tr:
-                UnwrapFunctionBody_IRNode(builder, source, tr.Value);
                 builder.Writer.Trunc((byte)tr.Size);
+                UnwrapFunctionBody_IRNode(builder, tr.Value);
                 break;
             
             
@@ -283,7 +284,7 @@ public class Compressor
         }
     }
     
-    private void UnwrapFunctionBody_Store_Reference(OmegaBytecodeBuilder builder, FunctionObject source, IRExpression reference)
+    private void UnwrapFunctionBody_Store(OmegaBytecodeBuilder builder, IRExpression reference)
     {
         if (reference is not IRSolvedReference @solved) throw new Exception();
         
@@ -300,7 +301,7 @@ public class Compressor
             default: throw new NotImplementedException();
         }
     }
-    private void UnwrapFunctionBody_Call_Reference(OmegaBytecodeBuilder builder, FunctionObject source, IRExpression reference)
+    private void UnwrapFunctionBody_Call(OmegaBytecodeBuilder builder, IRExpression reference)
     {
         if (reference is not IRSolvedReference @solved) throw new Exception();
         
@@ -314,7 +315,8 @@ public class Compressor
         }
     }
 
-    private void UnwrtapFunctionBody_LoadReference(OmegaBytecodeBuilder builder, LanguageReference refe)
+    
+    private void UnwrapFunctionBody_Load_Reference(OmegaBytecodeBuilder builder, LanguageReference refe)
     {
         switch (refe)
         {
@@ -325,14 +327,20 @@ public class Compressor
             case ParameterReference @arg:
                 builder.Writer.LdLocal((short)(-((short)arg.Parameter.index) - 1));
                 break;
-            
+
             case FieldReference @fie:
-                builder.Writer.LdField((FieldBuilder)GetObjectBuilder(((SolvedFieldReference)fie).Field));
-                break;
-                    
+            {
+                var field = ((SolvedFieldReference)fie).Field;
+                
+                if (((SolvedFieldReference)fie).Field.Static) builder.Writer.LdField((FieldBuilder)GetObjectBuilder(field));
+                else builder.Writer.AccessField((FieldBuilder)GetObjectBuilder(field));
+                
+            } break;
+
             default: throw new NotFiniteNumberException();
         }
     }
+    
     
     private ProgramMemberBuilder GetObjectBuilder(LangObject obj) => _membersMap[obj];
 

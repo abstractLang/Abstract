@@ -534,6 +534,12 @@ public class Analizer(ErrorHandler handler)
 
     private void ScanFunctionExecutionBody(FunctionObject function)
     {
+        foreach (var t in function.Parameters)
+        {
+            if (t.Type is UnsolvedTypeReference @unsolved)
+                t.Type = SolveTypeLazy(unsolved.syntaxNode, function);
+        }
+        
         var body = GetFunctionBody(function.syntaxNode);
         if (body == null) return;
 
@@ -1349,6 +1355,12 @@ public class Analizer(ErrorHandler handler)
                 var t = GetEffectiveTypeReference(icast.Value);
                 if (t is not RuntimeIntegerTypeReference @runtimei) throw new UnreachableException();
                 return new RuntimeIntegerTypeReference(runtimei.Signed, (byte)icast.Size);
+            } break;
+            case IRIntTrunc @itrunc:
+            {
+                var t = GetEffectiveTypeReference(itrunc.Value);
+                if (t is not RuntimeIntegerTypeReference @runtimei) throw new UnreachableException();
+                return new RuntimeIntegerTypeReference(runtimei.Signed, (byte)itrunc.Size);
             } break;
             
                 
