@@ -1,29 +1,29 @@
 @public func main() void {
 
-	let Randomizer rng = new Randomizer() {
-		seed = 0x123456789ABCDEF0
-	}
-	foo(5, rng)
+	let Randomizer rng = new Randomizer()
+	rng.seed = 0x123456789ABCDEF0
+	rng.last = 0
 
+	randi(5, rng)
 	writeln(rng.seed)
 }
 
-func foo(u8 entropy, Randomizer rng) void {
+func randi(u8 entropy, Randomizer rng) u64 {
 
-	let i32 value = 42
-	let i32 smtgidk = 500
-	
-	value *= 5 + smtgidk * rng.seed * entropy
+	let u64 value *= rng.seed * entropy
 	value = 5 * 10
 	value = 10 / 2
 	value = 34565432 % 100 + 5
 	
+	rng.last += value
+	return value
 
 }
 
 struct Randomizer {
 
 	@public let u64 seed
+	@public let u64 last
 
 }
 

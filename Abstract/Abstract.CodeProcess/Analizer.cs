@@ -5,6 +5,7 @@ using Abstract.CodeProcess.Core.Language;
 using Abstract.CodeProcess.Core.Language.EvaluationData;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Statements;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
@@ -22,6 +23,7 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression.TypeModifiers;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Misc;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Statement;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
 namespace Abstract.CodeProcess;
@@ -618,6 +620,15 @@ public class Analizer(ErrorHandler handler)
                 return new IRAssign(assign, left, right);
             }
             
+            case ReturnStatementNode @ret:
+            {
+                var exp = ret.HasExpression
+                    ? UnwrapExecutionContext_Expression(ret.Expression, ctx)
+                    : null;
+                
+                return new IRReturn(ret, exp);
+            }
+            
             default: return UnwrapExecutionContext_Expression(node, ctx);
         }
     }
@@ -685,15 +696,18 @@ public class Analizer(ErrorHandler handler)
 
                 var typer = SolveTypeLazy(newobj.Type, ctx) as SolvedStructTypeReference
                             ?? throw new UnreachableException();
-                
-                foreach (var i in newobj.Inlined.Content)
+
+                if (newobj.Inlined != null)
                 {
-                    if (i is not AssignmentExpressionNode @ass) throw new UnreachableException();
-                    asisgns.Add(new IRAssign(ass,
-                        SearchReferenceStrictlyInside(ass.Left, typer.Struct),
-                        UnwrapExecutionContext_Expression(ass.Right, ctx)));
+                    foreach (var i in newobj.Inlined.Content)
+                    {
+                        if (i is not AssignmentExpressionNode @ass) throw new UnreachableException();
+                        asisgns.Add(new IRAssign(ass,
+                            SearchReferenceStrictlyInside(ass.Left, typer.Struct),
+                            UnwrapExecutionContext_Expression(ass.Right, ctx)));
+                    }
                 }
-                
+
                 var ctor = new IRNewObject(newobj, typer,
                     newobj.Arguments.Select(i => UnwrapExecutionContext_Expression(i, ctx)).ToArray(),
                     [..asisgns]);
@@ -1012,6 +1026,7 @@ public class Analizer(ErrorHandler handler)
             IRAssign @ass => NodeSemaAnal_Assign(ass),
             IRBinaryExp @be => NodeSemaAnal_BinExp(be),
             IRNewObject @no => NodeSemaAnal_NewObj(no),
+            IRReturn @re => NodeSemaAnal_Return(re),
             
             IRReferenceAccess
                 or IRSolvedReference
@@ -1206,6 +1221,12 @@ public class Analizer(ErrorHandler handler)
             node.InlineAssignments[i] = v;
         }
 
+        return node;
+    }
+
+    private IRNode NodeSemaAnal_Return(IRReturn node)
+    {
+        if (node.Value != null) node.Value = (IRExpression)NodeSemaAnal(node.Value);
         return node;
     }
     

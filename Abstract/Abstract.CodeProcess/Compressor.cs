@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Abstract.CodeProcess.Core.Language.EvaluationData;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Statements;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences;
@@ -265,6 +266,10 @@ public class Compressor
                 foreach (var ia in newobj.InlineAssignments) UnwrapFunctionBody_IRNode(builder, ia);
             } break;
             
+            case IRReturn @ret:
+                builder.Writer.Ret(ret.Value != null);
+                if (ret.Value != null) UnwrapFunctionBody_IRNode(builder, ret.Value);
+                break;
             
             case IRSignCast @sigcast:
                 builder.Writer.Sigcast(sigcast.Signed);
@@ -283,24 +288,40 @@ public class Compressor
             default: throw new NotImplementedException();
         }
     }
-    
+
     private void UnwrapFunctionBody_Store(OmegaBytecodeBuilder builder, IRExpression reference)
     {
-        if (reference is not IRSolvedReference @solved) throw new Exception();
-        
-        switch (solved.Reference)
+        while (true)
         {
-            case LocalReference @l:
-                builder.Writer.StLocal((short)l.Local.index);
-                break;
-            
-            case SolvedFieldReference @f:
-                builder.Writer.StField((FieldBuilder)GetObjectBuilder(f.Field));
-                break;
-            
-            default: throw new NotImplementedException();
+            switch (reference)
+            {
+                case IRSolvedReference @solved:
+                    switch (solved.Reference)
+                    {
+                        case LocalReference @l:
+                            builder.Writer.StLocal((short)l.Local.index);
+                            break;
+
+                        case SolvedFieldReference @f:
+                            if (f.Field.Static) builder.Writer.StField((FieldBuilder)GetObjectBuilder(f.Field));
+                            else builder.Writer.StInstanceField((FieldBuilder)GetObjectBuilder(f.Field));
+                            break;
+
+                        default: throw new NotImplementedException();
+                    }
+                    break;
+                    
+                case IRReferenceAccess @refaccess:
+                {
+                    UnwrapFunctionBody_Load_Reference(builder, refaccess.A);
+                    reference = refaccess.B;
+                } continue;
+
+                default: throw new NotImplementedException();
+            } break;
         }
     }
+
     private void UnwrapFunctionBody_Call(OmegaBytecodeBuilder builder, IRExpression reference)
     {
         if (reference is not IRSolvedReference @solved) throw new Exception();
@@ -333,7 +354,7 @@ public class Compressor
                 var field = ((SolvedFieldReference)fie).Field;
                 
                 if (((SolvedFieldReference)fie).Field.Static) builder.Writer.LdField((FieldBuilder)GetObjectBuilder(field));
-                else builder.Writer.AccessField((FieldBuilder)GetObjectBuilder(field));
+                else builder.Writer.LdInstanceField((FieldBuilder)GetObjectBuilder(field));
                 
             } break;
 
