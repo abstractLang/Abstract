@@ -303,8 +303,8 @@ public class Compressor
                             break;
 
                         case SolvedFieldReference @f:
-                            if (f.Field.Static) builder.Writer.StField((FieldBuilder)GetObjectBuilder(f.Field));
-                            else builder.Writer.StInstanceField((FieldBuilder)GetObjectBuilder(f.Field));
+                            if (f.Field.Static) builder.Writer.StStaticField((FieldBuilder)GetObjectBuilder(f.Field));
+                            else builder.Writer.StField((FieldBuilder)GetObjectBuilder(f.Field));
                             break;
 
                         default: throw new NotImplementedException();
@@ -353,8 +353,8 @@ public class Compressor
             {
                 var field = ((SolvedFieldReference)fie).Field;
                 
-                if (((SolvedFieldReference)fie).Field.Static) builder.Writer.LdField((FieldBuilder)GetObjectBuilder(field));
-                else builder.Writer.LdInstanceField((FieldBuilder)GetObjectBuilder(field));
+                if (((SolvedFieldReference)fie).Field.Static) builder.Writer.LdStaticField((FieldBuilder)GetObjectBuilder(field));
+                else builder.Writer.LdField((FieldBuilder)GetObjectBuilder(field));
                 
             } break;
 
