@@ -1,0 +1,90 @@
+{
+  "version": 3,
+  "targets": {
+    "net9.0": {}
+  },
+  "libraries": {},
+  "projectFileDependencyGroups": {
+    "net9.0": [
+      "/home/mila/Documentos/repos/Abstract/Abstract/Target/Abstract.Target.Core/Abstract.Target.Core.csproj"
+    ]
+  },
+  "packageFolders": {
+    "/home/mila/.nuget/packages/": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "/home/mila/Documentos/repos/Abstract/Abstract/Target/target-wasm/Abstract.Target.Wasm/Abstract.Target.Wasm.csproj",
+      "projectName": "Abstract.Target.Wasm",
+      "projectPath": "/home/mila/Documentos/repos/Abstract/Abstract/Target/target-wasm/Abstract.Target.Wasm/Abstract.Target.Wasm.csproj",
+      "packagesPath": "/home/mila/.nuget/packages/",
+      "outputPath": "/home/mila/Documentos/repos/Abstract/Abstract/Target/target-wasm/Abstract.Target.Wasm/obj/",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "/home/mila/.nuget/NuGet/NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net9.0"
+      ],
+      "sources": {
+        "/usr/lib64/dotnet/library-packs": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "projectReferences": {
+            "/home/mila/Documentos/repos/Abstract/Abstract/Target/Abstract.Target.Core/Abstract.Target.Core.csproj": {
+              "projectPath": "/home/mila/Documentos/repos/Abstract/Abstract/Target/Abstract.Target.Core/Abstract.Target.Core.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      },
+      "restoreAuditProperties": {
+        "enableAudit": "true",
+        "auditLevel": "low",
+        "auditMode": "direct"
+      },
+      "SdkAnalysisLevel": "9.0.100"
+    },
+    "frameworks": {
+      "net9.0": {
+        "targetAlias": "net9.0",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "/usr/lib64/dotnet/sdk/9.0.109/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  },
+  "logs": [
+    {
+      "code": "NU1104",
+      "level": "Error",
+      "message": "Unable to find project '/home/mila/Documentos/repos/Abstract/Abstract/Target/Abstract.Target.Core/Abstract.Target.Core.csproj'. Check that the project reference is valid and that the project file exists.",
+      "libraryId": "/home/mila/Documentos/repos/Abstract/Abstract/Target/Abstract.Target.Core/Abstract.Target.Core.csproj",
+      "targetGraphs": [
+        "net9.0"
+      ]
+    }
+  ]
+}
