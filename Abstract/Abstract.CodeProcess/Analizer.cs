@@ -37,7 +37,10 @@ public class Analizer(ErrorHandler handler)
     private Stack<List<AttributeReference>> _onHoldAttributes = null!;
     
     
-    public ProgramObject Analize(Module[] modules)
+    public ProgramObject Analize(
+        Module[] modules,
+        bool dumpGlobalTable = false,
+        bool dumpEvaluatedData = false)
     {
         // Stage 1
         SearchReferences(modules);
@@ -50,8 +53,8 @@ public class Analizer(ErrorHandler handler)
         DoSemanticAnalysis();
         
         // Debug shit
-        DumpGlobalTable();
-        DumpEvaluatedData();
+        if (dumpGlobalTable) DumpGlobalTable();
+        if (dumpEvaluatedData) DumpEvaluatedData();
 
         return new ProgramObject([.. _namespaces]);
     }
@@ -1423,7 +1426,7 @@ public class Analizer(ErrorHandler handler)
         foreach (var i in _namespaces)
             sb.AppendLine(i.ToString());
         
-        File.WriteAllText(".abs-cache/debug/eval.txt", sb.ToString());
+        File.WriteAllTextAsync(".abs-cache/debug/eval.txt", sb.ToString());
     }
     
     private class IdentifierComparer : IEqualityComparer<string[]>

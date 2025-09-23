@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Abstract.Cli.Build;
@@ -6,13 +8,15 @@ public class BuildOptions(string projectName)
 {
 
     public readonly string ProjectName = projectName;
-
-    public bool Verbose = false;
+    
     public string DirectoryQueryRegex = "^[a-zA-Z_][a-zA-Z0-9_]*$";
     public string ScriptQueryRegex = "^[A-Za-z_][A-Za-z0-9_]*(?:\\.(?:a|abs))?$";
     
     // Debug options
+    public bool Verbose = false;
     public bool DebugDumpParsedTrees = false;
+    public bool DebugDumpAnalyzerIr = false;
+    public bool DebugDumpCompressedModules = false;
     
     private readonly Dictionary<string, string> _modules = [];
     public (string name, string path)[] Modules => _modules.Select(x => (x.Key, x.Value)).ToArray();

@@ -26,7 +26,7 @@ public class Compressor
 
     private Dictionary<LangObject, ProgramMemberBuilder> _membersMap;
     
-    public void CompressProgramObject(ProgramObject programObject)
+    public ProgramBuilder CompressProgramObject(ProgramObject programObject)
     {
         _membersMap = [];
         var realizerModule = new ProgramBuilder();
@@ -49,7 +49,8 @@ public class Compressor
 
         }
         
-        File.WriteAllText(".abs-cache/debug/compression.txt", realizerModule.GetRoot().ToString());
+        File.WriteAllTextAsync(".abs-cache/debug/compression.txt", realizerModule.ToString());
+        return realizerModule;
     }
 
     private void CreateModules(ProgramBuilder prg, ProgramObject programObject)

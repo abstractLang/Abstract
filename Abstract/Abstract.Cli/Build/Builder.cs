@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Abstract.CodeProcess;
 using Abstract.CodeProcess.Core;
-using Module = Abstract.CodeProcess.Core.Language.Module;
+using LangModule = Abstract.CodeProcess.Core.Language.Module;
 
 namespace Abstract.Cli.Build;
 
@@ -21,20 +21,22 @@ public static class Builder
         var verbose = options.Verbose;
         
         var err = new ErrorHandler();
+        
         var lexer = new Lexer();
         var parser = new Parser(err);
         var analizer = new Analizer(err);
         var compressor = new Compressor();
+        
         
         if (verbose) Console.WriteLine("Starting build...");
         var completeBuild = Stopwatch.StartNew();
 
         var parsingModules = Stopwatch.StartNew();
         
-        List<Module> modules = [];
+        List<LangModule> modules = [];
         foreach (var mod in options.Modules)
         {
-            var module = new Module(mod.name);
+            var module = new LangModule(mod.name);
             modules.Add(module);
             var mod_path = mod.path;
 
@@ -96,12 +98,19 @@ public static class Builder
         }
         
         var analysis = Stopwatch.StartNew();
-        var progObj = analizer.Analize([.. modules]);
+        var progObj = analizer.Analize(
+            [.. modules],
+            dumpGlobalTable: options.DebugDumpAnalyzerIr,
+            dumpEvaluatedData: options.DebugDumpAnalyzerIr);
         
         analysis.Stop();
         if (verbose) Console.WriteLine($"Analysis done ({analysis.Elapsed})");
-
+        
+        var compress = Stopwatch.StartNew();
         compressor.CompressProgramObject(progObj);
+        
+        compress.Stop();
+        if (verbose) Console.WriteLine($"Compression done ({compress.Elapsed})");
         
         completeBuild.Stop();
         if (verbose) Console.WriteLine($"Build Finished ({completeBuild.Elapsed})");
