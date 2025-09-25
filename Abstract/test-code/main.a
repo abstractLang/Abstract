@@ -2,7 +2,7 @@
 
 	let Randomizer rng = new Randomizer()
 	rng.seed = 0x123456789ABCDEF0
-	rng.last = 0
+	rng.rng.last = 0
 
 	randi(5, rng)
 	writeln(rng.seed)
@@ -15,7 +15,7 @@ func randi(u8 entropy, Randomizer rng) u64 {
 	value = 10 / 2
 	value = 34565432 % 100 + 5
 	
-	rng.last += value
+	rng.rng.last += value
 	return value
 
 }
@@ -23,7 +23,27 @@ func randi(u8 entropy, Randomizer rng) u64 {
 struct Randomizer {
 
 	@public let u64 seed
+	@public let RandomNumberGenerator rng
+
+}
+struct RandomNumberGenerator {
+
 	@public let u64 last
+	@public let u128 entropy
+
+}
+
+struct AliginmentReorderingTest {
+
+	@public let u8 a
+	@public let u128 b
+	@public let u8 c
+	@public let u64 d
+	@public let u16 e
+	@public let u32 f
+	@public let u8 g
+	@public let u16 h	
+	@public let u32 i
 
 }
 

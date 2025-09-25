@@ -42,8 +42,12 @@ public class Compressor
                     UnwrapFunction(builder, (FunctionObject)source);
                     break;
                 
-                case FieldBuilder @builder:
-                    UnwrapField(builder, (FieldObject)source);
+                case StaticFieldBuilder @builder:
+                    UnwrapStaticField(builder, (FieldObject)source);
+                    break;
+                
+                case InstanceFieldBuilder @builder:
+                    UnwrapInstanceField(builder, (FieldObject)source);
                     break;
             }
 
@@ -180,7 +184,17 @@ public class Compressor
 
     }
 
-    private void UnwrapField(FieldBuilder builder, FieldObject source)
+    private void UnwrapStaticField(StaticFieldBuilder builder, FieldObject source)
+    {
+        builder.Type = source.Type switch
+        {
+            RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
+            SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
+            UnsolvedTypeReference => throw new UnreachableException("Local type should not be unsolved at this step!"),
+            _ => throw new NotImplementedException(),
+        };
+    }
+    private void UnwrapInstanceField(InstanceFieldBuilder builder, FieldObject source)
     {
         builder.Type = source.Type switch
         {
@@ -216,17 +230,7 @@ public class Compressor
             {
                 if (itlit.PtrSized) builder.Writer.LdConstIptr((ulong)itlit.Value);
                 //else if (itlit.Size == null) throw new Exception("Integer literal should have a assigned size");
-                else switch (itlit.Size)
-                {
-                    case 1:   builder.Writer.LdConstI1(!itlit.Value.IsZero); break;
-                    case 8:   builder.Writer.LdConstI8((byte)itlit.Value); break;
-                    case 16:  builder.Writer.LdConstI16((ushort)itlit.Value); break;
-                    case 32:  builder.Writer.LdConstI32((uint)itlit.Value); break;
-                    case 64:  builder.Writer.LdConstI64((ulong)itlit.Value); break;
-                    case 128: builder.Writer.LdConstI128((UInt128)itlit.Value); break;
-                    
-                    default: builder.Writer.LdConstI((byte)(itlit.Size ?? 255), itlit.Value); break;
-                }
+                builder.Writer.LdConstI((byte)(itlit.Size ?? 255), itlit.Value);
             } break;
 
             case IRSolvedReference @solvref:
@@ -304,8 +308,8 @@ public class Compressor
                             break;
 
                         case SolvedFieldReference @f:
-                            if (f.Field.Static) builder.Writer.StStaticField((FieldBuilder)GetObjectBuilder(f.Field));
-                            else builder.Writer.StField((FieldBuilder)GetObjectBuilder(f.Field));
+                            if (f.Field.Static) builder.Writer.StField((StaticFieldBuilder)GetObjectBuilder(f.Field));
+                            else builder.Writer.StField((InstanceFieldBuilder)GetObjectBuilder(f.Field));
                             break;
 
                         default: throw new NotImplementedException();
@@ -354,8 +358,8 @@ public class Compressor
             {
                 var field = ((SolvedFieldReference)fie).Field;
                 
-                if (((SolvedFieldReference)fie).Field.Static) builder.Writer.LdStaticField((FieldBuilder)GetObjectBuilder(field));
-                else builder.Writer.LdField((FieldBuilder)GetObjectBuilder(field));
+                if (((SolvedFieldReference)fie).Field.Static) builder.Writer.LdField((StaticFieldBuilder)GetObjectBuilder(field));
+                else builder.Writer.LdField((InstanceFieldBuilder)GetObjectBuilder(field));
                 
             } break;
 

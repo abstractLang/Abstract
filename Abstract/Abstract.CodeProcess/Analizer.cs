@@ -47,8 +47,11 @@ public class Analizer(ErrorHandler handler)
         
         // Stage 2
         ScanHeadersMetadata();
+        
         // Stage 3
-        ScanExecutionBodies();
+        LazyScanObjectHeaders();
+        ScanObjectBodies();
+        
         // Stage 4
         DoSemanticAnalysis();
         
@@ -516,41 +519,73 @@ public class Analizer(ErrorHandler handler)
      *  high-level optimizations.
      */
 
-    private void ScanExecutionBodies()
+    private void LazyScanObjectHeaders()
     {
         foreach (var i in _globalReferenceTable)
         {
             switch (i.Value)
             {
-                case FunctionObject @funcobj:
-                    ScanFunctionExecutionBody(funcobj);
-                    break;
+                case FunctionObject @funcobj: LazyScanFunctionMeta(funcobj); break;
+                case StructObject @structobj: LazyScanStructureMeta(structobj); break;
                 
                 case FunctionGroupObject @funcgroup:
-                {
-                    foreach (var i2 in funcgroup.Overloads)
-                        ScanFunctionExecutionBody(i2);
-
+                    foreach (var i2 in funcgroup.Overloads) LazyScanFunctionMeta(i2);
                     break;
-                }
             }
         }
     }
-
-    private void ScanFunctionExecutionBody(FunctionObject function)
+    
+    
+    private void LazyScanStructureMeta(StructObject structure)
+    {
+        foreach (var i in structure.Children)
+        {
+            switch (i)
+            {
+                case FieldObject field:
+                    
+                    if (field.Type is UnsolvedTypeReference @unsolved)
+                        field.Type = SolveTypeLazy(unsolved.syntaxNode, structure);
+                    
+                    break;
+                
+                case FunctionObject function: break; // Not handled here!
+                default: throw new UnreachableException();
+            }
+        }
+    }
+    private void LazyScanFunctionMeta(FunctionObject function)
     {
         foreach (var t in function.Parameters)
         {
             if (t.Type is UnsolvedTypeReference @unsolved)
                 t.Type = SolveTypeLazy(unsolved.syntaxNode, function);
         }
-        
+    }
+
+    
+    private void ScanObjectBodies()
+    {
+        foreach (var i in _globalReferenceTable)
+        {
+            switch (i.Value)
+            {
+                case FunctionObject @funcobj: ScanFunctionExecutionBody(funcobj); break;
+                case FunctionGroupObject @funcgroup:
+                {
+                    foreach (var i2 in funcgroup.Overloads) ScanFunctionExecutionBody(i2);
+                    break;
+                }
+            }
+        }
+    }
+    private void ScanFunctionExecutionBody(FunctionObject function)
+    {
         var body = GetFunctionBody(function.syntaxNode);
         if (body == null) return;
 
         function.Body = UnwrapExecutionContext_Block(function, body);
     }
-
     private static BlockNode? GetFunctionBody(FunctionDeclarationNode functionNode)
     {
         // Function body options ([..] means constant):
@@ -567,6 +602,7 @@ public class Analizer(ErrorHandler handler)
 
     }
 
+    
     private IRBlock UnwrapExecutionContext_Block(LangObject parent, BlockNode block)
     {
         var rootBlock = new IRBlock(block);
@@ -775,7 +811,19 @@ public class Analizer(ErrorHandler handler)
             if (res.HasValue)
             {
                 referenceChain.Add(res.Value.Item1);
-                langobj = res.Value.Item2;
+                var children = res.Value.Item2;
+                
+                var tref = children switch
+                {
+                    FieldObject f => f.Type,
+                    _ => throw new UnreachableException()
+                };
+                langobj = tref switch
+                {
+                    SolvedStructTypeReference st => st.Struct,
+                    IntegerTypeReference => null,
+                    _ => throw new UnreachableException()
+                };
             }
             else
             {
@@ -844,7 +892,19 @@ public class Analizer(ErrorHandler handler)
             if (res.HasValue)
             {
                 referenceChain.Add(res.Value.Item1);
-                langobj = res.Value.Item2;
+                var children = res.Value.Item2;
+                
+                var tref = children switch
+                {
+                    FieldObject f => f.Type,
+                    _ => throw new UnreachableException()
+                };
+                langobj = tref switch
+                {
+                    SolvedStructTypeReference st => st.Struct,
+                    IntegerTypeReference => null,
+                    _ => throw new UnreachableException()
+                };
             }
             else
             {

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Abstract.CodeProcess;
 using Abstract.CodeProcess.Core;
+using Abstract.Realizer;
 using LangModule = Abstract.CodeProcess.Core.Language.Module;
 
 namespace Abstract.Cli.Build;
@@ -107,10 +108,29 @@ public static class Builder
         if (verbose) Console.WriteLine($"Analysis done ({analysis.Elapsed})");
         
         var compress = Stopwatch.StartNew();
-        compressor.CompressProgramObject(progObj);
+        var program = compressor.CompressProgramObject(progObj);
         
         compress.Stop();
         if (verbose) Console.WriteLine($"Compression done ({compress.Elapsed})");
+
+        var config = Program.modules.Where(e => e.Config.Targets
+            .Any((e => e.TargetIdentifier == "wasm")))
+            .ToArray()[0].Config.Targets[0].LanguageOutput;
+
+        var rproc = new RealizerProcessor()
+        {
+            DebugDumpPath = ".abs-cache/debug/realizer",
+            Verbose = verbose
+        };
+        
+        rproc.SelectProgram(program);
+        rproc.SelectConfiguration(config);
+        
+        rproc.Start();
+        
+        rproc.Optimize(RealizerProcessor.OptimizationOption.PackStructures);
+        
+        var result = rproc.Compile();
         
         completeBuild.Stop();
         if (verbose) Console.WriteLine($"Build Finished ({completeBuild.Elapsed})");
@@ -122,6 +142,7 @@ public static class Builder
         string[] directories = [
             ".abs-cache",
             ".abs-cache/debug",
+            ".abs-cache/debug/realizer",
             ".abs-cache/modules",
         ];
         string[] reset = [
