@@ -251,13 +251,22 @@ public class Compressor
 
             case IRBinaryExp @bexp:
             {
+                switch (bexp.ResultType)
+                {
+                    case RuntimeIntegerTypeReference @rint:
+                        builder.Writer.TypeInt(rint.Signed, rint.PtrSized ? null : rint.BitSize);
+                        break;
+                    
+                    default: throw new UnreachableException();
+                }
+                
                 switch (bexp.Operator)
                 {
                     case IRBinaryExp.Operators.Add: builder.Writer.Add(); break;
                     case IRBinaryExp.Operators.Subtract: builder.Writer.Sub(); break;
-                    case IRBinaryExp.Operators.Multiply: builder.Writer.Mul(false); break;
-                    case IRBinaryExp.Operators.Divide: builder.Writer.Div(false); break;
-                    case IRBinaryExp.Operators.Reminder: builder.Writer.Rem(false); break;
+                    case IRBinaryExp.Operators.Multiply: builder.Writer.Mul(); break;
+                    case IRBinaryExp.Operators.Divide: builder.Writer.Div(); break;
+                    case IRBinaryExp.Operators.Reminder: builder.Writer.Rem(); break;
                     default: throw new Exception();
                 }
                 
