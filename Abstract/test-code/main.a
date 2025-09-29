@@ -9,10 +9,14 @@
 
 	# Testing function call
 	writeln(rng.seed)
+	writeln(rng.rng.last)
 
 	# Testing function with ignored
 	# return value
 	mathTest(5, rng)
+
+	# Testing structure field modification
+	writeln(rng.rng.last)
 
 	# Testing function with return value
 	#let u64 result = mathTest(10, rng)
