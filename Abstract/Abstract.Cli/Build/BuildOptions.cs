@@ -11,6 +11,8 @@ public class BuildOptions(string projectName)
     
     public string DirectoryQueryRegex = "^[a-zA-Z_][a-zA-Z0-9_]*$";
     public string ScriptQueryRegex = "^[A-Za-z_][A-Za-z0-9_]*(?:\\.(?:a|abs))?$";
+
+    public string TargetQuery = null!;
     
     // Debug options
     public bool Verbose = false;
@@ -42,6 +44,8 @@ public class BuildOptions(string projectName)
         sb.AppendLine("{");
         sb.AppendLine($"[Project]={ProjectName}");
         sb.AppendLine($"[Verbose]={Verbose}");
+        
+        sb.AppendLine($"[TargetQuery]={TargetQuery}");
         
         sb.AppendLine("[Modules]={");
         foreach (var i in _modules)

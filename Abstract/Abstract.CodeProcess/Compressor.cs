@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Abstract.CodeProcess.Core.Language.EvaluationData;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Macros;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Statements;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
@@ -159,24 +160,24 @@ public class Compressor
                 
                 if (source.Body == null) return;
         
-                foreach (var l in source.Body.Locals)
-                {
-                    AbstractTypeReference typeref = l.Type switch
-                    {
-                        RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
-                        SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
-                        UnsolvedTypeReference => throw new UnreachableException("Local type should not be unsolved at this step!"),
-                        _ => throw new NotImplementedException(),
-                    };
-                    builder.AddLocal(typeref);
-                }
+                // foreach (var l in source.Body.Locals)
+                // {
+                //     AbstractTypeReference typeref = l.Type switch
+                //     {
+                //         RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
+                //         SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
+                //         UnsolvedTypeReference => throw new UnreachableException("Local type should not be unsolved at this step!"),
+                //         _ => throw new NotImplementedException(),
+                //     };
+                //     
+                // }
                 UnwrapFunctionBody(fb.GetOrCreateOmegaBuilder(), source);
                 
             } break;
             
             case ImportedFunctionBuilder @ifb:
             {
-                ifb.Symbol = source.Extern;
+                ifb.ImportSymbol = source.Extern;
                 if (source.Body != null) throw new UnreachableException("Externaly imported functions cannot contains a body");
             } break;
         }
@@ -218,6 +219,10 @@ public class Compressor
         {
             case IRBlock @b:
                 foreach (var i in  b.Content) UnwrapFunctionBody_IRNode(builder, i);
+                break;
+            
+            case IRDefLocal @defl:
+                builder.Writer.MacroDefineLocal(ConvType(defl.LocalVariable.Type));
                 break;
             
             case IRInvoke @iv:
@@ -290,11 +295,13 @@ public class Compressor
                 UnwrapFunctionBody_IRNode(builder, sigcast.Value);
                 break;
             case IRIntExtend @ex:
-                builder.Writer.Extend((byte)ex.Size);
+                UnwrapFunctionBody_FlagType(builder, ex.toType);
+                builder.Writer.Extend();
                 UnwrapFunctionBody_IRNode(builder, ex.Value);
                 break;
             case IRIntTrunc @tr:
-                builder.Writer.Trunc((byte)tr.Size);
+                UnwrapFunctionBody_FlagType(builder, tr.toType);
+                builder.Writer.Trunc();
                 UnwrapFunctionBody_IRNode(builder, tr.Value);
                 break;
             
@@ -375,10 +382,18 @@ public class Compressor
             default: throw new NotFiniteNumberException();
         }
     }
-    
+
+    private void UnwrapFunctionBody_FlagType(OmegaBytecodeBuilder builder, BuilderTypeReference type)
+    {
+        switch (type)
+        {
+            case RuntimeIntegerTypeReference @intt:
+                builder.Writer.TypeInt(intt.Signed, intt.PtrSized ? null : intt.BitSize);
+                break;
+        }
+    }
     
     private ProgramMemberBuilder GetObjectBuilder(LangObject obj) => _membersMap[obj];
-
     private ProgramMemberBuilder GetTypeReferenceBuilder(BuilderTypeReference tref)
     {
         return tref switch
@@ -387,5 +402,16 @@ public class Compressor
 
             _ => throw new NotImplementedException(),
         };
+    }
+
+    private AbstractTypeReference ConvType(BuilderTypeReference tref)
+    {
+        switch (tref)
+        {
+            case SolvedStructTypeReference @ss: return new NodeTypeReference((StructureBuilder)GetObjectBuilder(ss.Struct));
+            case RuntimeIntegerTypeReference @ri: return new IntegerTypeReference(ri.Signed, ri.PtrSized ? null : ri.BitSize);
+            
+            default: throw new UnreachableException();
+        }
     }
 }

@@ -7,13 +7,16 @@ public abstract class SyntaxNode
     protected SyntaxNode _parent = null!;
 
     public SyntaxNode Parent => _parent;
-    public virtual (uint line_start, uint line_end, uint start, uint end) Range => OverrideRange.HasValue
-        ? OverrideRange!.Value
-        : (_children[0].Range.line_start, _children[^1].Range.line_end, _children[0].Range.start, _children[^1].Range.end);
     public (uint line_start, uint line_end, uint start, uint end)? OverrideRange { get; set; } = null;
     public string? OverrideToString { get; set; } = null;
 
-
+    public virtual (uint line_start, uint line_end, uint start, uint end) Range => OverrideRange.HasValue
+        ? OverrideRange!.Value
+        : (_children[0].Range.line_start, _children[^1].Range.line_end, _children[0].Range.start, _children[^1].Range.end);
+    public virtual string ReadableValue =>
+        string.IsNullOrEmpty(OverrideToString) ? $"{string.Join(" ", _children)}" : OverrideToString;
+    
+    
 
     #region Tree related
     protected List<SyntaxNode> _children = [];
@@ -50,7 +53,8 @@ public abstract class SyntaxNode
     #endregion
 
 
-    public override string ToString() => string.IsNullOrEmpty(OverrideToString) ? $"{string.Join(" ", _children)}" : OverrideToString;
+    public override string ToString() => $"\'{ReadableValue}\' ({Range.line_start+1}:{Range.end+1})";
+    
     public virtual string ToTree()
     {
         var buf = new StringBuilder();

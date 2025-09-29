@@ -25,12 +25,17 @@ public class Lexer
             TokenType.LeftBracketChar, //TokenType.RightBracketChar,
 
             TokenType.RightArrowOperator, TokenType.LessEqualsOperator,
-            TokenType.EqualOperator, TokenType.UnEqualOperator,
+            TokenType.EqualOperator, TokenType.UnequalOperator,
             TokenType.LeftAngleChar, TokenType.RightAngleChar,
             TokenType.LessEqualsOperator, TokenType.GreatEqualsOperator,
+            TokenType.ExactEqualOperator, TokenType.ExactUnequalOperator,
 
             TokenType.AddAssigin, TokenType.MulAssigin,
-            TokenType.SubAssigin, TokenType.DivAssigin
+            TokenType.SubAssigin, TokenType.DivAssigin,
+            
+            TokenType.CircumflexChar, TokenType.PipeChar,
+            TokenType.BitShiftLeftOperator, TokenType.BitShiftRightOperator,
+            TokenType.BitwiseXorAssign, TokenType.BitwiseAndAssign, TokenType.BitwiseOrAssign,
         ] },
     };
 
@@ -122,27 +127,36 @@ public class Lexer
             {
                 // Check single characters
                 case '\n': tokens.Add(Tokenize(TokenType.LineFeedChar, src.GetSlice())); break;
-                
+
                 case '(': tokens.Add(Tokenize(TokenType.LeftPerenthesisChar, src.GetSlice())); break;
                 case ')': tokens.Add(Tokenize(TokenType.RightParenthesisChar, src.GetSlice())); break;
                 case '{': tokens.Add(Tokenize(TokenType.LeftBracketChar, src.GetSlice())); break;
                 case '}': tokens.Add(Tokenize(TokenType.RightBracketChar, src.GetSlice())); break;
                 case '[': tokens.Add(Tokenize(TokenType.LeftSquareBracketChar, src.GetSlice())); break;
                 case ']': tokens.Add(Tokenize(TokenType.RightSquareBracketChar, src.GetSlice())); break;
-                case '&': tokens.Add(Tokenize(TokenType.AmpersandChar,src.GetSlice())); break;
                 case '?': tokens.Add(Tokenize(TokenType.QuestionChar, src.GetSlice())); break;
                 case '!': tokens.Add(Tokenize(TokenType.BangChar, src.GetSlice())); break;
                 case '@': tokens.Add(Tokenize(TokenType.AtSiginChar, src.GetSlice())); break;
                 case ',': tokens.Add(Tokenize(TokenType.CommaChar, src.GetSlice())); break;
                 case '.': tokens.Add(Tokenize(TokenType.DotChar, src.GetSlice())); break;
+
+                case '<':
+                {
+                    if (src.NextIs('=')) Tokenize(TokenType.LessEqualsOperator, src.GetSlice());
+                    else if (src.NextIs('<')) tokens.Add(src.NextIs('=')
+                            ? Tokenize(TokenType.BitShiftLeftAssign, src.GetSlice())
+                            : Tokenize(TokenType.BitShiftLeftOperator, src.GetSlice()));
+                    else tokens.Add(Tokenize(TokenType.LeftAngleChar, src.GetSlice()));
+                } break;
                 
-                case '<': tokens.Add(src.NextIs('=')
-                    ? Tokenize(TokenType.LessEqualsOperator, src.GetSlice())
-                    : Tokenize(TokenType.LeftAngleChar, src.GetSlice())); break;
-                
-                case '>': tokens.Add(src.NextIs('=')
-                    ? Tokenize(TokenType.GreatEqualsOperator, src.GetSlice())
-                    : Tokenize(TokenType.RightAngleChar, src.GetSlice())); break;
+                case '>':
+                {
+                    if (src.NextIs('=')) Tokenize(TokenType.GreatEqualsOperator, src.GetSlice());
+                    else if (src.NextIs('>')) tokens.Add(src.NextIs('=')
+                        ? Tokenize(TokenType.BitShiftRightAssign, src.GetSlice())
+                        : Tokenize(TokenType.BitShiftLeftOperator, src.GetSlice()));
+                    else tokens.Add(Tokenize(TokenType.RightAngleChar, src.GetSlice()));
+                } break;
                 
                 case '+': tokens.Add(src.NextIs('=')
                     ? Tokenize(TokenType.AddAssigin, src.GetSlice())
@@ -167,6 +181,35 @@ public class Lexer
                 case '=': tokens.Add(src.NextIs('=')
                     ? Tokenize(TokenType.EqualOperator, src.GetSlice())
                     : Tokenize(TokenType.EqualsChar, src.GetSlice())); break;
+                
+                case '^': tokens.Add(src.NextIs('=')
+                    ? Tokenize(TokenType.BitwiseXorAssign, src.GetSlice())
+                    : Tokenize(TokenType.CircumflexChar, src.GetSlice())); break;
+                
+                case '|': tokens.Add(src.NextIs('=')
+                    ? Tokenize(TokenType.BitwiseOrAssign, src.GetSlice())
+                    : Tokenize(TokenType.PipeChar, src.GetSlice())); break;
+                
+                case '&': tokens.Add(src.NextIs('=')
+                    ? Tokenize(TokenType.BitwiseAndAssign, src.GetSlice())
+                    : Tokenize(TokenType.AmpersandChar, src.GetSlice())); break;
+
+                // ignore comments
+                case '#':
+                {
+                    if (src.NextStringIs("##"))
+                    {
+                        src.Next();
+                        src.Next();
+                        while (!src.NextStringIs("###")) src.Next();
+                        src.Discard();
+                    }
+                    else
+                    {
+                        while (src.Peek() != '\n') src.Next();
+                        src.Discard();
+                    }
+                } break;
                 
                 default:
                 {
@@ -267,22 +310,7 @@ public class Lexer
                             else src.Next();
                         }
                     }
-
-                    // Igonore comments
-                    else if (c == '#')
-                    {
-                        if (src.NextStringIs("###"))
-                        {
-                            while (!src.NextStringIs("###")) src.Next();
-                            src.Discard();
-                        }
-                        else
-                        {
-                            while (src.Peek() != '\n') src.Next();
-                            src.Discard();
-                        }
-                    }
-
+                    
                     // unrecognized character
                     else
                     {
@@ -305,8 +333,10 @@ public class Lexer
 
     private void VerifyEndOfStatements(List<Token> tokensList)
     {
+        while (tokensList[0].type == TokenType.LineFeedChar) tokensList.RemoveAt(0);
+        
         var indexesToRemove = new List<int>();
-
+        
         for (int index = 0; index < tokensList.Count; index++)
         {
             var currToken = tokensList[index];
@@ -339,12 +369,10 @@ public class Lexer
                 }
             }
         }
-
-        // Remove os marcados, de trás pra frente para não quebrar os índices
+        
         foreach (var i in indexesToRemove.Distinct().OrderByDescending(x => x))
             tokensList.RemoveAt(i);
-
-        // 🔎 Passo extra: eliminar duplicados consecutivos de LineFeedChar
+        
         for (int i = tokensList.Count - 2; i >= 0; i--)
         {
             if (tokensList[i].type == TokenType.LineFeedChar &&

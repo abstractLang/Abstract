@@ -5,6 +5,7 @@ using Abstract.CodeProcess.Core.Language;
 using Abstract.CodeProcess.Core.Language.EvaluationData;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Macros;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Statements;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
@@ -629,11 +630,9 @@ public class Analizer(ErrorHandler handler)
                 
                 var typenode = localvar.TypedIdentifier.Type;
                 var identnode = localvar.TypedIdentifier.Identifier;
-                    
-                ctx.AddLocal(new LocalVariableObject(
-                    SolveTypeLazy(localvar.TypedIdentifier.Type, ctx),
-                    identnode.Value));
-                return null;
+
+                var type = SolveTypeLazy(localvar.TypedIdentifier.Type, ctx);
+                return new IRDefLocal(localvar, new(type, identnode.Value));
             }
 
             case AssignmentExpressionNode @assign:
@@ -682,7 +681,7 @@ public class Analizer(ErrorHandler handler)
                     SolveTypeLazy(localvar.TypedIdentifier.Type, ctx),
                     localvar.TypedIdentifier.Identifier.Value);
                 
-                ctx.AddLocal(newLocal);
+                ctx.CurrentBlock.Content.Add(new IRDefLocal(localvar, newLocal));
                 return new IRSolvedReference(
                     localvar.TypedIdentifier.Identifier,
                     new LocalReference(newLocal));
@@ -734,7 +733,7 @@ public class Analizer(ErrorHandler handler)
                 List<IRAssign> asisgns = [];
 
                 var typer = SolveTypeLazy(newobj.Type, ctx) as SolvedStructTypeReference
-                            ?? throw new UnreachableException();
+                            ?? throw new Exception($"Undefined symbol {newobj.Type}");
 
                 if (newobj.Inlined != null)
                 {
@@ -949,8 +948,10 @@ public class Analizer(ErrorHandler handler)
     }
     private (LanguageReference, TypeReference)? SearchReference_ExecCtx(string part, ExecutionContextData ctx)
     {
-        var local = ctx.Locals.FirstOrDefault(e => e.Name == part);
-        if (local != null) return (new LocalReference(local), local.Type);
+        var local = ctx.CurrentBlock.Content
+            .OfType<IRDefLocal>()
+            .FirstOrDefault(e => e.LocalVariable.Name == part);
+        if (local != null) return (new LocalReference(local.LocalVariable), local.LocalVariable.Type);
         
         var param = ctx.Parameters.FirstOrDefault(e => e.Name == part);
         if (param != null) return (new ParameterReference(param), param.Type);
@@ -1077,23 +1078,26 @@ public class Analizer(ErrorHandler handler)
 
     private void BlockSemaAnal(IRBlock block)
     {
+        IrBlockExecutionContextData ctx = new IrBlockExecutionContextData();
         for (var i = 0; i < block.Content.Count; i++)
-            block.Content[i] = NodeSemaAnal(block.Content[i]);
+            block.Content[i] = NodeSemaAnal(block.Content[i], ctx);
     }
 
-    private IRNode NodeSemaAnal(IRNode node)
+    private IRNode NodeSemaAnal(IRNode node, IrBlockExecutionContextData ctx)
     {
         return node switch
         {
-            IRInvoke @iv => NodeSemaAnal_Invoke(iv),
-            IRAssign @ass => NodeSemaAnal_Assign(ass),
-            IRBinaryExp @be => NodeSemaAnal_BinExp(be),
-            IRNewObject @no => NodeSemaAnal_NewObj(no),
-            IRReturn @re => NodeSemaAnal_Return(re),
+            IRInvoke @iv => NodeSemaAnal_Invoke(iv, ctx),
+            IRAssign @ass => NodeSemaAnal_Assign(ass, ctx),
+            IRBinaryExp @be => NodeSemaAnal_BinExp(be, ctx),
+            IRNewObject @no => NodeSemaAnal_NewObj(no, ctx),
+            IRReturn @re => NodeSemaAnal_Return(re, ctx),
             
             IRReferenceAccess
                 or IRSolvedReference
                 or IRIntegerLiteral => node,
+            
+            IRDefLocal @dl => NodeSemaAnal_Macro_DefLocal(dl, ctx),
             
             IRUnknownReference => throw new UnreachableException("All references must already been handled"),
             
@@ -1101,13 +1105,19 @@ public class Analizer(ErrorHandler handler)
         };
     }
 
-    private IRNode NodeSemaAnal_Invoke(IRInvoke node)
+    private IRNode NodeSemaAnal_Macro_DefLocal(IRDefLocal deflocal, IrBlockExecutionContextData ctx)
+    {
+        ctx.RegisterLocalVariable(deflocal.LocalVariable);
+        return deflocal;
+    }
+    
+    private IRNode NodeSemaAnal_Invoke(IRInvoke node, IrBlockExecutionContextData ctx)
     {
         if (node.Target is IRSolvedReference @solvedref)
         {
 
             for (var i = 0; i < node.Arguments.Length; i++)
-                node.Arguments[i] = (IRExpression)NodeSemaAnal(node.Arguments[i]);
+                node.Arguments[i] = (IRExpression)NodeSemaAnal(node.Arguments[i], ctx);
             
             if (solvedref.Reference is SolvedFunctionGroupReference @fgroupref)
             {
@@ -1194,11 +1204,10 @@ public class Analizer(ErrorHandler handler)
         
         return node;
     }
-
-    private IRNode NodeSemaAnal_Assign(IRAssign node)
+    private IRNode NodeSemaAnal_Assign(IRAssign node, IrBlockExecutionContextData ctx)
     {
-        node.Target = (IRExpression)NodeSemaAnal(node.Target);
-        node.Value = (IRExpression)NodeSemaAnal(node.Value);
+        node.Target = (IRExpression)NodeSemaAnal(node.Target, ctx);
+        node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
 
         // TODO type target inference
         
@@ -1206,12 +1215,11 @@ public class Analizer(ErrorHandler handler)
         
         return node;
     }
-
-    private IRNode NodeSemaAnal_BinExp(IRBinaryExp node)
+    private IRNode NodeSemaAnal_BinExp(IRBinaryExp node, IrBlockExecutionContextData ctx)
     {
-        node.Left = (IRExpression)NodeSemaAnal(node.Left);
+        node.Left = (IRExpression)NodeSemaAnal(node.Left, ctx);
         var leftTypeRef = GetEffectiveTypeReference(node.Left);
-        node.Right = SolveTypeCast(leftTypeRef, (IRExpression)NodeSemaAnal(node.Right));
+        node.Right = SolveTypeCast(leftTypeRef, (IRExpression)NodeSemaAnal(node.Right, ctx));
         
         // Operate literals at comptime
         if (node is { Left: IRIntegerLiteral @leftInt, Right: IRIntegerLiteral @rightInt })
@@ -1266,8 +1274,7 @@ public class Analizer(ErrorHandler handler)
         
         return node;
     }
-
-    private IRNode NodeSemaAnal_NewObj(IRNewObject node)
+    private IRNode NodeSemaAnal_NewObj(IRNewObject node, IrBlockExecutionContextData ctx)
     {
         // TODO i prefer handle constructor overloading when
         //  we have actual constructable structures working
@@ -1276,8 +1283,8 @@ public class Analizer(ErrorHandler handler)
         {
             var v = node.InlineAssignments[i];
 
-            v.Target = (IRExpression)NodeSemaAnal(v.Target);
-            v.Value = (IRExpression)NodeSemaAnal(v.Value);
+            v.Target = (IRExpression)NodeSemaAnal(v.Target, ctx);
+            v.Value = (IRExpression)NodeSemaAnal(v.Value, ctx);
             
             v.Value = SolveTypeCast(GetEffectiveTypeReference(v.Target), v.Value);
             
@@ -1286,12 +1293,12 @@ public class Analizer(ErrorHandler handler)
 
         return node;
     }
-
-    private IRNode NodeSemaAnal_Return(IRReturn node)
+    private IRNode NodeSemaAnal_Return(IRReturn node, IrBlockExecutionContextData ctx)
     {
-        if (node.Value != null) node.Value = (IRExpression)NodeSemaAnal(node.Value);
+        if (node.Value != null) node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
         return node;
     }
+    
     
     /// <summary>
     /// With a desired type and a value node,
@@ -1315,12 +1322,12 @@ public class Analizer(ErrorHandler handler)
                 if (typetoRi.BitSize == valueRi.BitSize) {}
                 
                 else if (typetoRi.BitSize > valueRi.BitSize)
-                   value = new IRIntExtend(value.Origin, value, typetoRi.BitSize);
+                   value = new IRIntExtend(value.Origin, value, typetoRi);
                 
                 else if (typetoRi.BitSize < valueRi.BitSize)
                 {
                     // TODO check value range
-                    value = new IRIntTrunc(value.Origin, value, typetoRi.BitSize);
+                    value = new IRIntTrunc(value.Origin, value, typetoRi);
                 }
                 
                 if (typetoRi.Signed == valueRi.Signed) {}
@@ -1438,13 +1445,13 @@ public class Analizer(ErrorHandler handler)
             {
                 var t = GetEffectiveTypeReference(icast.Value);
                 if (t is not RuntimeIntegerTypeReference @runtimei) throw new UnreachableException();
-                return new RuntimeIntegerTypeReference(runtimei.Signed, (byte)icast.Size);
+                return icast.toType;
             } break;
             case IRIntTrunc @itrunc:
             {
                 var t = GetEffectiveTypeReference(itrunc.Value);
                 if (t is not RuntimeIntegerTypeReference @runtimei) throw new UnreachableException();
-                return new RuntimeIntegerTypeReference(runtimei.Signed, (byte)itrunc.Size);
+                return itrunc.toType;
             } break;
             
                 

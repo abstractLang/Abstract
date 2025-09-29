@@ -1,39 +1,53 @@
+
 @public func main() void {
 
+	# Testing object instantiation
 	let Randomizer rng = new Randomizer()
+	# Testing direct assignment
 	rng.seed = 0x123456789ABCDEF0
 	rng.rng.last = 0
 
-	randi(5, rng)
+	# Testing function call
 	writeln(rng.seed)
+
+	# Testing function with ignored
+	# return value
+	mathTest(5, rng)
+
+	# Testing function with return value
+	#let u64 result = mathTest(10, rng)
 }
 
-func randi(u8 entropy, Randomizer rng) u64 {
+func mathTest(u8 entropy, Randomizer rng) u64 {
+	# Testing assignment operations
+	let u32 value *= rng.seed * entropy
 
-	let u64 value *= rng.seed * entropy
+	# Testing operations with constants
 	value = 5 * 10
 	value = 10 / 2
 	value = 34565432 % 100 + 5
-	
-	rng.rng.last += value
-	return value
 
+	# Testing operations with fields
+	rng.rng.last += value
+	value += rng.seed
+
+	return value
 }
 
 struct Randomizer {
 
 	@public let u64 seed
-	@public let RandomNumberGenerator rng
+	@public let StructNeastingTest rng
 
 }
-struct RandomNumberGenerator {
+struct StructNeastingTest {
 
 	@public let u64 last
 	@public let u128 entropy
 
 }
 
-struct AliginmentReorderingTest {
+struct StructPackingTest {
 
 	@public let u8 a
 	@public let u128 b
@@ -46,7 +60,6 @@ struct AliginmentReorderingTest {
 	@public let u32 i
 
 }
-
 
 # For now, write and writeln will be
 # just imported from a external source

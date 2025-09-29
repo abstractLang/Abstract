@@ -1,18 +1,19 @@
 using System.Text;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.Integer;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
 
-public class IRIntTrunc(SyntaxNode origin, IRExpression val, int size) : IRExpression(origin)
+public class IRIntTrunc(SyntaxNode origin, IRExpression val, IntegerTypeReference totype) : IRExpression(origin)
 {
     public IRExpression Value = val;
-    public readonly int Size = size;
+    public readonly IntegerTypeReference toType = totype;
 
     public override string ToString()
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine($"(trunc.to.{Size}");
+        sb.AppendLine($"({totype}.trunc");
         sb.Append(Value.ToString().TabAll());
         sb.Append(')');
         

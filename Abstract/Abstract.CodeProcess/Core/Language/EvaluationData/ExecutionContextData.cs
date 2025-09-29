@@ -16,16 +16,10 @@ public class ExecutionContextData(LangObject parent, IRBlock root)
         StructObject @struc => throw new NotImplementedException(),
         _ => []
     };
-    public LocalVariableObject[] Locals => _blocks.SelectMany(e => e.Locals).ToArray();
-    
+
     public IRBlock CurrentBlock => _blocks[^1];
     
     public void PushBlock(IRBlock block) => _blocks.Add(block);
     public void PopBlock() => _blocks.RemoveAt(_blocks.Count - 1);
-
-    public void AddLocal(LocalVariableObject local)
-    {
-        CurrentBlock.Locals.Add(local);
-        local.index = CurrentBlock.Locals.Count-1;
-    }
+    
 }

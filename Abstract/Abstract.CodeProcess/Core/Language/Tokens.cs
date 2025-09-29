@@ -75,7 +75,7 @@ public enum TokenType : byte
     LeftAngleChar,          // <
     RightAngleChar,         // >
 
-    EscapedLeftBracketChar, // \{
+    EscapedLeftBracket,     // \{
 
     CrossChar,              // +
     MinusChar,              // -
@@ -83,21 +83,29 @@ public enum TokenType : byte
     SlashChar,              // /
     PercentChar,            // %
     EqualsChar,             // =
+    CircumflexChar,         // ^
     AmpersandChar,          // &
     QuestionChar,           // ?
     BangChar,               // !
+    PipeChar,               // |
+    ColonChar,              // :
 
     AtSiginChar,            // @
 
     RightArrowOperator,     // =>
 
     EqualOperator,          // ==
-    UnEqualOperator,        // !=
+    UnequalOperator,        // !=
+    ExactEqualOperator,     // ===
+    ExactUnequalOperator,   // !==
     LessEqualsOperator,     // <=
     GreatEqualsOperator,    // >=
 
     AndOperator,            // and
     OrOperator,             // or
+    
+    BitShiftLeftOperator,   // <<
+    BitShiftRightOperator,  // >>
 
     PowerOperator,          // **
 
@@ -106,6 +114,11 @@ public enum TokenType : byte
     MulAssigin,             // *=
     DivAssigin,             // /=
     RestAssigin,            // %=
+    BitwiseXorAssign,       // ^=
+    BitwiseAndAssign,       // &=
+    BitwiseOrAssign,        // |=
+    BitShiftLeftAssign,     // <<=
+    BitShiftRightAssign,    // >>=
 
     IncrementOperator,      // ++
     DecrementOperator,      // --

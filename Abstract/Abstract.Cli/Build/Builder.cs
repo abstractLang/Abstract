@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Abstract.CodeProcess;
 using Abstract.CodeProcess.Core;
+using Abstract.Module.Core.Configuration;
 using Abstract.Realizer;
 using LangModule = Abstract.CodeProcess.Core.Language.Module;
 
@@ -20,7 +21,22 @@ public static class Builder
         SetupBuildCache();
         
         var verbose = options.Verbose;
-        
+
+        ModuleLanguageTargetConfiguration target;
+        {
+            ModuleLanguageTargetConfiguration? found = null;
+            foreach (var m in Program.modules)
+            {
+                found = m.Config.Targets
+                    .OfType<ModuleLanguageTargetConfiguration?>()
+                    .FirstOrDefault(e => e.Value.TargetIdentifier == options.TargetQuery);
+                if (found.HasValue) break;
+            }
+            if (!found.HasValue) throw new Exception($"Target '{options.TargetQuery}' not found");
+            target = found.Value;
+        }
+
+
         var err = new ErrorHandler();
         
         var lexer = new Lexer();
@@ -113,9 +129,7 @@ public static class Builder
         compress.Stop();
         if (verbose) Console.WriteLine($"Compression done ({compress.Elapsed})");
 
-        var config = Program.modules.Where(e => e.Config.Targets
-            .Any((e => e.TargetIdentifier == "wasm")))
-            .ToArray()[0].Config.Targets[0].LanguageOutput;
+        var intermediateCompilation = Stopwatch.StartNew();
 
         var rproc = new RealizerProcessor()
         {
@@ -124,13 +138,20 @@ public static class Builder
         };
         
         rproc.SelectProgram(program);
-        rproc.SelectConfiguration(config);
+        rproc.SelectConfiguration(target.LanguageOutput);
         
         rproc.Start();
-        
-        rproc.Optimize(RealizerProcessor.OptimizationOption.PackStructures);
-        
         var result = rproc.Compile();
+        
+        intermediateCompilation.Stop();
+        Console.WriteLine($"Intermediate compilation done ({intermediateCompilation.Elapsed})");
+        
+        var binaryEmmission = Stopwatch.StartNew();
+        
+        target.CompilerInvoke(result);
+        
+        binaryEmmission.Stop();
+        Console.WriteLine($"Binary emmission done ({binaryEmmission.Elapsed})");
         
         completeBuild.Stop();
         if (verbose) Console.WriteLine($"Build Finished ({completeBuild.Elapsed})");
@@ -140,13 +161,17 @@ public static class Builder
     private static void SetupBuildCache()
     {
         string[] directories = [
+            ".abs-out",
+            
             ".abs-cache",
             ".abs-cache/debug",
             ".abs-cache/debug/realizer",
+            ".abs-cache/temp",
             ".abs-cache/modules",
         ];
         string[] reset = [
             ".abs-cache/debug",
+            ".abs-cache/temp",
         ];
 
         foreach (var i in reset)

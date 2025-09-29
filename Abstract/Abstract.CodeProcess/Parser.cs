@@ -171,7 +171,7 @@ public class Parser(ErrorHandler errHandler)
             // TODO constructors and destructors
 
             default: throw new Exception(
-                $"Unexpected token \'{Bite()}\' at position {_tokens_cursor}");
+                $"Unexpected token {Bite()} at position {_tokens_cursor}");
         }
 
         TryEndLine();
@@ -292,7 +292,7 @@ public class Parser(ErrorHandler errHandler)
             && node is not AssignmentExpressionNode
             && node is not LocalVariableNode
             && node is not FunctionCallExpressionNode
-        ) throw new Exception($"Unexpected token '{Bite()}'");
+        ) throw new Exception($"Unexpected token {Bite()}");
 
         return node;
     }
@@ -366,7 +366,7 @@ public class Parser(ErrorHandler errHandler)
 
         if (!Taste(
             TokenType.EqualOperator, // ==
-            TokenType.UnEqualOperator, // !=
+            TokenType.UnequalOperator, // !=
             TokenType.LeftAngleChar, // <
             TokenType.RightAngleChar, // >
             TokenType.LessEqualsOperator, // <=
@@ -543,7 +543,7 @@ public class Parser(ErrorHandler errHandler)
                     if (Taste(TokenType.StringLiteral))
                         node.AppendChild(new StringSectionNode(Eat()));
 
-                    else if (Taste(TokenType.EscapedLeftBracketChar))
+                    else if (Taste(TokenType.EscapedLeftBracket))
                     {
                         var interpNode = new StringInterpolationNode();
                         interpNode.AppendChild(EatAsNode());

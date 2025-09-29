@@ -77,6 +77,10 @@ public class Program
                     buildOps.AppendModule(name, path);
                     break;
 
+                case "-t":
+                    buildOps.TargetQuery = args[i++];
+                    break;
+                
                 case "-v" or "--verbose":
                     buildOps.Verbose = true;
                     break;

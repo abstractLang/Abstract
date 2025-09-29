@@ -11,6 +11,7 @@
     <ProjectReference Include="..\Abstract.CodeProcess\Abstract.CodeProcess.csproj" />
     <ProjectReference Include="..\Abstract.Resources\Abstract.Resources.csproj" />
     <ProjectReference Include="..\Module\Abstract.Module.Core\Abstract.Module.Core.csproj" />
+    <ProjectReference Include="..\Module\target-LLVM\Abstract.Module.LLVM\Abstract.Module.LLVM.csproj" />
     <ProjectReference Include="..\Module\target-wasm\Abstract.Module.Wasm\Abstract.Module.Wasm.csproj" />
   </ItemGroup>
 

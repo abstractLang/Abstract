@@ -4,6 +4,5 @@ public class IdentifierNode(Token token) : ValueNode(token)
 {
 
     public string Value => token.value.ToString();
-
-    public override string ToString() => $"{Value}";
+    public override string ReadableValue => Value;
 }

@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WasmSharp.Core", "Module\ta
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WasmSharp.CodeGen", "Module\target-wasm\WasmSharp\WasmSharp.CodeGen\WasmSharp.CodeGen.csproj", "{CF2E255D-52D2-4558-BCE5-B5DCF6F05C03}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Abstract.Module.LLVM", "Module\target-LLVM\Abstract.Module.LLVM\Abstract.Module.LLVM.csproj", "{582FCAD3-DA14-46EB-B5DA-90E086325C81}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,10 @@ Global
 		{CF2E255D-52D2-4558-BCE5-B5DCF6F05C03}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CF2E255D-52D2-4558-BCE5-B5DCF6F05C03}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CF2E255D-52D2-4558-BCE5-B5DCF6F05C03}.Release|Any CPU.Build.0 = Release|Any CPU
+		{582FCAD3-DA14-46EB-B5DA-90E086325C81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{582FCAD3-DA14-46EB-B5DA-90E086325C81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{582FCAD3-DA14-46EB-B5DA-90E086325C81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{582FCAD3-DA14-46EB-B5DA-90E086325C81}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -70,6 +76,7 @@ Global
 		{49974243-E407-488B-A5A6-4CDFE35F75B1} = {86A86F49-4DC9-4B60-B456-49EDB8D74908}
 		{90A96D48-A699-4EFE-BA25-B2E3780192C8} = {7C33F4F0-BE01-4E7E-8919-95BA9B4574B4}
 		{CF2E255D-52D2-4558-BCE5-B5DCF6F05C03} = {7C33F4F0-BE01-4E7E-8919-95BA9B4574B4}
+		{582FCAD3-DA14-46EB-B5DA-90E086325C81} = {86A86F49-4DC9-4B60-B456-49EDB8D74908}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {EE39FF52-3B11-4E55-B8E4-8F17173A6EF2}
