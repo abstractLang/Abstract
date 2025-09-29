@@ -1,5 +1,8 @@
 .idea/
 .vscode/
+*/.abs-cache/
+*/.abs-out/
+
 
 */bin/
 */obj/
