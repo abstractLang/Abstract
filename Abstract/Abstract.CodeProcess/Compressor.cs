@@ -94,7 +94,7 @@ public class Compressor
             {
                 var name = string.Join('.', fnobj.Global[(langParent?.Global.Length ?? 0) ..]);
                 
-                BaseFunctionBuilder fn = fnobj.Extern == null
+                BaseFunctionBuilder fn = fnobj.Extern == (null, null)
                     ? parentnmsp.AddFunction(name)
                     : parentnmsp.AddExternImportedFunction(name);
                 
@@ -177,7 +177,8 @@ public class Compressor
             
             case ImportedFunctionBuilder @ifb:
             {
-                ifb.ImportSymbol = source.Extern;
+                ifb.ImportDomain = source.Extern.domain;
+                ifb.ImportSymbol = source.Extern.symbol;
                 if (source.Body != null) throw new UnreachableException("Externaly imported functions cannot contains a body");
             } break;
         }

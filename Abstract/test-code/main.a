@@ -18,6 +18,17 @@
 	# Testing structure field modification
 	writeln(rng.rng.last)
 
+	# Testing function overloading
+	let u32 uint32 = 32
+	let u64 uint64 = 64
+	let i32 sint32 = 32
+	let i64 sint64 = 64
+
+	writeln(uint32)
+	writeln(uint64)
+	writeln(sint32)
+	writeln(sint64)
+
 	# Testing function with return value
 	#let u64 result = mathTest(10, rng)
 }
@@ -65,8 +76,13 @@ struct StructPackingTest {
 
 }
 
-# For now, write and writeln will be
-# just imported from a external source
 
-@extern("write_u64")   func write(u64 value) void
-@extern("writeln_u64") func writeln(u64 value) void
+@extern("Std", "Console.write_i32")   func write(i32 value) void
+@extern("Std", "Console.write_u32")   func write(u32 value) void
+@extern("Std", "Console.write_i64")   func write(i64 value) void
+@extern("Std", "Console.write_u64")   func write(u64 value) void
+
+@extern("Std", "Console.writeln_i32") func writeln(i32 value) void
+@extern("Std", "Console.writeln_u32") func writeln(u32 value) void
+@extern("Std", "Console.writeln_i64") func writeln(i64 value) void
+@extern("Std", "Console.writeln_u64") func writeln(u64 value) void

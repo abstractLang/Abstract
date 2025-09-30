@@ -57,8 +57,8 @@ public class Analizer(ErrorHandler handler)
         DoSemanticAnalysis();
         
         // Debug shit
-        if (dumpGlobalTable) DumpGlobalTable();
         if (dumpEvaluatedData) DumpEvaluatedData();
+        if (dumpGlobalTable) DumpGlobalTable();
 
         return new ProgramObject([.. _namespaces]);
     }
@@ -77,7 +77,7 @@ public class Analizer(ErrorHandler handler)
     private void SearchReferences(Module[] modules)
     {
         _namespaces = [];
-        _globalReferenceTable = [];
+        _globalReferenceTable = new(new IdentifierComparer());
         _onHoldAttributes = [];
         
         foreach (var m in modules)
@@ -171,6 +171,8 @@ public class Analizer(ErrorHandler handler)
         string[] g = parent != null
             ? [..parent.Global, funcnode.Identifier.Value]
             : [funcnode.Identifier.Value];
+
+        var aaa = string.Join('.', g);
         
         FunctionGroupObject? funcg = null;
         if (!_globalReferenceTable.TryGetValue(g, out var a))
@@ -179,7 +181,6 @@ public class Analizer(ErrorHandler handler)
             parent?.AppendChild(funcg);
             _globalReferenceTable.Add(g, funcg);
         }
-
         var peepoop = funcg ?? (FunctionGroupObject)a!;
 
         FunctionObject f = new(g, funcnode.Identifier.Value, funcnode);
@@ -454,12 +455,31 @@ public class Analizer(ErrorHandler handler)
                     
                     if (node.Children.Length != 3) throw new Exception("'Extern' expected 1 arguments");
                     var args = (node.Children[2] as ArgumentCollectionNode)!.Arguments;
-                    if (args.Length != 1) throw new Exception($"'Extern' expected 1 arguments, found {args.Length}");
 
-                    if (args[0] is not StringLiteralNode @strlit)
-                        throw new Exception("'Extern' expected argument 0 as ComptimeString");
 
-                    externModifier.Extern = strlit.RawContent;
+                    switch (args.Length)
+                    {
+                        case 1:
+                        {
+                            if (args[0] is not StringLiteralNode @strlit)
+                                throw new Exception("'Extern' expected argument 0 as ComptimeString");
+
+                            externModifier.Extern = (null, strlit.RawContent);
+                            break;
+                        }
+                        case 2:
+                        {
+                            if (args[0] is not StringLiteralNode @strlit1)
+                                throw new Exception("'Extern' expected argument 0 as ComptimeString");
+                            if (args[1] is not StringLiteralNode @strlit2)
+                                throw new Exception("'Extern' expected argument 1 as ComptimeString");
+                        
+                            externModifier.Extern = (strlit1.RawContent, strlit2.RawContent);
+                            break;
+                        }
+                        default:
+                            throw new Exception($"'Extern' expected 1 or 2 arguments, found {args.Length}");
+                    }
                 } break;
 
                 // TODO builtin attributes
@@ -514,7 +534,7 @@ public class Analizer(ErrorHandler handler)
     
     /*
      * Stage Three:
-     *  Processes every funtion body into a intermediate
+     *  Processes every function body into a intermediate
      *  representation that will be used for data storage,
      *  compile time execution, runtime evaluation and
      *  high-level optimizations.
@@ -1156,12 +1176,23 @@ public class Analizer(ErrorHandler handler)
                                         suitability[i] = 2;
                                         break;
                                     }
-
+                                    
                                     if (runtimeiParam.Signed == runtimeiArg.Signed)
                                     {
                                         suitability[i] = runtimeiParam.BitSize == runtimeiArg.BitSize ? 2 : 1;
                                         break;
                                     }
+
+                                    if (!runtimeiArg.Signed && runtimeiParam.Signed)
+                                    {
+                                        if (runtimeiArg.BitSize < runtimeiParam.BitSize) suitability[i] = 1;
+                                        else goto NoSuitability;
+                                        break;
+                                    }
+
+                                    if (runtimeiArg.Signed && !runtimeiParam.Signed)
+                                        goto NoSuitability;
+                                    
                                     
                                     throw new UnreachableException();
                                 }
@@ -1185,9 +1216,13 @@ public class Analizer(ErrorHandler handler)
                     if (sum <= betterFoundSum) continue;
                     betterFound = ov;
                     betterFoundSum = sum;
+                    
+                    NoSuitability:
+                    continue;
                 }
 
-                if (betterFound == null) throw new Exception("CompError: No overload that matches function call");
+                if (betterFound == null)  throw new Exception($"CompError:" + 
+                                                             $"No overload that matches function call {node.Origin}");
                 node.Target = new IRSolvedReference(solvedref.Origin, new SolvedFunctionReference(betterFound));
 
                 
@@ -1503,12 +1538,13 @@ public class Analizer(ErrorHandler handler)
             if (x is null || y is null) return false;
             return x.SequenceEqual(y);
         }
-        public bool Equals(string[]? x, string[]? y) => IdentifierComparer.IsEquals(x, y);
+        public bool Equals(string[]? x, string[]? y) => IsEquals(x, y);
+
 
         public int GetHashCode(string[] key)
         {
             var val = string.Join('.', key);
-            return HashCode.Combine(val);
+            return string.GetHashCode(val, StringComparison.Ordinal);
         }
     }
     
