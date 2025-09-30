@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using System.Text;
 using Abstract.CodeProcess.Core;
 using Abstract.CodeProcess.Core.Language;
@@ -736,10 +737,23 @@ public class Analizer(ErrorHandler handler)
                         "or" => IRBinaryExp.Operators.Logical_Or,
                         "and" => IRBinaryExp.Operators.Logical_And,
                         
-                        _ => throw new NotImplementedException(),
+                        _ => throw new UnreachableException(),
                     },
                     UnwrapExecutionContext_Expression(bexp.Left, ctx),
                     UnwrapExecutionContext_Expression(bexp.Right, ctx));
+            }
+
+            case UnaryExpressionNode @uexp:
+            {
+                return new IRUnaryExp(uexp, uexp.Operator switch
+                {
+                    "+" => IRUnaryExp.UnaryPrefix.Plus,
+                    "-" => IRUnaryExp.UnaryPrefix.Minus,
+                    "!" => IRUnaryExp.UnaryPrefix.Not,
+                    
+                    _ => throw new UnreachableException(),
+                },
+                    UnwrapExecutionContext_Expression(uexp.Expression, ctx));
             }
             
             
@@ -1110,6 +1124,7 @@ public class Analizer(ErrorHandler handler)
             IRInvoke @iv => NodeSemaAnal_Invoke(iv, ctx),
             IRAssign @ass => NodeSemaAnal_Assign(ass, ctx),
             IRBinaryExp @be => NodeSemaAnal_BinExp(be, ctx),
+            IRUnaryExp @ue => NodeSemaAnal_UnExp(ue, ctx),
             IRNewObject @no => NodeSemaAnal_NewObj(no, ctx),
             IRReturn @re => NodeSemaAnal_Return(re, ctx),
             
@@ -1309,6 +1324,25 @@ public class Analizer(ErrorHandler handler)
         
         return node;
     }
+
+    private IRNode NodeSemaAnal_UnExp(IRUnaryExp node, IrBlockExecutionContextData ctx)
+    {
+        node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
+
+        if (node is { Value: IRIntegerLiteral @valInt })
+        {
+            return new IRIntegerLiteral(node.Origin, node.Prefix switch
+            {
+                IRUnaryExp.UnaryPrefix.Plus => valInt.Value,
+                IRUnaryExp.UnaryPrefix.Minus => BigInteger.Negate(valInt.Value),
+                IRUnaryExp.UnaryPrefix.Not => ~valInt.Value,
+                _ => throw new UnreachableException(),
+            });
+        }
+
+        return node;
+    }
+
     private IRNode NodeSemaAnal_NewObj(IRNewObject node, IrBlockExecutionContextData ctx)
     {
         // TODO i prefer handle constructor overloading when

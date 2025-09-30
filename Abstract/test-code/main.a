@@ -21,18 +21,18 @@
 	# Testing function overloading
 	let u32 uint32 = 32
 	let u64 uint64 = 64
-	let i32 sint32 = 32
-	let i64 sint64 = 64
+	let i32 sint32 = -32
+	let i64 sint64 = -64
 
 	writeln(uint32)
 	writeln(uint64)
 	writeln(sint32)
 	writeln(sint64)
 
+	# Testing explicit type casting
 	let u64 RandomNegativeNumber = 0xffffffffff00000f
-	let i64 RandomNegativeNumber2 = 0xffffffffff00000f
 	writeln(RandomNegativeNumber)
-	writeln(RandomNegativeNumber2)
+	#writeln(RandomNegativeNumber as i64)
 
 	# Testing function with return value
 	#let u64 result = mathTest(10, rng)
