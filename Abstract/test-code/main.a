@@ -29,6 +29,11 @@
 	writeln(sint32)
 	writeln(sint64)
 
+	let u64 RandomNegativeNumber = 0xffffffffff00000f
+	let i64 RandomNegativeNumber2 = 0xffffffffff00000f
+	writeln(RandomNegativeNumber)
+	writeln(RandomNegativeNumber2)
+
 	# Testing function with return value
 	#let u64 result = mathTest(10, rng)
 }
