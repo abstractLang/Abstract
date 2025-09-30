@@ -1,6 +1,10 @@
 [submodule "Abstract/Abstract.Realizer"]
 	path = Abstract/Abstract.Realizer
 	url = git@github.com:abstractLang/AbstractRealizer.git
+
 [submodule "Abstract/Module/target-wasm"]
 	path = Abstract/Module/target-wasm
 	url = git@github.com:abstractLang/target-wasm.git
+[submodule "Abstract/Module/target-LLVM"]
+	path = Abstract/Module/target-LLVM
+	url = git@github.com:abstractLang/target-LLVM.git
