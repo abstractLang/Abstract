@@ -273,6 +273,15 @@ public class Compressor
                     case IRBinaryExp.Operators.Multiply: builder.Writer.Mul(); break;
                     case IRBinaryExp.Operators.Divide: builder.Writer.Div(); break;
                     case IRBinaryExp.Operators.Reminder: builder.Writer.Rem(); break;
+
+                    case IRBinaryExp.Operators.Bitwise_And: builder.Writer.And(); break;
+                    case IRBinaryExp.Operators.Bitwise_Or: builder.Writer.Or(); break;
+                    case IRBinaryExp.Operators.Bitwise_Xor: builder.Writer.Xor(); break;
+
+                    case IRBinaryExp.Operators.Left_Shift:
+                    case IRBinaryExp.Operators.Right_Shift:
+                    case IRBinaryExp.Operators.Logical_And:
+                    case IRBinaryExp.Operators.Logical_Or:
                     default: throw new Exception();
                 }
                 
@@ -291,10 +300,7 @@ public class Compressor
                 if (ret.Value != null) UnwrapFunctionBody_IRNode(builder, ret.Value);
                 break;
             
-            case IRSignCast @sigcast:
-                builder.Writer.Sigcast(sigcast.Signed);
-                UnwrapFunctionBody_IRNode(builder, sigcast.Value);
-                break;
+            
             case IRIntExtend @ex:
                 UnwrapFunctionBody_FlagType(builder, ex.toType);
                 builder.Writer.Extend();
@@ -304,6 +310,12 @@ public class Compressor
                 UnwrapFunctionBody_FlagType(builder, tr.toType);
                 builder.Writer.Trunc();
                 UnwrapFunctionBody_IRNode(builder, tr.Value);
+                break;
+
+            case IRIntCast @cast:
+                UnwrapFunctionBody_FlagType(builder, cast.TargetType);
+                builder.Writer.Conv();
+                UnwrapFunctionBody_IRNode(builder, cast.Expression);
                 break;
             
             

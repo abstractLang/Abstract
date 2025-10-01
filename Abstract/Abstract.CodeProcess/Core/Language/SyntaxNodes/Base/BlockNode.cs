@@ -8,7 +8,7 @@ public class BlockNode : SyntaxNode
         ? _children[1..^1]
         : [];
     
-    public override string ToString()
+    public string ToString(string f)
     {
         var sb = new StringBuilder();
 

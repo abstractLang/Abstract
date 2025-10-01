@@ -30,9 +30,15 @@
 	writeln(sint64)
 
 	# Testing explicit type casting
-	let u64 RandomNegativeNumber = 0xffffffffff00000f
+	let u64 RandomNegativeNumber = 0xffffffffffffffff
 	writeln(RandomNegativeNumber)
-	#writeln(RandomNegativeNumber as i64)
+	writeln(RandomNegativeNumber as i64)
+	writeln(RandomNegativeNumber as u32)
+	writeln(RandomNegativeNumber as i32)
+	writeln(RandomNegativeNumber as u16)
+	writeln(RandomNegativeNumber as i16)
+	writeln(RandomNegativeNumber as u8)
+	writeln(RandomNegativeNumber as i8)
 
 	# Testing function with return value
 	#let u64 result = mathTest(10, rng)
@@ -40,7 +46,7 @@
 
 func mathTest(u8 entropy, Randomizer rng) u64 {
 	# Testing assignment operations
-	let u32 value *= rng.seed * entropy
+	let u32 value *= ((rng.seed as u128) ^ entropy) as u32
 
 	# Testing operations with constants
 	value = 5 * 10
@@ -48,8 +54,8 @@ func mathTest(u8 entropy, Randomizer rng) u64 {
 	value = 34565432 % 100 + 5
 
 	# Testing operations with fields
-	rng.rng.last += value
-	value += rng.seed
+	rng.rng.last *= value
+	value += (rng.seed as u32)
 
 	return value
 }

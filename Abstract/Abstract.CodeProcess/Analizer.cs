@@ -742,7 +742,6 @@ public class Analizer(ErrorHandler handler)
                     UnwrapExecutionContext_Expression(bexp.Left, ctx),
                     UnwrapExecutionContext_Expression(bexp.Right, ctx));
             }
-
             case UnaryExpressionNode @uexp:
             {
                 return new IRUnaryExp(uexp, uexp.Operator switch
@@ -755,7 +754,13 @@ public class Analizer(ErrorHandler handler)
                 },
                     UnwrapExecutionContext_Expression(uexp.Expression, ctx));
             }
-            
+
+            case TypeCastNode @tcast:
+            {
+                return new IrConv(tcast,
+                    UnwrapExecutionContext_Expression(tcast.Value, ctx),
+                    SolveTypeLazy(tcast.TargetType, ctx));
+            }
             
             case IdentifierCollectionNode @identc: return SearchReference(identc, ctx);
             case IdentifierNode @ident: return SearchReference(ident, ctx);
@@ -786,6 +791,8 @@ public class Analizer(ErrorHandler handler)
                 
                 return ctor;
             } break;
+            
+            case ParenthesisExpressionNode @pa: return UnwrapExecutionContext_Expression(pa.Content, ctx);
             
             default: throw new NotImplementedException();
         };
@@ -1121,18 +1128,19 @@ public class Analizer(ErrorHandler handler)
     {
         return node switch
         {
+            IRDefLocal @dl => NodeSemaAnal_Macro_DefLocal(dl, ctx),
+            
             IRInvoke @iv => NodeSemaAnal_Invoke(iv, ctx),
             IRAssign @ass => NodeSemaAnal_Assign(ass, ctx),
             IRBinaryExp @be => NodeSemaAnal_BinExp(be, ctx),
             IRUnaryExp @ue => NodeSemaAnal_UnExp(ue, ctx),
+            IrConv @tc =>NodeSemaAnal_Conv(tc, ctx),
             IRNewObject @no => NodeSemaAnal_NewObj(no, ctx),
             IRReturn @re => NodeSemaAnal_Return(re, ctx),
             
             IRReferenceAccess
                 or IRSolvedReference
                 or IRIntegerLiteral => node,
-            
-            IRDefLocal @dl => NodeSemaAnal_Macro_DefLocal(dl, ctx),
             
             IRUnknownReference => throw new UnreachableException("All references must already been handled"),
             
@@ -1170,61 +1178,12 @@ public class Analizer(ErrorHandler handler)
                     
                     var parameters = ov.Parameters;
                     var suitability = new int[parameters.Length];
-                    
+
                     foreach (var (i, e) in parameters.Index())
                     {
-                        var partype = e.Type;
-                        var argtype = GetEffectiveTypeReference(arguments[i]);
-                        
-                        switch (partype)
-                        { 
-                            // IRIntegerLiterals 
-                            case IntegerTypeReference when arguments[i] is IRIntegerLiteral:
-                                suitability[i] = 2; break;
-                            
-                            case RuntimeIntegerTypeReference runtimeiParam:
-                                if (argtype is RuntimeIntegerTypeReference runtimeiArg)
-                                {
-                                    if (runtimeiParam.PtrSized && runtimeiArg.PtrSized 
-                                    && runtimeiParam.Signed == runtimeiArg.Signed)
-                                    {
-                                        suitability[i] = 2;
-                                        break;
-                                    }
-                                    
-                                    if (runtimeiParam.Signed == runtimeiArg.Signed)
-                                    {
-                                        suitability[i] = runtimeiParam.BitSize == runtimeiArg.BitSize ? 2 : 1;
-                                        break;
-                                    }
-
-                                    if (!runtimeiArg.Signed && runtimeiParam.Signed)
-                                    {
-                                        if (runtimeiArg.BitSize < runtimeiParam.BitSize) suitability[i] = 1;
-                                        else goto NoSuitability;
-                                        break;
-                                    }
-
-                                    if (runtimeiArg.Signed && !runtimeiParam.Signed)
-                                        goto NoSuitability;
-                                    
-                                    
-                                    throw new UnreachableException();
-                                }
-                                break;
-
-
-                            case SolvedStructTypeReference @solvedstruct:
-                            {
-                                if (argtype is SolvedStructTypeReference @solvedstructarg)
-                                    suitability[i] = solvedstruct.CalculateSuitability(solvedstructarg);
-                                else suitability[i] = 0;
-                            } break;
-                            
-                            
-                            default: throw new NotImplementedException();
-                        }
-                        
+                        var s = CalculateTypeSuitability(e.Type, arguments[i], true);
+                        if (s == 0) goto NoSuitability;
+                        suitability[i] = s;
                     }
                     
                     var sum = suitability.Sum();
@@ -1324,7 +1283,6 @@ public class Analizer(ErrorHandler handler)
         
         return node;
     }
-
     private IRNode NodeSemaAnal_UnExp(IRUnaryExp node, IrBlockExecutionContextData ctx)
     {
         node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
@@ -1343,6 +1301,11 @@ public class Analizer(ErrorHandler handler)
         return node;
     }
 
+    private IRNode NodeSemaAnal_Conv(IrConv node, IrBlockExecutionContextData ctx)
+    {
+        node.Expression = (IRExpression)NodeSemaAnal(node.Expression, ctx);
+        return SolveTypeCast(node.TargetType, node.Expression, true);
+    }
     private IRNode NodeSemaAnal_NewObj(IRNewObject node, IrBlockExecutionContextData ctx)
     {
         // TODO i prefer handle constructor overloading when
@@ -1378,7 +1341,7 @@ public class Analizer(ErrorHandler handler)
     /// <param name="typeTo"> Target type </param>
     /// <param name="value"> Value to cast </param>
     /// <returns></returns>
-    private IRExpression SolveTypeCast(TypeReference typeTo, IRExpression value)
+    private IRExpression SolveTypeCast(TypeReference typeTo, IRExpression value, bool @explicit = false)
     {
         if (typeTo is RuntimeIntegerTypeReference typetoRi)
         {
@@ -1388,23 +1351,90 @@ public class Analizer(ErrorHandler handler)
             var valType = GetEffectiveTypeReference(value);
             if (valType is RuntimeIntegerTypeReference valueRi)
             {
-                if (typetoRi.BitSize == valueRi.BitSize) {}
+                // If same type, do nothing
+                if (typetoRi.BitSize == valueRi.BitSize
+                    && typetoRi.Signed == valueRi.Signed) {}
                 
-                else if (typetoRi.BitSize > valueRi.BitSize)
-                   value = new IRIntExtend(value.Origin, value, typetoRi);
+                // If pointer sized, delegate check for backend
+                else if (valueRi.PtrSized || typetoRi.PtrSized)
+                    return new IRIntCast(value.Origin, value, typetoRi);
+
+                var val = valueRi;
+                var tar = typetoRi;
+                var o = value.Origin;
                 
-                else if (typetoRi.BitSize < valueRi.BitSize)
+                if (val.Signed == tar.Signed)
                 {
-                    // TODO check value range
-                    value = new IRIntTrunc(value.Origin, value, typetoRi);
+                    if (val.BitSize == tar.BitSize) return value;
+                    if (val.BitSize < tar.BitSize) return new IRIntExtend(o, value, tar);
+                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
                 }
-                
-                if (typetoRi.Signed == valueRi.Signed) {}
-                else value = new IRSignCast(value.Origin, value, typetoRi.Signed);
+                else if (!val.Signed && tar.Signed)
+                {
+                    
+                    if (val.BitSize == tar.BitSize && @explicit) return new IRIntCast(o, value, tar);
+                    if (val.BitSize < tar.BitSize) return new IRIntExtend(o, value, tar);
+                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
+                }
+                else
+                {
+                    if (val.BitSize == tar.BitSize && @explicit) return new IRIntCast(o, value, tar);
+                    if (val.BitSize < tar.BitSize && @explicit) return new IRIntExtend(o, value, tar);
+                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
+                }
+                    
+                throw new Exception($"Cannot convert type {val} to {tar} in {value.Origin:pos}");
             }
         }
         
         return value;
+    }
+    
+    private int CalculateTypeSuitability(TypeReference typeTp, IRExpression value, bool allowImplicit)
+    {
+        var typeVl = GetEffectiveTypeReference(value);
+        switch (typeTp)
+        { 
+            
+            case RuntimeIntegerTypeReference runtimeiParam:
+                if (value is IRIntegerLiteral) return 2;
+                if (typeVl is RuntimeIntegerTypeReference runtimeArg)
+                {
+                    if (runtimeiParam.BitSize == runtimeArg.BitSize
+                        && runtimeiParam.Signed == runtimeArg.Signed) return 2;
+                    
+                    else if (runtimeiParam.PtrSized || runtimeArg.PtrSized) return 1;
+
+                    var val = runtimeArg;
+                    var tar = runtimeiParam;
+                
+                    if (val.Signed == tar.Signed)
+                    {
+                        if (val.BitSize == tar.BitSize) return 2;
+                        if (val.BitSize < tar.BitSize) return 1;
+                        if (val.BitSize > tar.BitSize && @allowImplicit) return 1;
+                        return 0;
+                    }
+                    if (!val.Signed && tar.Signed)
+                    {
+
+                        if (val.BitSize == tar.BitSize && @allowImplicit) return 1;
+                        if (val.BitSize < tar.BitSize) return 1;
+                        if (val.BitSize > tar.BitSize && @allowImplicit) return 1;
+                         return 0;
+                    }
+                    return allowImplicit ? 1 : 0;
+                }
+                break;
+
+
+            case SolvedStructTypeReference @solvedstruct:
+                if (typeVl is SolvedStructTypeReference @solvedstructarg)
+                    return solvedstruct.CalculateSuitability(solvedstructarg);
+                return 0;
+            
+        }
+        throw new UnreachableException();
     }
     
     #endregion
@@ -1457,6 +1487,8 @@ public class Analizer(ErrorHandler handler)
                 case ReferenceTypeModifierNode @rf:
                     return new ReferenceTypeReference(SolveShallowType(rf.Type));
                 
+                case BinaryExpressionNode @b: return new UnsolvedTypeReference(b);
+                
                 default: throw new NotImplementedException();
             }
         }
@@ -1503,27 +1535,12 @@ public class Analizer(ErrorHandler handler)
                 return exp.ResultType ?? throw new UnreachableException(
                     "This function should not be called when this value is null");
 
-
-            case IRSignCast @scast:
-            {
-                var t = GetEffectiveTypeReference(scast.Value);
-                if (t is not RuntimeIntegerTypeReference @runtimei) throw new UnreachableException();
-                return new RuntimeIntegerTypeReference(scast.Signed, runtimei.BitSize);
-            } break;
-            case IRIntExtend @icast:
-            {
-                var t = GetEffectiveTypeReference(icast.Value);
-                if (t is not RuntimeIntegerTypeReference @runtimei) throw new UnreachableException();
-                return icast.toType;
-            } break;
-            case IRIntTrunc @itrunc:
-            {
-                var t = GetEffectiveTypeReference(itrunc.Value);
-                if (t is not RuntimeIntegerTypeReference @runtimei) throw new UnreachableException();
-                return itrunc.toType;
-            } break;
             
-                
+            case IrConv @conv: return conv.TargetType;
+            case IRIntCast @tcast: return tcast.TargetType;
+            case IRIntExtend @icast: return icast.toType;
+            case IRIntTrunc @itrunc: return itrunc.toType;
+            
             default: throw new NotImplementedException();
         }
     }

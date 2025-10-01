@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
-public abstract class SyntaxNode
+public abstract class SyntaxNode : IFormattable
 {
     protected SyntaxNode _parent = null!;
 
@@ -13,9 +13,6 @@ public abstract class SyntaxNode
     public virtual (uint line_start, uint line_end, uint start, uint end) Range => OverrideRange.HasValue
         ? OverrideRange!.Value
         : (_children[0].Range.line_start, _children[^1].Range.line_end, _children[0].Range.start, _children[^1].Range.end);
-    public virtual string ReadableValue =>
-        string.IsNullOrEmpty(OverrideToString) ? $"{string.Join(" ", _children)}" : OverrideToString;
-    
     
 
     #region Tree related
@@ -52,8 +49,19 @@ public abstract class SyntaxNode
     }
     #endregion
 
+    
+    public string ToString(string? f, IFormatProvider? _) => ToString(f);
+    public string ToString(string? f)
+    {
+        return f == "pos"
+            ? $"\'{ToString()}\' ({Range.line_start + 1}:{Range.end + 1})"
+            : ToString();
+    }
 
-    public override string ToString() => $"\'{ReadableValue}\' ({Range.line_start+1}:{Range.end+1})";
+    public override string ToString()=> string.IsNullOrEmpty(OverrideToString)
+        ? $"{string.Join(" ", _children)}"
+        : OverrideToString;
+    
     
     public virtual string ToTree()
     {

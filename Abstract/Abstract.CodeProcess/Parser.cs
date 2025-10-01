@@ -362,15 +362,21 @@ public class Parser(ErrorHandler errHandler)
 
     private ExpressionNode ParseBooleanOperationExpression()
     {
-        var node = ParseUnaryExpression();
+        var node = ParseBitwiseOperationExpression();
 
         if (!Taste(
             TokenType.EqualOperator, // ==
             TokenType.UnequalOperator, // !=
+            
+            TokenType.ExactEqualOperator, // ===
+            TokenType.ExactUnequalOperator, // !==
+            
             TokenType.LeftAngleChar, // <
             TokenType.RightAngleChar, // >
+            
             TokenType.LessEqualsOperator, // <=
             TokenType.GreatEqualsOperator, // >=
+            
             TokenType.AndOperator, // and
             TokenType.OrOperator // or
         )) return node;
@@ -383,7 +389,42 @@ public class Parser(ErrorHandler errHandler)
 
         return node;
     }
+
+    private ExpressionNode ParseBitwiseOperationExpression()
+    {
+        var node = ParseCastingExpression();
+
+        if (!Taste(
+                TokenType.PipeChar, // |
+                TokenType.AmpersandChar, // &
+                TokenType.CircumflexChar, // ^
+            
+                TokenType.BitShiftLeftOperator, // <<
+                TokenType.BitShiftRightOperator // >>
+            )) return node;
+        
+        var n = new BinaryExpressionNode();
+        n.AppendChild(node);
+        n.AppendChild(EatAsNode());
+        n.AppendChild(ParseBooleanOperationExpression());
+        node = n;
+
+        return node;
+    }
     
+    private ExpressionNode ParseCastingExpression()
+    {
+        var node = ParseUnaryExpression();
+
+        if (!Taste(TokenType.AsKeyword)) return node;
+
+        var n = new TypeCastNode();
+        n.AppendChild(node);
+        n.AppendChild(EatAsNode());
+        n.AppendChild(ParseType());
+        
+        return n;
+    }
     private ExpressionNode ParseUnaryExpression()
     {
         ExpressionNode node;
@@ -401,7 +442,7 @@ public class Parser(ErrorHandler errHandler)
 
         return node;
     }    
-
+    
     #endregion
 
     private ExpressionNode ParseValue()
