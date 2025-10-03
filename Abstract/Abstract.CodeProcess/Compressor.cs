@@ -63,9 +63,9 @@ public class Compressor
 
     private void CreateModules(ProgramBuilder prg, ProgramObject programObject)
     {
+        var m = prg.AddModule(null!);
         foreach (var i in programObject.Namespaces)
         {
-            var m = prg.AddModule(null!);
             CreateMembersRecursive(m, null!, i);
         }
     }

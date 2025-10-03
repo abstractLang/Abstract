@@ -12,6 +12,7 @@ public abstract class LangObject(string[] global, string name)
     public readonly string[] Global = global;
     public readonly string Name = name;
     public LangObject Parent { get =>_parent; set => _parent = value; }
+    public virtual NamespaceObject Namespace => _parent.Namespace;
     public LangObject[] Children => [.. _children];
     public AttributeReference[] Attributes => [.. _attributes];
     

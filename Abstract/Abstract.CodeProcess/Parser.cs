@@ -149,7 +149,7 @@ public class Parser(ErrorHandler errHandler)
 
                 break;
 
-            case TokenType.ImportKeyword:
+            case TokenType.FromKeyword:
                 node = ParseImport();
                 break;
 

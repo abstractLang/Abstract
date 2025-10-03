@@ -50,6 +50,9 @@ public class Analizer(ErrorHandler handler)
         // Stage 2
         ScanHeadersMetadata();
         
+        if (dumpEvaluatedData) DumpEvaluatedData();
+        if (dumpGlobalTable) DumpGlobalTable();
+        
         // Stage 3
         LazyScanObjectHeaders();
         ScanObjectBodies();
@@ -122,10 +125,18 @@ public class Analizer(ErrorHandler handler)
     }
     private void SearchGenericScopeRecursive(LangObject parent, ControlNode node)
     {
-        if (node is AttributeNode @attr)
+        switch (node)
         {
-            _onHoldAttributes.Peek().Add(EvaluateAttribute(attr));
-            return;
+            case AttributeNode @attr:
+                _onHoldAttributes.Peek().Add(EvaluateAttribute(attr));
+                return;
+            case FromImportNode @fromimport:
+            {
+                if (parent is not NamespaceObject @nmsp)
+                    throw new Exception("Imports can only be made inside a namespace root");
+                RegisterImport(nmsp, fromimport);
+                return;
+            }
         }
 
         LangObject obj = node switch
@@ -165,7 +176,18 @@ public class Analizer(ErrorHandler handler)
         _onHoldAttributes.Peek().Clear();
 
     }
-    
+
+
+    private void RegisterImport(NamespaceObject parent, FromImportNode fromImport)
+    {
+
+        if (fromImport.Children.Length < 4)
+        {
+            var namespaceParts = ((IdentifierCollectionNode)fromImport.Children[1]).Values;
+            parent.AddImportAll(namespaceParts);
+        }
+        else throw new UnreachableException();
+    }
     
     private FunctionObject RegisterFunction(LangObject? parent, FunctionDeclarationNode funcnode)
     {
@@ -301,6 +323,7 @@ public class Analizer(ErrorHandler handler)
         return vari;
     }
 
+    
     private void RegisterAlias(LangObject? parent, LangObject target, string alias)
     {
         string[] g = parent != null ? [..parent.Global, alias] : [alias];
@@ -547,6 +570,7 @@ public class Analizer(ErrorHandler handler)
         {
             switch (i.Value)
             {
+                case NamespaceObject @nmsp: LazyScanNamespaceMeta(nmsp); break;
                 case FunctionObject @funcobj: LazyScanFunctionMeta(funcobj); break;
                 case StructObject @structobj: LazyScanStructureMeta(structobj); break;
                 
@@ -558,6 +582,21 @@ public class Analizer(ErrorHandler handler)
     }
     
     
+    private void LazyScanNamespaceMeta(NamespaceObject nmsp)
+    {
+        foreach (var n in nmsp.Imports)
+        {
+            var member = _globalReferenceTable.Values
+                .FirstOrDefault(e => IdentifierComparer.IsEquals(e.Global, n.Key));
+            
+            if (member is not NamespaceObject @nmspObj)
+                throw new Exception($"\"{string.Join('.', n.Key)}\" is not a namespace");
+
+            nmsp.Imports[n.Key] = (n.Value.specific, nmspObj);
+
+            if (n.Value.specific != null) throw new UnreachableException();
+        }
+    }
     private void LazyScanStructureMeta(StructObject structure)
     {
         foreach (var i in structure.Children)
@@ -818,9 +857,9 @@ public class Analizer(ErrorHandler handler)
         
         if (reference.Length == 0) goto end;
 
-        do
+        do // capturing root
         {
-            // capturing root
+            // Search in exec context
             var res1 = SearchReference_ExecCtx(reference[0], ctx);
             if (res1.HasValue)
             {
@@ -837,6 +876,7 @@ public class Analizer(ErrorHandler handler)
                 break;
             }
 
+            // Search in sibilings
             var res2 = SearchReference_ChildrenOf(reference[0], ctx.Parent.Parent);
             if (res2.HasValue)
             {
@@ -845,8 +885,18 @@ public class Analizer(ErrorHandler handler)
                 break;
             }
 
-            var res3 = SearchReference_Global(reference);
-            if (res3 != null) referenceChain.Add(res3);
+            // Search in imports
+            var res3 = SearchReference_Import(reference[0], ctx.Parent.Namespace);
+            if (res3.HasValue)
+            {
+                referenceChain.Add(res3.Value.Item1);
+                langobj = res3.Value.Item2;
+                break;
+            }
+
+            // Search in globals
+            var res4 = SearchReference_Global(reference);
+            if (res4 != null) referenceChain.Add(res4);
             goto end;
             
         } while (false);
@@ -916,18 +966,27 @@ public class Analizer(ErrorHandler handler)
         
         if (reference.Length == 0) goto end;
 
-        do
+        do // capturing root
         {
-            // capturing root
+            // Vhecking if is a sibling
             var res1 = SearchReference_ChildrenOf(reference[0], obj.Parent);
             if (res1.HasValue)
             {
                 referenceChain.Add(res1.Value.Item1);
                 break;
             }
-
-            var res2 = SearchReference_Global(reference);
-            if (res2 != null) referenceChain.Add(res2);
+            
+            // Checking if is a import
+            var res2 = SearchReference_Import(reference[0], obj.Namespace);
+            if (res2.HasValue)
+            {
+                referenceChain.Add(res2.Value.Item1);
+                break;
+            }
+            
+            // Checking if is a global
+            var res3 = SearchReference_Global(reference);
+            if (res3 != null) referenceChain.Add(res3);
             goto end;
             
         } while (false);
@@ -994,6 +1053,19 @@ public class Analizer(ErrorHandler handler)
         return (GetObjectReference(found), found);
         
     }
+    private (LanguageReference, LangObject)? SearchReference_Import(string part, NamespaceObject parentNmsp)
+    {
+        foreach (var i in parentNmsp.Imports)
+        {
+            if (i.Value.specific == null)
+            {
+                var res = SearchReference_ChildrenOf(part, i.Value.nmsp!);
+                if (res != null) return res;
+            }
+            else throw new UnreachableException();
+        }
+        throw new UnreachableException();
+    }
     private (LanguageReference, TypeReference)? SearchReference_ExecCtx(string part, ExecutionContextData ctx)
     {
         var local = ctx.CurrentBlock.Content
@@ -1006,7 +1078,7 @@ public class Analizer(ErrorHandler handler)
 
         return null;
     }
-
+    
     private LanguageReference? SearchReference_Global(string[] parts)
     {
         var member = _globalReferenceTable.Values
@@ -1624,22 +1696,6 @@ public class Analizer(ErrorHandler handler)
         File.WriteAllTextAsync(".abs-cache/debug/eval.txt", sb.ToString());
     }
     
-    private class IdentifierComparer : IEqualityComparer<string[]>
-    {
-        public static bool IsEquals(string[]? x, string[]? y)
-        {
-            if (x is null || y is null) return false;
-            return x.SequenceEqual(y);
-        }
-        public bool Equals(string[]? x, string[]? y) => IsEquals(x, y);
-
-
-        public int GetHashCode(string[] key)
-        {
-            var val = string.Join('.', key);
-            return string.GetHashCode(val, StringComparison.Ordinal);
-        }
-    }
     
 }
 
