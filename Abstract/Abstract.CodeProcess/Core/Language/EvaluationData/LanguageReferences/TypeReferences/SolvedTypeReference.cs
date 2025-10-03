@@ -10,7 +10,7 @@ public class SolvedStructTypeReference(StructObject struc) : TypeReference
 
     public int CalculateSuitability(SolvedStructTypeReference to)
     {
-        if (Struct == to.Struct) return 2;
+        if (Struct == to.Struct) return 3;
         // TODO check casting possibility
         return 0;
     }

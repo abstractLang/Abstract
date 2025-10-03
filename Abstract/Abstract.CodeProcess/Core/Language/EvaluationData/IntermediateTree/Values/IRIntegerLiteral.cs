@@ -7,8 +7,7 @@ namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Val
 public class IRIntegerLiteral: IRExpression
 {
 
-    public readonly int? Size;
-    public readonly bool PtrSized;  
+    public readonly byte? Size;
     public readonly BigInteger Value;
 
     
@@ -16,13 +15,11 @@ public class IRIntegerLiteral: IRExpression
     {
         Value = val;
         Size = null;
-        PtrSized = false;
     }
-    public IRIntegerLiteral(SyntaxNode origin, BigInteger val, int? size) : base(origin)
+    public IRIntegerLiteral(SyntaxNode origin, BigInteger val, byte? size) : base(origin)
     {
         Value = val;
         Size = size;
-        PtrSized = !size.HasValue;
     }
     
     public override string ToString() => $"{Value}";

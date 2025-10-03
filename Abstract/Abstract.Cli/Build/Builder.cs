@@ -148,7 +148,7 @@ public static class Builder
         
         var binaryEmmission = Stopwatch.StartNew();
         
-        target.CompilerInvoke(result);
+        target.CompilerInvoke(result, target.LanguageOutput);
         
         binaryEmmission.Stop();
         Console.WriteLine($"Binary emmission done ({binaryEmmission.Elapsed})");

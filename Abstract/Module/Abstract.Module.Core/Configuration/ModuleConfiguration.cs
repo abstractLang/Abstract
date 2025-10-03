@@ -17,7 +17,7 @@ public struct ModuleConfiguration
 
 public struct ModuleLanguageTargetConfiguration
 {
-    public delegate void CompilerDelegate(ProgramBuilder program);
+    public delegate void CompilerDelegate(ProgramBuilder program, ILanguageOutputConfiguration config);
     
     public string TargetName;
     public string TargetDescription;

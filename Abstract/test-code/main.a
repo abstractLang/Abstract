@@ -30,18 +30,28 @@
 	writeln(sint64)
 
 	# Testing explicit type casting
-	let u64 RandomNegativeNumber = 0xffffffffffffffff
-	writeln(RandomNegativeNumber)
-	writeln(RandomNegativeNumber as i64)
-	writeln(RandomNegativeNumber as u32)
-	writeln(RandomNegativeNumber as i32)
-	writeln(RandomNegativeNumber as u16)
-	writeln(RandomNegativeNumber as i16)
-	writeln(RandomNegativeNumber as u8)
-	writeln(RandomNegativeNumber as i8)
+	const u64 realy_long_number = 0x8888888888888888
+	writeln(realy_long_number)
+	writeln(realy_long_number as i64)
+	writeln(realy_long_number as u32)
+	writeln(realy_long_number as i32)
+	writeln(realy_long_number as u16)
+	writeln(realy_long_number as i16)
+	writeln(realy_long_number as u8)
+	writeln(realy_long_number as i8)
 
 	# Testing function with return value
 	#let u64 result = mathTest(10, rng)
+
+	# Testing strings
+	writeln("Hello, World!")
+
+	const string some_long_text = "Arabica Acerbic Affogato Aftertaste Aged Americano "
+						+ "And Aroma press au aroma siphon origin french Barista "
+						+ "eu, caramelization and robust americano doppio ristretto "
+						+ "cortado white mug whipped aromatic Blue at."
+
+	writeln(some_long_text)
 }
 
 func mathTest(u8 entropy, Randomizer rng) u64 {
@@ -92,8 +102,11 @@ struct StructPackingTest {
 @extern("Std", "Console.write_u32")   func write(u32 value) void
 @extern("Std", "Console.write_i64")   func write(i64 value) void
 @extern("Std", "Console.write_u64")   func write(u64 value) void
+@extern("Std", "Console.write_string(Utf8)") func write(string value) void
+
 
 @extern("Std", "Console.writeln_i32") func writeln(i32 value) void
 @extern("Std", "Console.writeln_u32") func writeln(u32 value) void
 @extern("Std", "Console.writeln_i64") func writeln(i64 value) void
 @extern("Std", "Console.writeln_u64") func writeln(u64 value) void
+@extern("Std", "Console.writeln_string(Utf8)") func writeln(string value) void

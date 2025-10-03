@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using Abstract.CodeProcess.Core.Language.EvaluationData;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
@@ -19,6 +20,8 @@ using Abstract.Realizer.Builder.References;
 using IntegerTypeReference = Abstract.Realizer.Builder.References.IntegerTypeReference;
 using AbstractTypeReference = Abstract.Realizer.Builder.References.TypeReference;
 using BuilderTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.TypeReference;
+using BuilderStringTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.StringTypeReference;
+using StringEncoding = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.StringEncoding;
 
 namespace Abstract.CodeProcess;
 
@@ -146,6 +149,7 @@ public class Compressor
             AbstractTypeReference typeref = p.Type switch
             {
                 RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
+                BuilderStringTypeReference @str => new SliceTypeReference(new IntegerTypeReference(false, 8)),
                 SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
                 UnsolvedTypeReference => throw new UnreachableException("parameter type should not be unsolved at this step!"),
                 _ => throw new NotImplementedException(),
@@ -234,11 +238,29 @@ public class Compressor
 
             case IRIntegerLiteral @itlit:
             {
-                if (itlit.PtrSized) builder.Writer.LdConstIptr((ulong)itlit.Value);
-                //else if (itlit.Size == null) throw new Exception("Integer literal should have a assigned size");
-                builder.Writer.LdConstI((byte)(itlit.Size ?? 255), itlit.Value);
+                if (itlit.Size == null) builder.Writer.LdConstIptr((ulong)itlit.Value);
+                else builder.Writer.LdConstI(itlit.Size.Value, itlit.Value);
             } break;
+            case IRStringLiteral @strlit:
+            {
+                if (strlit.Encoding is StringEncoding.Utf8 or StringEncoding.Undefined)
+                    builder.Writer.LdStringUtf8(strlit.Data);
 
+                else
+                {
+                    var data = strlit.Encoding switch
+                    {
+                        StringEncoding.Ascii => Encoding.ASCII.GetBytes(strlit.Data),
+                        StringEncoding.Utf16 => Encoding.Unicode.GetBytes(strlit.Data),
+                        StringEncoding.Utf32 => Encoding.UTF32.GetBytes(strlit.Data),
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+
+                    builder.Writer.LdSlice(data);
+
+                }
+            } break;
+            
             case IRSolvedReference @solvref:
                 UnwrapFunctionBody_Load_Reference(builder, solvref.Reference);
                 break;
@@ -423,6 +445,7 @@ public class Compressor
         {
             case SolvedStructTypeReference @ss: return new NodeTypeReference((StructureBuilder)GetObjectBuilder(ss.Struct));
             case RuntimeIntegerTypeReference @ri: return new IntegerTypeReference(ri.Signed, ri.PtrSized ? null : ri.BitSize);
+            case BuilderStringTypeReference @sr: return new SliceTypeReference(new IntegerTypeReference(false, 8));
             
             default: throw new UnreachableException();
         }

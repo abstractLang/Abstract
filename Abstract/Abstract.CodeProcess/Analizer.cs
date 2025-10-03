@@ -766,7 +766,12 @@ public class Analizer(ErrorHandler handler)
             case IdentifierNode @ident: return SearchReference(ident, ctx);
                 
             case IntegerLiteralNode @intlit: return new IRIntegerLiteral(intlit, intlit.Value);
-
+            case StringLiteralNode @strlit:
+            {
+                if (strlit.isSimple) return new IRStringLiteral(strlit, ((StringSectionNode)strlit.Content[0]).Value);
+                else throw new NotImplementedException();
+            }
+            
             case NewObjectNode @newobj:
             {
                 List<IRAssign> asisgns = [];
@@ -822,7 +827,9 @@ public class Analizer(ErrorHandler handler)
                 referenceChain.Add(res1.Value.Item1);
                 switch (res1.Value.Item2)
                 {
-                    case RuntimeIntegerTypeReference: goto end;
+                    case RuntimeIntegerTypeReference:
+                    case StringTypeReference:
+                        goto end; break;
                         
                     case SolvedStructTypeReference @sst: langobj = sst.Struct; break; 
                     default: throw new NotImplementedException();
@@ -1140,6 +1147,7 @@ public class Analizer(ErrorHandler handler)
             
             IRReferenceAccess
                 or IRSolvedReference
+                or IRStringLiteral
                 or IRIntegerLiteral => node,
             
             IRUnknownReference => throw new UnreachableException("All references must already been handled"),
@@ -1181,12 +1189,12 @@ public class Analizer(ErrorHandler handler)
 
                     foreach (var (i, e) in parameters.Index())
                     {
-                        var s = CalculateTypeSuitability(e.Type, arguments[i], true);
+                        var s = (int)CalculateTypeSuitability(e.Type, arguments[i], true);
                         if (s == 0) goto NoSuitability;
                         suitability[i] = s;
                     }
                     
-                    var sum = suitability.Sum();
+                    var sum = (suitability.Sum() * 100) / parameters.Length;
                     if (sum <= betterFoundSum) continue;
                     betterFound = ov;
                     betterFoundSum = sum;
@@ -1229,30 +1237,39 @@ public class Analizer(ErrorHandler handler)
         node.Left = (IRExpression)NodeSemaAnal(node.Left, ctx);
         var leftTypeRef = GetEffectiveTypeReference(node.Left);
         node.Right = SolveTypeCast(leftTypeRef, (IRExpression)NodeSemaAnal(node.Right, ctx));
-        
+
         // Operate literals at comptime
-        if (node is { Left: IRIntegerLiteral @leftInt, Right: IRIntegerLiteral @rightInt })
+        switch (node)
         {
-            return new IRIntegerLiteral(node.Origin, node.Operator switch {
+            case { Left: IRIntegerLiteral @leftInt, Right: IRIntegerLiteral @rightInt }:
+                return new IRIntegerLiteral(node.Origin, node.Operator switch {
                 
-                IRBinaryExp.Operators.Add => leftInt.Value + rightInt.Value,
-                IRBinaryExp.Operators.Subtract => leftInt.Value - rightInt.Value,
-                IRBinaryExp.Operators.Multiply => leftInt.Value * rightInt.Value,
-                IRBinaryExp.Operators.Divide => leftInt.Value / rightInt.Value,
-                IRBinaryExp.Operators.Reminder => leftInt.Value % rightInt.Value,
+                    IRBinaryExp.Operators.Add => leftInt.Value + rightInt.Value,
+                    IRBinaryExp.Operators.Subtract => leftInt.Value - rightInt.Value,
+                    IRBinaryExp.Operators.Multiply => leftInt.Value * rightInt.Value,
+                    IRBinaryExp.Operators.Divide => leftInt.Value / rightInt.Value,
+                    IRBinaryExp.Operators.Reminder => leftInt.Value % rightInt.Value,
                 
-                IRBinaryExp.Operators.Bitwise_And => leftInt.Value & rightInt.Value,
-                IRBinaryExp.Operators.Bitwise_Or => leftInt.Value | rightInt.Value,
-                IRBinaryExp.Operators.Bitwise_Xor => leftInt.Value ^ rightInt.Value,
-                IRBinaryExp.Operators.Left_Shift => leftInt.Value << (int)rightInt.Value,
-                IRBinaryExp.Operators.Right_Shift => leftInt.Value >> (int)rightInt.Value,
+                    IRBinaryExp.Operators.Bitwise_And => leftInt.Value & rightInt.Value,
+                    IRBinaryExp.Operators.Bitwise_Or => leftInt.Value | rightInt.Value,
+                    IRBinaryExp.Operators.Bitwise_Xor => leftInt.Value ^ rightInt.Value,
+                    IRBinaryExp.Operators.Left_Shift => leftInt.Value << (int)rightInt.Value,
+                    IRBinaryExp.Operators.Right_Shift => leftInt.Value >> (int)rightInt.Value,
                 
-                IRBinaryExp.Operators.Logical_And or
-                IRBinaryExp.Operators.Logical_Or or
-                _ => throw new NotImplementedException(),
-            });
+                    IRBinaryExp.Operators.Logical_And or
+                        IRBinaryExp.Operators.Logical_Or or
+                        _ => throw new NotImplementedException(),
+                });
+            
+            case { Left: IRStringLiteral @leftStr, Right: IRStringLiteral @rightStr }:
+                return new IRStringLiteral(node.Origin, node.Operator switch
+                    {
+                        IRBinaryExp.Operators.Add => leftStr.Data + rightStr.Data,
+                        _ => throw new UnreachableException()
+                    }
+                );
         }
-        
+
         // TODO solve operator overloading
 
         var ltype = GetEffectiveTypeReference(node.Left);
@@ -1390,51 +1407,73 @@ public class Analizer(ErrorHandler handler)
         return value;
     }
     
-    private int CalculateTypeSuitability(TypeReference typeTp, IRExpression value, bool allowImplicit)
+    private Suitability CalculateTypeSuitability(TypeReference typeTo, IRExpression value, bool allowImplicit)
     {
         var typeVl = GetEffectiveTypeReference(value);
-        switch (typeTp)
+        switch (typeTo)
         { 
             
-            case RuntimeIntegerTypeReference runtimeiParam:
-                if (value is IRIntegerLiteral) return 2;
-                if (typeVl is RuntimeIntegerTypeReference runtimeArg)
+            case RuntimeIntegerTypeReference intParam:
+                if (value is IRIntegerLiteral) return Suitability.Perfect;
+                if (typeVl is RuntimeIntegerTypeReference intArg)
                 {
-                    if (runtimeiParam.BitSize == runtimeArg.BitSize
-                        && runtimeiParam.Signed == runtimeArg.Signed) return 2;
+                    if (intParam.PtrSized && intArg.PtrSized)
+                    {
+                        if (intParam.Signed == intArg.Signed) return Suitability.Perfect;
+                        if (allowImplicit) return Suitability.NeedsSoftCast;
+                    }
                     
-                    else if (runtimeiParam.PtrSized || runtimeArg.PtrSized) return 1;
+                    if (intParam.PtrSized || intArg.PtrSized) return Suitability.NeedsSoftCast;
+                    
+                    if (intParam.BitSize == intArg.BitSize
+                        && intParam.Signed == intArg.Signed) return Suitability.Perfect;
 
-                    var val = runtimeArg;
-                    var tar = runtimeiParam;
+                    var val = intArg;
+                    var tar = intParam;
                 
                     if (val.Signed == tar.Signed)
                     {
-                        if (val.BitSize == tar.BitSize) return 2;
-                        if (val.BitSize < tar.BitSize) return 1;
-                        if (val.BitSize > tar.BitSize && @allowImplicit) return 1;
+                        if (val.BitSize == tar.BitSize) return Suitability.Perfect;
+                        if (val.BitSize < tar.BitSize) return Suitability.NeedsSoftCast;
+                        if (val.BitSize > tar.BitSize && @allowImplicit) return Suitability.NeedsSoftCast;
                         return 0;
                     }
                     if (!val.Signed && tar.Signed)
                     {
 
-                        if (val.BitSize == tar.BitSize && @allowImplicit) return 1;
-                        if (val.BitSize < tar.BitSize) return 1;
-                        if (val.BitSize > tar.BitSize && @allowImplicit) return 1;
+                        if (val.BitSize == tar.BitSize && @allowImplicit) return Suitability.NeedsHardCast;
+                        if (val.BitSize < tar.BitSize) return Suitability.NeedsHardCast;
+                        if (val.BitSize > tar.BitSize && @allowImplicit) return Suitability.NeedsHardCast;
                          return 0;
                     }
-                    return allowImplicit ? 1 : 0;
+                    return allowImplicit
+                        ? Suitability.NeedsHardCast
+                        : Suitability.None;
                 }
-                break;
 
+                return 0;
+
+            case StringTypeReference stringParam:
+                if (typeVl is StringTypeReference @strArg
+                    && (strArg.Encoding == StringEncoding.Undefined
+                        || strArg.Encoding == stringParam.Encoding)) return Suitability.Perfect;
+                return Suitability.None;
 
             case SolvedStructTypeReference @solvedstruct:
                 if (typeVl is SolvedStructTypeReference @solvedstructarg)
-                    return solvedstruct.CalculateSuitability(solvedstructarg);
-                return 0;
+                    return (Suitability)solvedstruct.CalculateSuitability(solvedstructarg);
+                return Suitability.None;
             
         }
         throw new UnreachableException();
+    }
+
+    private enum Suitability
+    {
+        None = 0,
+        NeedsHardCast = 1,
+        NeedsSoftCast = 2,
+        Perfect = 3
     }
     
     #endregion
@@ -1452,6 +1491,7 @@ public class Analizer(ErrorHandler handler)
     {
         while (true)
         {
+            
             switch (node)
             {
                 case TypeExpressionNode @texp:
@@ -1472,6 +1512,7 @@ public class Analizer(ErrorHandler handler)
                         case "uptr": return new RuntimeIntegerTypeReference(false);
                         case "void": return new VoidTypeReference();
                         case "type": return new TypeTypeReference();
+                        case "string": return new StringTypeReference(StringEncoding.Undefined);
                         case "anytype": return new AnytypeTypeReference();
 ;                    }
 
@@ -1513,6 +1554,7 @@ public class Analizer(ErrorHandler handler)
         switch (expr)
         {
             case IRIntegerLiteral: return new ComptimeIntegerTypeReference();
+            case IRStringLiteral: return new StringTypeReference(StringEncoding.Undefined);
             
             case IRSolvedReference @solvedFuck:
                 return solvedFuck.Reference switch
