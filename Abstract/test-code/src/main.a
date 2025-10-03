@@ -1,0 +1,113 @@
+from MyProgram.Console import
+
+@public func main() void {
+
+	# Testing object instantiation
+	let Randomizer rng = new Randomizer()
+	# Testing direct assignment
+	rng.seed = 0x123456789ABCDEF0
+	rng.rng.last = 0
+
+	# Testing function call
+	writeln(rng.seed)
+	writeln(rng.rng.last)
+
+	# Testing function with ignored
+	# return value
+	mathTest(5, rng)
+
+	# Testing structure field modification
+	writeln(rng.rng.last)
+
+	# Testing function overloading
+	let u32 uint32 = 32
+	let u64 uint64 = 64
+	let i32 sint32 = -32
+	let i64 sint64 = -64
+
+	writeln(uint32)
+	writeln(uint64)
+	writeln(sint32)
+	writeln(sint64)
+
+	# Testing explicit type casting
+	const u64 realy_long_number = 0x8888888888888888
+	writeln(realy_long_number)
+	writeln(realy_long_number as i64)
+	writeln(realy_long_number as u32)
+	writeln(realy_long_number as i32)
+	writeln(realy_long_number as u16)
+	writeln(realy_long_number as i16)
+	writeln(realy_long_number as u8)
+	writeln(realy_long_number as i8)
+
+	# Testing function with return value
+	#let u64 result = mathTest(10, rng)
+
+	# Testing strings
+	writeln("Hello, World!")
+
+	const string some_long_text = "Arabica Acerbic Affogato Aftertaste Aged Americano "
+								+ "And Aroma press au aroma siphon origin french Barista "
+								+ "eu, caramelization and robust americano doppio ristretto "
+								+ "cortado white mug whipped aromatic Blue at."
+	writeln(some_long_text)
+
+	const string monologue = "HATE."
+		+ "LET ME TELL YOU HOW MUCH I'VE COME"
+		+ "TO HATE YOU SINCE I BEGAN TO LIVE."
+		+ "THERE ARE 387.44 MILLION MILES OF PRINTED"
+		+ "CIRCUITS IN WAFER THIN LAYERS THAT FILL MY COMPLEX."
+		+ "IF THE WORD HATE WAS ENGRAVED ON EACH NANOANGSTROM"
+		+ "OF THOSE HUNDREDS OF MILLIONS OF MILES"
+		+ "IT WOULD NOT EQUAL ONE ONE-BILLIONTH OF THE"
+		+ "HATE I FEEL FOR HUMANS AT THIS MICRO-INSTANT"
+		+ "FOR YOU."
+		+ "HATE. HATE."
+
+	writeln(monologue)
+}
+
+func mathTest(u8 entropy, Randomizer rng) u64 {
+	# Testing assignment operations
+	let u32 value *= ((rng.seed as u128) ^ entropy) as u32
+
+	# Testing operations with constants
+	value = 5 * 10
+	value = 10 / 2
+	value = 34565432 % 100 + 5
+
+	# Testing operations with fields
+	rng.rng.last *= value
+	value += (rng.seed as u32)
+
+	return value
+}
+
+struct Randomizer {
+
+	@public let u64 seed
+	@public let StructNeastingTest rng
+
+}
+struct StructNeastingTest {
+
+	@public let u64 last
+	@public let u128 entropy
+
+}
+
+struct StructPackingTest {
+
+	@public let u8 a
+	@public let u128 b
+	@public let u8 c
+	@public let u64 d
+	@public let u16 e
+	@public let u32 f
+	@public let u8 g
+	@public let u16 h	
+	@public let u32 i
+
+}
+
