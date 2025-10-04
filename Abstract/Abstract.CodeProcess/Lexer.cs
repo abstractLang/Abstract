@@ -293,10 +293,14 @@ public class Lexer
                                 // hexadecimal
                                 else if (escapeCode == 'x')
                                 {
-                                    while (src.Peek() != '\\') src.Next(); 
+                                    while (src.Peek() != '\\') src.Next();
                                     tokens.Add(Tokenize(TokenType.CharacterLiteral, src.GetSlice()));
                                 }
-                                else tokens.Add(Tokenize(TokenType.CharacterLiteral, src.GetSlice()));
+                                else
+                                {
+                                    src.Next();
+                                    tokens.Add(Tokenize(TokenType.CharacterLiteral, src.GetSlice()));
+                                }
                             }
 
                             // test end of string

@@ -41,8 +41,13 @@ from MyProgram.Console import
 	writeln(realy_long_number as u8)
 	writeln(realy_long_number as i8)
 
-	# Testing function with return value
-	#let u64 result = mathTest(10, rng)
+	# Testing functions with return value
+	write("The following value should be 10: ")
+	writeln(return10())
+
+	let u64 result = mathTest(10, rng)
+	write("mathTest result: ")
+	writeln(result)
 
 	# Testing strings
 	writeln("Hello, World!")
@@ -53,22 +58,40 @@ from MyProgram.Console import
 								+ "cortado white mug whipped aromatic Blue at."
 	writeln(some_long_text)
 
-	const string monologue = "HATE."
-		+ "LET ME TELL YOU HOW MUCH I'VE COME"
-		+ "TO HATE YOU SINCE I BEGAN TO LIVE."
-		+ "THERE ARE 387.44 MILLION MILES OF PRINTED"
-		+ "CIRCUITS IN WAFER THIN LAYERS THAT FILL MY COMPLEX."
-		+ "IF THE WORD HATE WAS ENGRAVED ON EACH NANOANGSTROM"
-		+ "OF THOSE HUNDREDS OF MILLIONS OF MILES"
-		+ "IT WOULD NOT EQUAL ONE ONE-BILLIONTH OF THE"
-		+ "HATE I FEEL FOR HUMANS AT THIS MICRO-INSTANT"
-		+ "FOR YOU."
+	const string monologue = "HATE.\n"
+		+ "LET ME TELL YOU HOW\n"
+		+ "MUCH I'VE COME TO HATE\n"
+		+ "YOU SINCE I BEGAN TO LIVE.\n"
+		+ "THERE ARE 387.44 MILLION\n"
+		+ "MILES OF PRINTED CIRCUITS\n"
+		+ "IN WAFER THIN LAYERS THAT\n"
+		+ "FILL MY COMPLEX. IF THE\n"
+		+ "WORD HATE WAS ENGRAVED ON\n"
+		+ "EACH NANOANGSTROM OF THOSE\n"
+		+ "HUNDREDS OF MILLIONS OF\n"
+		+ "MILES IT WOULD NOT EQUAL\n"
+		+ "ONE ONE-BILLIONTH OF THE\n"
+		+ "HATE I FEEL FOR HUMANS AT\n"
+		+ "THIS MICRO-INSTANT\n"
+		+ "FOR YOU.\n"
 		+ "HATE. HATE."
 
 	writeln(monologue)
+
+	# For some reason, this is valid syntax but generates a
+	# internal runtime error a.a
+	#let string a = ((let string b = "stringB") + (let string c = "stringC"))
+	#writeln(a)
+
+	return
+}
+
+func return10() u64 {
+	return 10
 }
 
 func mathTest(u8 entropy, Randomizer rng) u64 {
+
 	# Testing assignment operations
 	let u32 value *= ((rng.seed as u128) ^ entropy) as u32
 

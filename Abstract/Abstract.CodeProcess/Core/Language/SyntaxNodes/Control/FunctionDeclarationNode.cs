@@ -9,5 +9,5 @@ public class FunctionDeclarationNode : ControlNode
 {
     public IdentifierNode Identifier => (IdentifierNode)_children[1];
     public ParameterCollectionNode ParameterCollection => (ParameterCollectionNode)_children[2];
-
+    public ExpressionNode? ReturnType => _children.Count > 4 ? (ExpressionNode)_children[3] : null;
 }

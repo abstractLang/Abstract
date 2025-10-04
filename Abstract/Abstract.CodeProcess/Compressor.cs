@@ -12,6 +12,7 @@ using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.CodeR
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FieldReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.Integer;
 using Abstract.Realizer.Builder;
 using Abstract.Realizer.Builder.Language.Omega;
@@ -21,6 +22,7 @@ using IntegerTypeReference = Abstract.Realizer.Builder.References.IntegerTypeRef
 using AbstractTypeReference = Abstract.Realizer.Builder.References.TypeReference;
 using BuilderTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.TypeReference;
 using BuilderStringTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.StringTypeReference;
+using SliceTypeReference = Abstract.Realizer.Builder.References.SliceTypeReference;
 using StringEncoding = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.StringEncoding;
 
 namespace Abstract.CodeProcess;
@@ -146,16 +148,11 @@ public class Compressor
 
         foreach (var p in source.Parameters)
         {
-            AbstractTypeReference typeref = p.Type switch
-            {
-                RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
-                BuilderStringTypeReference @str => new SliceTypeReference(new IntegerTypeReference(false, 8)),
-                SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
-                UnsolvedTypeReference => throw new UnreachableException("parameter type should not be unsolved at this step!"),
-                _ => throw new NotImplementedException(),
-            };
+            AbstractTypeReference typeref = ConvType(p.Type);
             builder.AddParameter(p.Name, typeref);
         }
+        
+        builder.ReturnType = ConvType(source.ReturnType);
 
         switch (builder)
         {
@@ -441,13 +438,15 @@ public class Compressor
 
     private AbstractTypeReference ConvType(BuilderTypeReference tref)
     {
-        switch (tref)
+        return tref switch
         {
-            case SolvedStructTypeReference @ss: return new NodeTypeReference((StructureBuilder)GetObjectBuilder(ss.Struct));
-            case RuntimeIntegerTypeReference @ri: return new IntegerTypeReference(ri.Signed, ri.PtrSized ? null : ri.BitSize);
-            case BuilderStringTypeReference @sr: return new SliceTypeReference(new IntegerTypeReference(false, 8));
+            RuntimeIntegerTypeReference @ri => new IntegerTypeReference(ri.Signed, ri.PtrSized ? null : ri.BitSize),
+            VoidTypeReference => null!,
             
-            default: throw new UnreachableException();
-        }
+            SolvedStructTypeReference @ss => new NodeTypeReference((StructureBuilder)GetObjectBuilder(ss.Struct)),
+            BuilderStringTypeReference @sr => new SliceTypeReference(new IntegerTypeReference(false, 8)),
+            
+            _ => throw new UnreachableException()
+        };
     }
 }

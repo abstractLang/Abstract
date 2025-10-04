@@ -548,6 +548,10 @@ public class Analizer(ErrorHandler handler)
             function.AddParameter(new ParameterObject(typeref, name));
         }
 
+        function.ReturnType = node.ReturnType == null
+            ? new VoidTypeReference()
+            : SolveShallowType(node.ReturnType);
+
     }
     private void UnwrapStructureMeta(StructObject structure)
     {
@@ -622,6 +626,8 @@ public class Analizer(ErrorHandler handler)
             if (t.Type is UnsolvedTypeReference @unsolved)
                 t.Type = SolveTypeLazy(unsolved.syntaxNode, function);
         }
+        if (function.ReturnType is UnsolvedTypeReference @unsolv)
+            function.ReturnType = SolveTypeLazy(unsolv.syntaxNode, function);
     }
 
     
@@ -807,7 +813,7 @@ public class Analizer(ErrorHandler handler)
             case IntegerLiteralNode @intlit: return new IRIntegerLiteral(intlit, intlit.Value);
             case StringLiteralNode @strlit:
             {
-                if (strlit.isSimple) return new IRStringLiteral(strlit, ((StringSectionNode)strlit.Content[0]).Value);
+                if (strlit.IsSimple) return new IRStringLiteral(strlit, strlit.RawContent);
                 else throw new NotImplementedException();
             }
             
@@ -1176,9 +1182,7 @@ public class Analizer(ErrorHandler handler)
         
         // Excution analysis
         foreach (var fun in funclist)
-        {
-            if (fun.Body != null) BlockSemaAnal(fun.Body);
-        }
+            if (fun.Body != null) BlockSemaAnal(fun.Body, fun);
     } 
     
     private void FunctionSemaAnal(FunctionObject function)
@@ -1196,9 +1200,9 @@ public class Analizer(ErrorHandler handler)
         field.Type = SolveTypeLazy(unsolv.syntaxNode, field);
     }
 
-    private void BlockSemaAnal(IRBlock block)
+    private void BlockSemaAnal(IRBlock block, FunctionObject function)
     {
-        IrBlockExecutionContextData ctx = new IrBlockExecutionContextData();
+        IrBlockExecutionContextData ctx = new IrBlockExecutionContextData(function);
         for (var i = 0; i < block.Content.Count; i++)
             block.Content[i] = NodeSemaAnal(block.Content[i], ctx);
     }
@@ -1255,6 +1259,12 @@ public class Analizer(ErrorHandler handler)
                 foreach (var ov in overloads)
                 {
                     if (ov.Parameters.Length != arguments.Length) continue;
+                    if (ov.Parameters.Length == 0)
+                    {
+                        betterFound = ov;
+                        betterFoundSum = 0;
+                        continue;
+                    }
                     
                     var parameters = ov.Parameters;
                     var suitability = new int[parameters.Length];
@@ -1416,7 +1426,11 @@ public class Analizer(ErrorHandler handler)
     }
     private IRNode NodeSemaAnal_Return(IRReturn node, IrBlockExecutionContextData ctx)
     {
-        if (node.Value != null) node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
+        if (node.Value != null)
+        {
+            node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
+            node.Value = SolveTypeCast(ctx.Function.ReturnType!, node.Value, false);
+        }
         return node;
     }
     
@@ -1635,15 +1649,22 @@ public class Analizer(ErrorHandler handler)
                     IntegerTypeReference @intt => intt,
                     SolvedStructTypeReference @structt => structt,
                     SolvedFieldReference @field => field.Field.Type,
+                    // FIXME it should in reality return a FunctionTypeReference,
+                    // not the function's return type
+                    SolvedFunctionReference @func => func.Function.ReturnType,
                     
                     LocalReference @local => local.Local.Type,
                     ParameterReference @param => param.Parameter.Type,
                     
                     _ => throw new NotImplementedException()
                 };
-            
             case IRReferenceAccess @access: return GetEffectiveTypeReference(access.B);
 
+            
+            case IRInvoke @invoke:
+                // FIXME it should in reality return a FunctionTypeReference,
+                // not the function's return type
+                return GetEffectiveTypeReference(invoke.Target);
             
             case IRBinaryExp @exp:
                 return exp.ResultType ?? throw new UnreachableException(

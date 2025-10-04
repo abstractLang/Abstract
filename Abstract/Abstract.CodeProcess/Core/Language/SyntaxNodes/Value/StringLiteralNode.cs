@@ -9,11 +9,12 @@ public class StringLiteralNode() : ExpressionNode()
 {
     public SyntaxNode[] Content => [.. _children[1..^1]];
 
-    public bool isSimple => !_children[1..^1].Any(e => e is StringInterpolationNode);
-    public string RawContent => string.Join("", (object[])Children[1..^1]);
+    public bool IsSimple => !_children[1..^1].Any(e => e is StringInterpolationNode);
+    public string RawContent => BuildStringContent();
 
     public override string ToString() => $"\"{RawContent}\"";
-    public string BuildStringContent()
+
+    private string BuildStringContent()
     {
         var str = new StringBuilder();
 

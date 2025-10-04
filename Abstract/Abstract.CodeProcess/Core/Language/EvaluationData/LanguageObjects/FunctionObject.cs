@@ -1,9 +1,11 @@
+using System.Reflection.Metadata;
 using System.Text;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Metadata;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
+using TypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.TypeReference;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 
@@ -28,7 +30,9 @@ public class FunctionObject(string[] g, string n, FunctionDeclarationNode synnod
     public (string? domain, string? symbol) Extern { get; set; } = (null, null);
     public bool Generic { get; set; } = false;
     public bool ConstExp { get; set; } = false;
-    
+
+
+    public TypeReference ReturnType = null!;
     public ParameterObject[] Parameters => [.. _parameters];
     public IRBlock? Body = null;
     

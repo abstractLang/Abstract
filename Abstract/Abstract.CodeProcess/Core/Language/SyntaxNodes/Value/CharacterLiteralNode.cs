@@ -15,7 +15,7 @@ public class CharacterLiteralNode(Token token, bool insideString = false) : Valu
             "\\t" => "\t",
             "\\n" => "\n",
             "\\r" => "\r",
-            "\\0" => char.ConvertFromUtf32(0x00),
+            "\\0" => "\0",
 
             // Characters
             "\\\"" => "\"",
