@@ -1,9 +1,0 @@
-
-@extern("Std", "Console.write_i64")   func write(i64 value) void
-@extern("Std", "Console.write_u64")   func write(u64 value) void
-@extern("Std", "Console.write_string(Utf8)") func write(string value) void
-
-
-@extern("Std", "Console.writeln_i64") func writeln(i64 value) void
-@extern("Std", "Console.writeln_u64") func writeln(u64 value) void
-@extern("Std", "Console.writeln_string(Utf8)") func writeln(string value) void

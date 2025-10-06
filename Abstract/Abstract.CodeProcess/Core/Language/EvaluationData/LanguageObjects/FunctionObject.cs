@@ -63,7 +63,7 @@ public class FunctionObject(string[] g, string n, FunctionDeclarationNode synnod
         else if (Extern.domain != null && Extern.symbol != null) sb.Append($"import_extern(\"{Extern.domain}\" \"{Extern.symbol}\") ");
         if (Generic) sb.Append("generic ");
 
-        sb.AppendLine($"Function:");
+        sb.AppendLine($"Function {Name} -> {ReturnType}:");
 
         foreach (var p in _parameters)
             sb.AppendLine($"\t{p}");

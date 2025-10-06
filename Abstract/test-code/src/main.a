@@ -1,6 +1,6 @@
-from MyProgram.Console import
+from Std.Console import
 
-@public func main() void {
+@export("main") func main() void {
 
 	# Testing object instantiation
 	let Randomizer rng = new Randomizer()
@@ -83,6 +83,19 @@ from MyProgram.Console import
 	#let string a = ((let string b = "stringB") + (let string c = "stringC"))
 	#writeln(a)
 
+	# Testing references
+	let StructPackingTest valueToChange = new StructPackingTest()
+	assignSomeValues(&valueToChange)
+	writeln(valueToChange.a)
+	writeln(valueToChange.b)
+	writeln(valueToChange.c)
+	writeln(valueToChange.d)
+	writeln(valueToChange.e)
+	writeln(valueToChange.f)
+	writeln(valueToChange.g)
+	writeln(valueToChange.h)
+	writeln(valueToChange.i)
+
 	return
 }
 
@@ -90,22 +103,35 @@ func return10() u64 {
 	return 10
 }
 
+func assignSomeValues(*StructPackingTest value) void {
+	value.a = 255
+	value.b = 10
+	value.c = 100
+	value.d = 200
+	value.e = 500
+
+	return
+}
+
 func mathTest(u8 entropy, Randomizer rng) u64 {
 
-	# Testing assignment operations
-	let u32 value *= ((rng.seed as u128) ^ entropy) as u32
+	let u128 value
 
 	# Testing operations with constants
 	value = 5 * 10
 	value = 10 / 2
 	value = 34565432 % 100 + 5
 
-	# Testing operations with fields
-	rng.rng.last *= value
-	value += (rng.seed as u32)
+	# Testing assignment operations
+	value += ((rng.seed as u128) + entropy) + (rng.rng.last as u128)
 
-	return value
+	# Testing operations with fields
+	rng.rng.last = value
+	value += rng.seed
+
+	return value as u64
 }
+
 
 struct Randomizer {
 
@@ -115,7 +141,7 @@ struct Randomizer {
 }
 struct StructNeastingTest {
 
-	@public let u64 last
+	@public let u128 last
 	@public let u128 entropy
 
 }
@@ -133,4 +159,3 @@ struct StructPackingTest {
 	@public let u32 i
 
 }
-

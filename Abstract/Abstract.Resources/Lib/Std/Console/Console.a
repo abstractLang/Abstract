@@ -1,9 +1,16 @@
 ###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
 
-@public func write(anytype content) void {}
-#@public func write([]anytype content) void
+@public @extern("Std", "Console.write(BigInt)")    func write(i64 value) void
+@public @extern("Std", "Console.write(UBigInt)")   func write(u64 value) void
+@public @extern("Std", "Console.write(BigInt)")    func write(i128 value) void
+@public @extern("Std", "Console.write(UBigInt)")   func write(u128 value) void
 
-@public func writeln(anytype content) void {}
-#@public func writeln([]anytype content) void
-    
-@public func read() string {}
+@public @extern("Std", "Console.write(string(Utf8))") func write(string value) void
+
+
+@public @extern("Std", "Console.writeln(BigInt)")  func writeln(i64 value) void
+@public @extern("Std", "Console.writeln(UBigInt)") func writeln(u64 value) void
+@public @extern("Std", "Console.writeln(BigInt)")  func writeln(i128 value) void
+@public @extern("Std", "Console.writeln(UBigInt)") func writeln(u128 value) void
+
+@public @extern("Std", "Console.writeln(string(Utf8))") func writeln(string value) void

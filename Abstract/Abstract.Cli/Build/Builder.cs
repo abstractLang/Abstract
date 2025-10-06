@@ -41,7 +41,7 @@ public static class Builder
         
         var lexer = new Lexer();
         var parser = new Parser(err);
-        var analizer = new Analizer(err);
+        var analizer = new Analyzer(err);
         var compressor = new Compressor();
         
         
@@ -115,7 +115,7 @@ public static class Builder
         }
         
         var analysis = Stopwatch.StartNew();
-        var progObj = analizer.Analize(
+        var progObj = analizer.Analyze(
             [.. modules],
             dumpGlobalTable: options.DebugDumpAnalyzerIr,
             dumpEvaluatedData: options.DebugDumpAnalyzerIr);

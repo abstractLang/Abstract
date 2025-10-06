@@ -11,7 +11,6 @@ public class NamespaceObject(string[] g, string n, NamespaceNode synnode)
     public Dictionary<string[], (List<NamespaceImport>? specific, NamespaceObject? nmsp)> Imports = new(new IdentifierComparer());
 
     public readonly NamespaceNode syntaxNode = synnode;
-
     public override NamespaceObject Namespace => this;
 
     public void AddImport(string[] nmsp, string[] member, string? alias)
@@ -24,7 +23,6 @@ public class NamespaceObject(string[] g, string n, NamespaceNode synnode)
         if (namespaceItem.specific.Any(e => IdentifierComparer.IsEquals(e.member, member))) return;
         namespaceItem.specific.Add(new NamespaceImport(member, alias));
     }
-
     public void AddImportAll(string[] nmsp)
     {
         if (!Imports.TryAdd(nmsp, (null, null))) Imports[nmsp] = (null, Imports[nmsp].nmsp);

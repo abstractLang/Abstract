@@ -1,0 +1,439 @@
+using System.Diagnostics;
+using System.Numerics;
+using Abstract.CodeProcess.Core.Language.EvaluationData;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Macros;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Statements;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.Integer;
+
+namespace Abstract.CodeProcess;
+
+/*
+ * Stage Four:
+ *  Semantic analysis, solving automatic type inference, type conversion,
+ *  operator overloading, function overloading, etc.
+ */
+
+public partial class Analyzer
+{
+    private void DoSemanticAnalysis()
+    {
+        var funclist = _globalReferenceTable
+            .Select(e => e.Value)
+            .OfType<FunctionGroupObject>().SelectMany(e => e.Overloads)
+            .ToArray();
+        
+        // Header analysis
+        foreach (var obj in _globalReferenceTable.Values)
+        {
+            switch (obj)
+            {
+                case FunctionGroupObject @functionGroup:
+                    foreach (var fun in @functionGroup.Overloads) FunctionSemaAnal(fun);
+                    break;
+                case FunctionObject @fun:
+                    FunctionSemaAnal(fun);
+                    break;
+                case FieldObject @field:
+                    FieldSemaAnal(field);
+                    break;
+            }
+            
+        }
+        
+        // Excution analysis
+        foreach (var fun in funclist)
+            if (fun.Body != null) BlockSemaAnal(fun.Body, fun);
+    } 
+    
+    private void FunctionSemaAnal(FunctionObject function)
+    {
+        foreach (var i in function.Parameters)
+        {
+            if (IsSolved(i.Type)) continue;
+            i.Type = SolveTypeLazy(i.Type, function);
+        }
+    }
+
+    private void FieldSemaAnal(FieldObject field)
+    {
+        if (IsSolved(field.Type)) return;
+        field.Type = SolveTypeLazy(field.Type, field);
+    }
+
+    private void BlockSemaAnal(IRBlock block, FunctionObject function)
+    {
+        var ctx = new IrBlockExecutionContextData(function);
+        for (var i = 0; i < block.Content.Count; i++)
+            block.Content[i] = NodeSemaAnal(block.Content[i], ctx);
+    }
+
+    private IRNode NodeSemaAnal(IRNode node, IrBlockExecutionContextData ctx)
+    {
+        return node switch
+        {
+            IRDefLocal @dl => NodeSemaAnal_Macro_DefLocal(dl, ctx),
+            
+            IRInvoke @iv => NodeSemaAnal_Invoke(iv, ctx),
+            IRAssign @ass => NodeSemaAnal_Assign(ass, ctx),
+            IRBinaryExp @be => NodeSemaAnal_BinExp(be, ctx),
+            IRUnaryExp @ue => NodeSemaAnal_UnExp(ue, ctx),
+            IrConv @tc =>NodeSemaAnal_Conv(tc, ctx),
+            IRNewObject @no => NodeSemaAnal_NewObj(no, ctx),
+            IRReturn @re => NodeSemaAnal_Return(re, ctx),
+            
+            IRReferenceAccess
+                or IRSolvedReference
+                or IRStringLiteral
+                or IRIntegerLiteral => node,
+            
+            IRUnknownReference => throw new UnreachableException("All references must already been handled"),
+            
+            _ => throw new NotImplementedException(),
+        };
+    }
+
+    private IRNode NodeSemaAnal_Macro_DefLocal(IRDefLocal deflocal, IrBlockExecutionContextData ctx)
+    {
+        ctx.RegisterLocalVariable(deflocal.LocalVariable);
+        return deflocal;
+    }
+    
+    private IRNode NodeSemaAnal_Invoke(IRInvoke node, IrBlockExecutionContextData ctx)
+    {
+        if (node.Target is IRSolvedReference @solvedref)
+        {
+
+            for (var i = 0; i < node.Arguments.Length; i++)
+                node.Arguments[i] = (IRExpression)NodeSemaAnal(node.Arguments[i], ctx);
+            
+            if (solvedref.Reference is SolvedFunctionGroupReference @fgroupref)
+            {
+                // Node is a function group and must be analysed to point
+                // to the correct or most optimal overload
+
+                var overloads = fgroupref.FunctionGroup.Overloads;
+                var arguments = node.Arguments;
+                FunctionObject? betterFound = null;
+                var betterFoundSum = 0;
+                
+                foreach (var ov in overloads)
+                {
+                    if (ov.Parameters.Length != arguments.Length) continue;
+                    if (ov.Parameters.Length == 0)
+                    {
+                        betterFound = ov;
+                        betterFoundSum = 0;
+                        continue;
+                    }
+                    
+                    var parameters = ov.Parameters;
+                    var suitability = new int[parameters.Length];
+
+                    foreach (var (i, e) in parameters.Index())
+                    {
+                        var argt = GetEffectiveTypeReference(arguments[i]);
+                        var s = (int)CalculateTypeSuitability(e.Type, argt, true);
+                        if (s == 0) goto NoSuitability;
+                        suitability[i] = s;
+                    }
+                    
+                    var sum = (suitability.Sum() * 100) / parameters.Length;
+                    if (sum <= betterFoundSum) continue;
+                    betterFound = ov;
+                    betterFoundSum = sum;
+                    
+                    NoSuitability:
+                    continue;
+                }
+
+                if (betterFound == null)  throw new Exception($"CompError:" + 
+                                                             $"No overload that matches function call {node.Origin}");
+                node.Target = new IRSolvedReference(solvedref.Origin, new SolvedFunctionReference(betterFound));
+
+                
+                for (var i = 0; i < node.Arguments.Length; i++)
+                    node.Arguments[i] = SolveTypeCast(betterFound.Parameters[i].Type, node.Arguments[i]);
+            }
+            
+            // I SUPPOSE it is impossible that the analizer stages before here
+            // are able to assign anything other than a FunctionGroup ref...
+            // i may be wrong...
+            else throw new NotImplementedException();
+        }
+        else throw new NotImplementedException();
+        
+        return node;
+    }
+    private IRNode NodeSemaAnal_Assign(IRAssign node, IrBlockExecutionContextData ctx)
+    {
+        node.Target = (IRExpression)NodeSemaAnal(node.Target, ctx);
+        node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
+
+        // TODO type target inference
+        
+        node.Value = SolveTypeCast(GetEffectiveTypeReference(node.Target), node.Value);
+        
+        return node;
+    }
+    private IRNode NodeSemaAnal_BinExp(IRBinaryExp node, IrBlockExecutionContextData ctx)
+    {
+        node.Left = (IRExpression)NodeSemaAnal(node.Left, ctx);
+        var leftTypeRef = GetEffectiveTypeReference(node.Left);
+        node.Right = SolveTypeCast(leftTypeRef, (IRExpression)NodeSemaAnal(node.Right, ctx));
+
+        // Operate literals at comptime
+        switch (node)
+        {
+            case { Left: IRIntegerLiteral @leftInt, Right: IRIntegerLiteral @rightInt }:
+                return new IRIntegerLiteral(node.Origin, node.Operator switch {
+                
+                    IRBinaryExp.Operators.Add => leftInt.Value + rightInt.Value,
+                    IRBinaryExp.Operators.Subtract => leftInt.Value - rightInt.Value,
+                    IRBinaryExp.Operators.Multiply => leftInt.Value * rightInt.Value,
+                    IRBinaryExp.Operators.Divide => leftInt.Value / rightInt.Value,
+                    IRBinaryExp.Operators.Reminder => leftInt.Value % rightInt.Value,
+                
+                    IRBinaryExp.Operators.Bitwise_And => leftInt.Value & rightInt.Value,
+                    IRBinaryExp.Operators.Bitwise_Or => leftInt.Value | rightInt.Value,
+                    IRBinaryExp.Operators.Bitwise_Xor => leftInt.Value ^ rightInt.Value,
+                    IRBinaryExp.Operators.Left_Shift => leftInt.Value << (int)rightInt.Value,
+                    IRBinaryExp.Operators.Right_Shift => leftInt.Value >> (int)rightInt.Value,
+                
+                    IRBinaryExp.Operators.Logical_And or
+                        IRBinaryExp.Operators.Logical_Or or
+                        _ => throw new NotImplementedException(),
+                });
+            
+            case { Left: IRStringLiteral @leftStr, Right: IRStringLiteral @rightStr }:
+                return new IRStringLiteral(node.Origin, node.Operator switch
+                    {
+                        IRBinaryExp.Operators.Add => leftStr.Data + rightStr.Data,
+                        _ => throw new UnreachableException()
+                    }
+                );
+        }
+
+        // TODO solve operator overloading
+
+        var ltype = GetEffectiveTypeReference(node.Left);
+        var rtype = GetEffectiveTypeReference(node.Right);
+        
+        if (ltype is RuntimeIntegerTypeReference @left &&
+            rtype is RuntimeIntegerTypeReference @right)
+        {
+            if (left.BitSize >= right.BitSize) node.ResultType = left;
+            else if (left.BitSize < right.BitSize) node.ResultType = right;
+        }
+        
+        else if (ltype is RuntimeIntegerTypeReference @left2 &&
+                 rtype is ComptimeIntegerTypeReference)
+        {
+            node.ResultType = left2;
+            node.Right = new IRIntegerLiteral(node.Right.Origin, ((IRIntegerLiteral)node.Right).Value, left2.BitSize);
+        }
+        
+        else if (ltype is ComptimeIntegerTypeReference @left3 &&
+                 rtype is RuntimeIntegerTypeReference @right3)
+        {
+            node.Left = new IRIntegerLiteral(node.Left.Origin, ((IRIntegerLiteral)node.Left).Value, right3.BitSize);
+            node.ResultType = right3;
+        }
+        
+        else throw new NotImplementedException();
+        
+        return node;
+    }
+    private IRNode NodeSemaAnal_UnExp(IRUnaryExp node, IrBlockExecutionContextData ctx)
+    {
+        node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
+
+        if (node is { Value: IRIntegerLiteral @valInt })
+        {
+            return new IRIntegerLiteral(node.Origin, node.Prefix switch
+            {
+                IRUnaryExp.UnaryPrefix.Plus => valInt.Value,
+                IRUnaryExp.UnaryPrefix.Minus => BigInteger.Negate(valInt.Value),
+                IRUnaryExp.UnaryPrefix.Not => ~valInt.Value,
+                _ => throw new UnreachableException(),
+            });
+        }
+
+        return node;
+    }
+
+    private IRNode NodeSemaAnal_Conv(IrConv node, IrBlockExecutionContextData ctx)
+    {
+        node.Expression = (IRExpression)NodeSemaAnal(node.Expression, ctx);
+        return SolveTypeCast(node.TargetType, node.Expression, true);
+    }
+    private IRNode NodeSemaAnal_NewObj(IRNewObject node, IrBlockExecutionContextData ctx)
+    {
+        // TODO i prefer handle constructor overloading when
+        //  we have actual constructable structures working
+
+        for (var i = 0; i < node.InlineAssignments.Length; i++)
+        {
+            var v = node.InlineAssignments[i];
+
+            v.Target = (IRExpression)NodeSemaAnal(v.Target, ctx);
+            v.Value = (IRExpression)NodeSemaAnal(v.Value, ctx);
+            
+            v.Value = SolveTypeCast(GetEffectiveTypeReference(v.Target), v.Value);
+            
+            node.InlineAssignments[i] = v;
+        }
+
+        return node;
+    }
+    private IRNode NodeSemaAnal_Return(IRReturn node, IrBlockExecutionContextData ctx)
+    {
+        if (node.Value != null)
+        {
+            node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
+            node.Value = SolveTypeCast(ctx.Function.ReturnType!, node.Value, false);
+        }
+        return node;
+    }
+    
+    
+    /// <summary>
+    /// With a desired type and a value node,
+    /// returns a node that explicitly solves
+    /// any applicable casting.
+    /// Value must already have been evaluated!
+    /// </summary>
+    /// <param name="typeTo"> Target type </param>
+    /// <param name="value"> Value to cast </param>
+    /// <returns></returns>
+    private IRExpression SolveTypeCast(TypeReference typeTo, IRExpression value, bool @explicit = false)
+    {
+        if (typeTo is RuntimeIntegerTypeReference typetoRi)
+        {
+            if (value is IRIntegerLiteral @lit)
+                    return new IRIntegerLiteral(lit.Origin, lit.Value, typetoRi.PtrSized? null : typetoRi.BitSize);
+
+            var valType = GetEffectiveTypeReference(value);
+            if (valType is RuntimeIntegerTypeReference valueRi)
+            {
+                // If same type, do nothing
+                if (typetoRi.BitSize == valueRi.BitSize
+                    && typetoRi.Signed == valueRi.Signed) {}
+                
+                // If pointer sized, delegate check for backend
+                else if (valueRi.PtrSized || typetoRi.PtrSized)
+                    return new IRIntCast(value.Origin, value, typetoRi);
+
+                var val = valueRi;
+                var tar = typetoRi;
+                var o = value.Origin;
+                
+                if (val.Signed == tar.Signed)
+                {
+                    if (val.BitSize == tar.BitSize) return value;
+                    if (val.BitSize < tar.BitSize) return new IRIntExtend(o, value, tar);
+                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
+                }
+                else if (!val.Signed && tar.Signed)
+                {
+                    
+                    if (val.BitSize == tar.BitSize && @explicit) return new IRIntCast(o, value, tar);
+                    if (val.BitSize < tar.BitSize) return new IRIntExtend(o, value, tar);
+                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
+                }
+                else
+                {
+                    if (val.BitSize == tar.BitSize && @explicit) return new IRIntCast(o, value, tar);
+                    if (val.BitSize < tar.BitSize && @explicit) return new IRIntExtend(o, value, tar);
+                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
+                }
+                    
+                throw new Exception($"Cannot convert type {val} to {tar} in {value.Origin:pos}");
+            }
+        }
+        
+        return value;
+    }
+    
+    private Suitability CalculateTypeSuitability(TypeReference typeTo, TypeReference typeFrom, bool allowImplicit)
+    {
+        switch (typeTo)
+        { 
+            
+            case RuntimeIntegerTypeReference intParam:
+                switch (typeFrom)
+                {
+                    case ComptimeIntegerTypeReference: return Suitability.Perfect;
+                    case RuntimeIntegerTypeReference intArg:
+                    {
+                        if (intParam.PtrSized && intArg.PtrSized)
+                        {
+                            if (intParam.Signed == intArg.Signed) return Suitability.Perfect;
+                            if (allowImplicit) return Suitability.NeedsSoftCast;
+                        }
+                    
+                        if (intParam.PtrSized || intArg.PtrSized) return Suitability.NeedsSoftCast;
+                    
+                        if (intParam.BitSize == intArg.BitSize
+                            && intParam.Signed == intArg.Signed) return Suitability.Perfect;
+
+                        var val = intArg;
+                        var tar = intParam;
+                
+                        if (val.Signed == tar.Signed)
+                        {
+                            if (val.BitSize == tar.BitSize) return Suitability.Perfect;
+                            if (val.BitSize < tar.BitSize) return Suitability.NeedsSoftCast;
+                            if (val.BitSize > tar.BitSize && @allowImplicit) return Suitability.NeedsSoftCast;
+                            return 0;
+                        }
+                        if (!val.Signed && tar.Signed)
+                        {
+
+                            if (val.BitSize == tar.BitSize && @allowImplicit) return Suitability.NeedsHardCast;
+                            if (val.BitSize < tar.BitSize) return Suitability.NeedsHardCast;
+                            if (val.BitSize > tar.BitSize && @allowImplicit) return Suitability.NeedsHardCast;
+                            return 0;
+                        }
+                        return allowImplicit
+                            ? Suitability.NeedsHardCast
+                            : Suitability.None;
+                    }
+                    default: return Suitability.None;
+                }
+
+            case StringTypeReference stringParam:
+                if (typeFrom is StringTypeReference @strArg
+                    && (strArg.Encoding == StringEncoding.Undefined
+                        || strArg.Encoding == stringParam.Encoding)) return Suitability.Perfect;
+                return Suitability.None;
+
+            case ReferenceTypeReference @refe:
+                return typeFrom is ReferenceTypeReference @refArg 
+                       && CalculateTypeSuitability(refe.InternalType, refArg.InternalType, false) == Suitability.Perfect
+                    ? Suitability.Perfect
+                    : Suitability.None;
+            
+            case SolvedStructTypeReference @solvedstruct:
+                if (typeFrom is SolvedStructTypeReference @solvedstructarg)
+                    return (Suitability)solvedstruct.CalculateSuitability(solvedstructarg);
+                return Suitability.None;
+            
+        }
+        throw new UnreachableException();
+    }
+
+    private enum Suitability
+    {
+        None = 0,
+        NeedsHardCast = 1,
+        NeedsSoftCast = 2,
+        Perfect = 3
+    }
+}

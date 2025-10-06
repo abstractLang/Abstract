@@ -22,7 +22,10 @@ using IntegerTypeReference = Abstract.Realizer.Builder.References.IntegerTypeRef
 using AbstractTypeReference = Abstract.Realizer.Builder.References.TypeReference;
 using BuilderTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.TypeReference;
 using BuilderStringTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.StringTypeReference;
+using BuilderReferenceTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.ReferenceTypeReference;
+
 using SliceTypeReference = Abstract.Realizer.Builder.References.SliceTypeReference;
+using ReferenceTypeReference = Abstract.Realizer.Builder.References.ReferenceTypeReference;
 using StringEncoding = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.StringEncoding;
 
 namespace Abstract.CodeProcess;
@@ -35,9 +38,9 @@ public class Compressor
     public ProgramBuilder CompressProgramObject(ProgramObject programObject)
     {
         _membersMap = [];
-        var realizerModule = new ProgramBuilder();
         
-        CreateModules(realizerModule, programObject);
+        var realizerProgram = new ProgramBuilder();
+        CreateModules(realizerProgram, programObject);
         _membersMap.TrimExcess();
 
         foreach (var (source, b) in _membersMap)
@@ -47,28 +50,31 @@ public class Compressor
                 case BaseFunctionBuilder @builder:
                     UnwrapFunction(builder, (FunctionObject)source);
                     break;
-                
+            
                 case StaticFieldBuilder @builder:
                     UnwrapStaticField(builder, (FieldObject)source);
                     break;
-                
+            
                 case InstanceFieldBuilder @builder:
                     UnwrapInstanceField(builder, (FieldObject)source);
                     break;
             }
 
         }
-        
-        File.WriteAllTextAsync(".abs-cache/debug/compression.txt", realizerModule.ToString());
-        return realizerModule;
+    
+        File.WriteAllTextAsync(".abs-cache/debug/compression.txt", realizerProgram.ToString());
+        return realizerProgram;
     }
 
     private void CreateModules(ProgramBuilder prg, ProgramObject programObject)
     {
-        var m = prg.AddModule(null!);
-        foreach (var i in programObject.Namespaces)
+        foreach (var module in programObject.Modules)
         {
-            CreateMembersRecursive(m, null!, i);
+            var m = prg.AddModule(module.Name);
+            foreach (var i in module.Children.Select(e => (NamespaceObject)e))
+            {
+                CreateMembersRecursive(m, null!, i);
+            }
         }
     }
     
@@ -307,7 +313,16 @@ public class Compressor
                 UnwrapFunctionBody_IRNode(builder, bexp.Left);
                 UnwrapFunctionBody_IRNode(builder, bexp.Right);
             } break;
-
+            case IRUnaryExp @unexp:
+            {
+                switch (unexp.Prefix)
+                {
+                    case IRUnaryExp.UnaryPrefix.Reference: UnwrapFunctionBody_Ref(builder, unexp.Value); break;
+                    default: throw new UnreachableException();
+                }
+                UnwrapFunctionBody_IRNode(builder, unexp.Value);
+            } break;
+            
             case IRNewObject @newobj:
             {
                 builder.Writer.LdNewObject((TypeBuilder)GetTypeReferenceBuilder(newobj.Type));
@@ -359,6 +374,45 @@ public class Compressor
                             if (f.Field.Static) builder.Writer.StField((StaticFieldBuilder)GetObjectBuilder(f.Field));
                             else builder.Writer.StField((InstanceFieldBuilder)GetObjectBuilder(f.Field));
                             break;
+                        
+                        case ParameterReference @p:
+                            if (p.Parameter.Type is not BuilderReferenceTypeReference @refe)
+                                throw new Exception("Cannot assign to constant parameter");
+                            builder.Writer.StLocalRef((short)p.Parameter.index);
+                            break;
+
+                        default: throw new NotImplementedException();
+                    }
+                    break;
+                    
+                case IRReferenceAccess @refaccess:
+                {
+                    UnwrapFunctionBody_Load_Reference(builder, refaccess.A);
+                    reference = refaccess.B;
+                } continue;
+
+                default: throw new NotImplementedException();
+            } break;
+        }
+    }
+    private void UnwrapFunctionBody_Ref(OmegaBytecodeBuilder builder, IRExpression reference)
+    {
+        while (true)
+        {
+            switch (reference)
+            {
+                case IRSolvedReference @solved:
+                    switch (solved.Reference)
+                    {
+                        case LocalReference @l:
+                            builder.Writer.LdLocalRef((short)l.Local.index);
+                            break;
+
+                        case SolvedFieldReference @f:
+                            throw new NotImplementedException();
+                            //if (f.Field.Static) builder.Writer.LdFieldRef((StaticFieldBuilder)GetObjectBuilder(f.Field));
+                            //else builder.Writer.LdFieldRef((InstanceFieldBuilder)GetObjectBuilder(f.Field));
+                            //break;
 
                         default: throw new NotImplementedException();
                     }
@@ -445,6 +499,7 @@ public class Compressor
             
             SolvedStructTypeReference @ss => new NodeTypeReference((StructureBuilder)GetObjectBuilder(ss.Struct)),
             BuilderStringTypeReference @sr => new SliceTypeReference(new IntegerTypeReference(false, 8)),
+            BuilderReferenceTypeReference @rr => new ReferenceTypeReference(ConvType(rr.InternalType)),
             
             _ => throw new UnreachableException()
         };

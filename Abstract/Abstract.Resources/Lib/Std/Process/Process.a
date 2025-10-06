@@ -1,3 +1,0 @@
-###    ABSTRACT STANDARD LIBRARY SCRIPT    ###
-
-@public func exit(uptr statusCode) noreturn {}

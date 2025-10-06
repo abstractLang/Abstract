@@ -13,5 +13,7 @@ IRUnaryExp.UnaryPrefix pre, IRExpression value) : IRExpression(origin)
         Plus,
         Minus,
         Not,
+        
+        Reference,
     }
 }

@@ -431,7 +431,8 @@ public class Parser(ErrorHandler errHandler)
 
         if(Taste(
                TokenType.CrossChar, // +
-               TokenType.MinusChar  // -
+               TokenType.MinusChar,  // -
+               TokenType.AmpersandChar  // &
            ))
         {
             node = new UnaryExpressionNode();
