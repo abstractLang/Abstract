@@ -18,7 +18,7 @@ public class FunctionObject(string[] g, string n, FunctionDeclarationNode synnod
         IVirtualModifier,
         IOverrideAttribute,
         IExternModifier,
-        
+        IExportModifier,
         IParametrizable
 {
     public bool Public { get; set; } = false;
@@ -28,6 +28,7 @@ public class FunctionObject(string[] g, string n, FunctionDeclarationNode synnod
     public bool Virtual { get; set; } = false;
     public bool Override { get; set; } = false;
     public (string? domain, string? symbol) Extern { get; set; } = (null, null);
+    public string? Export { get; set; } = null;
     public bool Generic { get; set; } = false;
     public bool ConstExp { get; set; } = false;
 

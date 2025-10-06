@@ -304,6 +304,7 @@ public partial class Analyzer
             "denyAccessTo" => BuiltinAttributes.DenyAccessTo,
 
             "extern" => BuiltinAttributes.Extern,
+            "export" => BuiltinAttributes.Export,
             
             "inline" => BuiltinAttributes.Inline,
             "noinline" => BuiltinAttributes.Noinline,

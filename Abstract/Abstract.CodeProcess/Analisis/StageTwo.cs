@@ -91,7 +91,7 @@ public partial class Analyzer
                     if (reference is not IExternModifier @externModifier)
                         throw new Exception($"Attribute {attr} is not suitable to {reference.GetType().Name}");
                     
-                    if (node.Children.Length != 3) throw new Exception("'Extern' expected 1 arguments");
+                    if (node.Children.Length != 3) throw new Exception("'Extern' expected arguments");
                     var args = (node.Children[2] as ArgumentCollectionNode)!.Arguments;
 
 
@@ -120,24 +120,41 @@ public partial class Analyzer
                     }
                 } break;
 
+                case BuiltinAttributes.Export:
+                {
+                    var node = builtInAttribute.syntaxNode;
+                    
+                    if (reference is not IExportModifier @exportModifier)
+                        throw new Exception($"Attribute {attr} is not suitable to {reference.GetType().Name}");
+                    
+                    if (node.Children.Length != 3) throw new Exception("'Export' expected arguments");
+                    var args = (node.Children[2] as ArgumentCollectionNode)!.Arguments;
+                    
+                    if (args.Length != 1) throw new Exception($"'Export' expected 1 arguments, found {args.Length}");
+                    if (args[0] is not StringLiteralNode @strlit1)
+                        throw new Exception("'Export' expected argument 0 as ComptimeString");
+
+                    exportModifier.Export = strlit1.RawContent;
+                } break;
+
                 // TODO builtin attributes
+                case BuiltinAttributes.Comptime:
+                case BuiltinAttributes.Getter:
+                    break;
+                    
                 case BuiltinAttributes.Align:
                 case BuiltinAttributes.AllowAccessTo:
                 case BuiltinAttributes.DenyAccessTo:
                 case BuiltinAttributes.Inline:
                 case BuiltinAttributes.Noinline:
-                case BuiltinAttributes.Comptime:
                 case BuiltinAttributes.Runtime:
                 case BuiltinAttributes.CallConv:
-                case BuiltinAttributes.Getter:
                 case BuiltinAttributes.Setter:
                 case BuiltinAttributes.IndexerGetter:
                 case BuiltinAttributes.IndexerSetter:
                 case BuiltinAttributes.ExplicitConvert:
                 case BuiltinAttributes.ImplicitConvert:
                 case BuiltinAttributes.OverrideOperator:
-                    break;
-
                 case BuiltinAttributes._undefined:
                 default: throw new NotImplementedException();
             }

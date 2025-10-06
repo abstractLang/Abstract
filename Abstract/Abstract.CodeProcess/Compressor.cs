@@ -164,20 +164,10 @@ public class Compressor
         {
             case FunctionBuilder @fb:
             {
+
+                fb.ExportSymbol = source.Export;
                 
                 if (source.Body == null) return;
-        
-                // foreach (var l in source.Body.Locals)
-                // {
-                //     AbstractTypeReference typeref = l.Type switch
-                //     {
-                //         RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
-                //         SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
-                //         UnsolvedTypeReference => throw new UnreachableException("Local type should not be unsolved at this step!"),
-                //         _ => throw new NotImplementedException(),
-                //     };
-                //     
-                // }
                 UnwrapFunctionBody(fb.GetOrCreateOmegaBuilder(), source);
                 
             } break;
