@@ -1,0 +1,11 @@
+@publc @abstract struct Allocator {
+
+    let u128 test
+
+    #@publc @abstract func alloc(uptr length, Alignment alignment) Memory
+    #@publc @abstract func resize(Memory old, uptr newLength) bool
+    #@publc @abstract func reallic(Memory old, uptr newLength) Memory
+    #@publc @abstract func free(Memory memory) void
+
+}
+

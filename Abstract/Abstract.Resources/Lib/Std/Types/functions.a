@@ -1,0 +1,3 @@
+#! Returns the type of a value
+@extern("__abstract.compiler.internal__", "type_of")
+@public @comptime func typeOf(anytype value) type

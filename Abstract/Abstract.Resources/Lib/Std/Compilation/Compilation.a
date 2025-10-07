@@ -1,0 +1,15 @@
+
+# #! Return the line where this function is called
+# @getter(get__currentLine) let uptr currentLine
+# @extern("__abstract.compiler.internal__", "get_current_line")
+# @comptime func get__currentLine() uptr
+
+# #! Return the name of the source file where the call is being made
+# @getter(get__currentSource) let string currentSource
+# @extern("__abstract.compiler.internal__", "get_current_source")
+# @comptime func get__currentSource() string
+
+# #! Return the name of the caller function
+# @getter(get__functionName) let string functionName
+# @extern("__abstract.compiler.internal__", "get_function_name")
+# @comptime func get__functionName() string

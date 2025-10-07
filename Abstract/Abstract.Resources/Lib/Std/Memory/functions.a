@@ -1,0 +1,5 @@
+@extern("__abstract.compiler.internal__", "int_to_ref")
+@publc @comptime func intToRef(uptr value) *anytype
+
+@extern("__abstract.compiler.internal__", "ref_to_int")
+@publc @comptime func refToInt(*anytype ref) uptr

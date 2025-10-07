@@ -1,0 +1,10 @@
+@public struct WasmAllocator extends Allocator
+{
+    let Memory mem
+
+	#@publc @override func alloc(uptr length, Alignment alignment) Memory {}
+    #@publc @override func resize(Memory old, uptr newLength) bool {}
+    #@publc @override func reallic(Memory old, uptr newLength) Memory {}
+    #@publc @override func free(Memory memory) void {}
+
+}

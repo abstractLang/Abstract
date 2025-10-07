@@ -1,0 +1,9 @@
+@public typedef Alignment {
+	1, 2, 4, 8, 16, 32, 64, 128, 256
+}
+
+@publc struct Memory {
+	@publc let *anytype pointer
+	@publc let uptr length
+	@publc let Alignment align
+}
