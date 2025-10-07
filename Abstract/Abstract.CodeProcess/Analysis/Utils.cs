@@ -82,7 +82,8 @@ public partial class Analyzer
             FunctionGroupObject @fg => new SolvedFunctionGroupReference(fg),
 
             StructObject @s => new SolvedStructTypeReference(s),
-
+            TypedefObject @t => new SolvedTypedefTypeReference(t),
+            
             FieldObject @v => new SolvedFieldReference(v),
 
             _ => throw new NotImplementedException(),

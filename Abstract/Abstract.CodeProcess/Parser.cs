@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Abstract.CodeProcess.Core;
 using Abstract.CodeProcess.Core.Language;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
@@ -49,7 +50,7 @@ public class Parser(ErrorHandler errHandler)
 
                 node = new StructureDeclarationNode();
                 node.AppendChild(EatAsNode()); // struct
-                node.AppendChild(ParseSingleIdentfier()); // <identifier>
+                node.AppendChild(ParseSingleIdentifier()); // <identifier>
 
                 if (Taste(TokenType.LeftPerenthesisChar)) node.AppendChild(ParseParameterCollection()); // generic parameters
                 
@@ -59,7 +60,7 @@ public class Parser(ErrorHandler errHandler)
                 if (TryEatAsNode(TokenType.ExtendsKeyword, out var extends)) // extends
                 {
                     extendsImplements.AppendChild(extends);
-                    extendsImplements.AppendChild(ParseIdentfier());
+                    extendsImplements.AppendChild(ParseIdentifier());
                     useExtendsImplements = true;
                 }
 
@@ -77,7 +78,7 @@ public class Parser(ErrorHandler errHandler)
 
                 node = new FunctionDeclarationNode();
                 node.AppendChild(EatAsNode()); // func
-                node.AppendChild(ParseSingleIdentfier()); // <identifier>
+                node.AppendChild(ParseSingleIdentifier()); // <identifier>
                 node.AppendChild(ParseParameterCollection()); // (..., ...)
                 node.AppendChild(ParseType()); // <type>
                 
@@ -97,7 +98,7 @@ public class Parser(ErrorHandler errHandler)
 
                 node = new PacketDeclarationNode();
                 node.AppendChild(EatAsNode()); // packet
-                node.AppendChild(ParseSingleIdentfier()); // <identifier>
+                node.AppendChild(ParseSingleIdentifier()); // <identifier>
                 TryEndLine();
                 node.AppendChild(ParseBlock((BlockNode n, ref bool _)
                     => n.AppendChild(ParsePacketBody()))); // {...}
@@ -125,29 +126,46 @@ public class Parser(ErrorHandler errHandler)
             break;
 
             case TokenType.TypedefKeyword:
+            {
                 node = new TypeDefinitionNode();
                 node.AppendChild(EatAsNode()); // typedef
-                node.AppendChild(ParseSingleIdentfier()); // identifier
+                node.AppendChild(ParseSingleIdentifier()); // identifier
                 if (Taste(TokenType.LeftPerenthesisChar))
                     node.AppendChild(ParseArgumentCollection()); // (T)
-                
-                node.AppendChild(ParseBlock((BlockNode block, ref bool _break) => { // {...}
-                    var i = new TypeDefinitionItemNode();
 
-                    i.AppendChild(ParseSingleIdentfier()); // <ident>
-                    if (TryEatAsNode(TokenType.EqualsChar, out var node))
+                node.AppendChild(ParseBlock((BlockNode block, ref bool _break) =>
+                {
+                    var value = Bite();
+                    switch (value.type)
                     {
-                        i.AppendChild(node); // =
-                        i.AppendChild(ParseExpression()); // <exp>
+                        case TokenType.RangeOperator:
+                        case TokenType.IntegerNumberLiteral when TasteMore(1, TokenType.RangeOperator):
+                            throw new NotImplementedException();
+
+                        case TokenType.IntegerNumberLiteral:
+                        {
+                            var n = new TypeDefinitionNumericItemNode();
+                            n.AppendChild(ParseValue());
+                            block.AppendChild(n);
+                        } break;
+                        
+                        default: throw new NotImplementedException();
                     }
+                    
+                    // var i = new TypeDefinitionNamedItemNode();
+                    //
+                    // i.AppendChild(ParseSingleIdentifier()); // <ident>
+                    // if (TryEatAsNode(TokenType.EqualsChar, out var node))
+                    // {
+                    //     i.AppendChild(node); // =
+                    //     i.AppendChild(ParseExpression()); // <exp>
+                    // }
 
                     if (!TryEat(TokenType.CommaChar, out _)) _break = true;
                     TryEndLine();
-
-                    block.AppendChild(i);
                 }));
 
-                break;
+            } break;
 
             case TokenType.FromKeyword:
                 node = ParseImport();
@@ -158,7 +176,7 @@ public class Parser(ErrorHandler errHandler)
 
                 node = new AttributeNode();
                 node.AppendChild(EatAsNode());
-                node.AppendChild(ParseIdentfier());
+                node.AppendChild(ParseIdentifier());
 
                 if (Taste(TokenType.LeftPerenthesisChar))
                     node.AppendChild(ParseArgumentCollection());
@@ -457,7 +475,7 @@ public class Parser(ErrorHandler errHandler)
             TokenType.DotChar:
             try {
                 
-                var identifier = ParseIdentfier();
+                var identifier = ParseIdentifier();
 
                 if (Taste(TokenType.LeftPerenthesisChar))
                 {
@@ -531,7 +549,7 @@ public class Parser(ErrorHandler errHandler)
                     {
                         var i = new AssignmentExpressionNode();
 
-                        i.AppendChild(ParseIdentfier());
+                        i.AppendChild(ParseIdentifier());
                         i.AppendChild(DietAsNode(TokenType.EqualsChar,
                             t => throw new Exception("Expected assignment operator")));
                         i.AppendChild(ParseExpression());
@@ -657,7 +675,7 @@ public class Parser(ErrorHandler errHandler)
     {
         var range = new RangeExpressionNode();
 
-        range.AppendChild(ParseIdentfier()); // <identifier>
+        range.AppendChild(ParseIdentifier()); // <identifier>
         range.AppendChild(DietAsNode(TokenType.InKeyword, (t)
             => throw new Exception($"Unexpected token '{Bite()}'"))); // in
 
@@ -678,7 +696,7 @@ public class Parser(ErrorHandler errHandler)
         nodebase.AppendChild(DietAsNode(TokenType.FromKeyword, (t)
             => throw new Exception($"Unexpected token '{Bite()}'")));
 
-        nodebase.AppendChild(ParseIdentfier());
+        nodebase.AppendChild(ParseIdentifier());
 
         nodebase.AppendChild(DietAsNode(TokenType.ImportKeyword, (t)
             => throw new Exception($"Unexpected token '{Bite()}'")));
@@ -695,10 +713,10 @@ public class Parser(ErrorHandler errHandler)
             {
                 var item = new ImportItemNode();
                 
-                item.AppendChild(ParseIdentfier());
+                item.AppendChild(ParseIdentifier());
                 if (TryEatAsNode(TokenType.AsKeyword, out var asNode)) {
                     item.AppendChild(asNode);
-                    item.AppendChild(ParseIdentfier());
+                    item.AppendChild(ParseIdentifier());
                 }
 
                 collection.AppendChild(item);
@@ -813,22 +831,22 @@ public class Parser(ErrorHandler errHandler)
     {
         var ti = new TypedIdentifierNode();
         ti.AppendChild(ParseType());
-        ti.AppendChild(ParseSingleIdentfier());
+        ti.AppendChild(ParseSingleIdentifier());
         return ti;
     }
 
-    private IdentifierCollectionNode ParseIdentfier()
+    private IdentifierCollectionNode ParseIdentifier()
     {
         var collection = new IdentifierCollectionNode(TryEat(TokenType.DotChar, out _));
 
-        collection.AppendChild(ParseSingleIdentfier());
+        collection.AppendChild(ParseSingleIdentifier());
 
         while (TryEatAsNode(TokenType.DotChar, out _))
             collection.AppendChild(new IdentifierNode(Eat()));
 
         return collection;
     }
-    private IdentifierNode ParseSingleIdentfier()
+    private IdentifierNode ParseSingleIdentifier()
     {
         return new IdentifierNode(Diet(TokenType.Identifier, (e) => {}));
     }

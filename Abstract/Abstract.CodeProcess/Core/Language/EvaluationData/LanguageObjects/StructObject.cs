@@ -1,5 +1,6 @@
 using System.Text;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
@@ -18,6 +19,8 @@ public class StructObject(string[] g, string n, StructureDeclarationNode synnode
     public bool Interface { get; set; } =  false;
     public bool Final { get; set; } =  false;
     
+    public TypeReference? Extends { get; set; }
+    
     public readonly StructureDeclarationNode syntaxNode = synnode;
     
     public override string ToString()
@@ -29,7 +32,9 @@ public class StructObject(string[] g, string n, StructureDeclarationNode synnode
         if (Internal) sb.Append("internal ");
         sb.Append(Abstract ? "abstract " : "concrete ");
 
-        sb.AppendLine($"Structure '{Name}' ('{string.Join('.', Global)}'):");
+        sb.Append($"Structure '{Name}' ('{string.Join('.', Global)}')");
+        if (Extends != null) sb.Append($" extends {Extends}");
+        sb.AppendLine(":");
         
         foreach (var c in Children)
         {

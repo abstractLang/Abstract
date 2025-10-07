@@ -18,6 +18,11 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Statement;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
+using Abstract.Realizer.Builder.References;
+using IntegerTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.Integer.IntegerTypeReference;
+using ReferenceTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.ReferenceTypeReference;
+using SliceTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.SliceTypeReference;
+using TypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.TypeReference;
 
 namespace Abstract.CodeProcess;
 
@@ -67,6 +72,15 @@ public partial class Analyzer
     }
     private void LazyScanStructureMeta(StructObject structure)
     {
+        if (structure.Extends != null)
+        {
+            structure.Extends = SolveTypeLazy(structure.Extends, structure);
+            if (structure.Extends is UnsolvedTypeReference)
+                throw new NotImplementedException();
+            if (structure.Extends is not SolvedStructTypeReference)
+                throw new Exception("Trying to extend a non-struct type");
+        }
+        
         foreach (var i in structure.Children)
         {
             switch (i)
@@ -75,7 +89,9 @@ public partial class Analyzer
                     if (!IsSolved(field.Type)) field.Type = SolveTypeLazy(field.Type, structure);
                     break;
                 
-                case FunctionObject function: break; // Not handled here!
+                case FunctionGroupObject group:
+                case FunctionObject function:
+                    break; // Not handled here!
                 default: throw new UnreachableException();
             }
         }

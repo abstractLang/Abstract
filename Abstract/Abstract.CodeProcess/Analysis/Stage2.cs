@@ -1,8 +1,12 @@
+using System.Diagnostics;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.AttributeReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Misc;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
@@ -182,9 +186,35 @@ public partial class Analyzer
         function.ReturnType = node.ReturnType == null
             ? new VoidTypeReference()
             : SolveShallowType(node.ReturnType);
-
+        
     }
     private void UnwrapStructureMeta(StructObject structure)
     {
+        var node = structure.syntaxNode;
+
+        if (node.Children.Length == 4)
+        {
+            var extendsImplements = new Queue<SyntaxNode>(((ExtendsImplementsNode)node.Children[2]).Children);
+
+            IdentifierCollectionNode? extendsVal = null;
+            List<IdentifierCollectionNode> implementsVal = [];
+
+            if (extendsImplements.Count > 0 && extendsImplements.Dequeue() is TokenNode { Value: "extends" })
+            {
+                var identifier = (IdentifierCollectionNode)extendsImplements.Dequeue();
+                if (identifier.incomplete) throw new Exception($"Cannot complete identifier {identifier}");
+                extendsVal = identifier;
+            }
+            
+            if (extendsImplements.Count > 0 && extendsImplements.Dequeue() is TokenNode { Value: "implements" })
+            {
+                while (extendsImplements.Count > 0)
+                {
+                    throw new UnreachableException();
+                }
+            }
+
+            structure.Extends = extendsVal == null ? null : new UnsolvedTypeReference(extendsVal);
+        }
     }
 }

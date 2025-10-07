@@ -111,7 +111,7 @@ public partial class Analyzer
         LangObject obj = node switch
         {
             FunctionDeclarationNode @funcnode => RegisterFunction(parent, funcnode),
-            TypeDefinitionItemNode @typedefitem => RegisterTypedefItem(parent, typedefitem),
+            TypeDefinitionItemNode @item => RegisterTypedefItem(parent, item),
             
             _ => throw new NotImplementedException()
         };
@@ -244,15 +244,31 @@ public partial class Analyzer
     }
     private TypedefItemObject RegisterTypedefItem(LangObject? parent, TypeDefinitionItemNode typedefitem)
     {
-        string[] g = parent != null
-            ? [..parent.Global, typedefitem.Identifier.Value]
-            : [typedefitem.Identifier.Value];
+        switch (typedefitem)
+        {
+            case TypeDefinitionNumericItemNode @num:
+            {
+                var number = num.Value.Value;
+                TypedefItemObject tydi = new(null!, number.ToString(), num);
+                parent?.AppendChild(tydi);
+
+                return tydi;
+            } 
+
+            case TypeDefinitionNamedItemNode @named:
+            {
+                string[] g = parent != null
+                    ? [..parent.Global, named.Identifier.Value]
+                    : [named.Identifier.Value];
         
-        TypedefItemObject typdi = new(g, typedefitem.Identifier.Value, typedefitem);
-        parent?.AppendChild(typdi);
-        _globalReferenceTable.Add(g, typdi);
+                TypedefItemObject typdi = new(g, named.Identifier.Value, named);
+                parent?.AppendChild(typdi);
+                _globalReferenceTable.Add(g, typdi);
         
-        return typdi;
+                return typdi;       
+            }
+            default: throw new UnreachableException();
+        }
     }
     private FieldObject RegisterField(LangObject? parent, TopLevelVariableNode variable)
     {

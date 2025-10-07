@@ -18,8 +18,11 @@ using Abstract.Realizer.Builder;
 using Abstract.Realizer.Builder.Language.Omega;
 using Abstract.Realizer.Builder.ProgramMembers;
 using Abstract.Realizer.Builder.References;
+
 using IntegerTypeReference = Abstract.Realizer.Builder.References.IntegerTypeReference;
 using AbstractTypeReference = Abstract.Realizer.Builder.References.TypeReference;
+using AnytypeTypeReference = Abstract.Realizer.Builder.References.AnytypeTypeReference;
+using BuilderAnytypeTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.AnytypeTypeReference;
 using BuilderTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.TypeReference;
 using BuilderStringTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.StringTypeReference;
 using BuilderReferenceTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.ReferenceTypeReference;
@@ -49,6 +52,10 @@ public class Compressor
             {
                 case BaseFunctionBuilder @builder:
                     UnwrapFunction(builder, (FunctionObject)source);
+                    break;
+                
+                case StructureBuilder @builder:
+                    UnwrapStruct(builder, (StructObject)source);
                     break;
             
                 case StaticFieldBuilder @builder:
@@ -96,10 +103,16 @@ public class Compressor
                 var name = string.Join('.', stobj.Global[(langParent?.Global.Length ?? 0) ..]);
                 var s = parentnmsp.AddStructure(name);
                 _membersMap.Add(langObject, s);
-
+                
                 foreach (var i in stobj.Children)
                     CreateMembersRecursive(s, stobj, i);
                 
+            } break;
+            case TypedefObject @tdobj when parent is NamespaceBuilder @parentnmsp:
+            {
+                var name = string.Join('.', tdobj.Global[(langParent?.Global.Length ?? 0) ..]);
+                TypeDefinitionBuilder td = parentnmsp.AddTypedef(name);
+                _membersMap.Add(langObject, td);
             } break;
             case FunctionObject @fnobj   when parent is NamespaceBuilder @parentnmsp:
             {
@@ -112,7 +125,7 @@ public class Compressor
                 _membersMap.Add(langObject, fn);
                 
             } break;
-            case FieldObject @vobj    when parent is NamespaceBuilder @parentnmsp:
+            case FieldObject @vobj       when parent is NamespaceBuilder @parentnmsp:
             {
                 var name = string.Join('.', vobj.Global[(langParent?.Global.Length ?? 0) ..]);
                 var fn = parentnmsp.AddStaticField(name);
@@ -127,7 +140,7 @@ public class Compressor
                 _membersMap.Add(langObject, fn);
                 
             } break;
-            case FieldObject @vobj    when parent is StructureBuilder @parentstruc:
+            case FieldObject @vobj       when parent is StructureBuilder @parentstruc:
             {
                 var name = string.Join('.', vobj.Global[(langParent?.Global.Length ?? 0) ..]);
                 var fn = parentstruc.AddField(name);
@@ -182,7 +195,11 @@ public class Compressor
         
 
     }
-
+    private void UnwrapStruct(StructureBuilder builder, StructObject source)
+    {
+        if (source.Extends is SolvedStructTypeReference @extendstruc)
+            builder.Extends = (StructureBuilder)GetObjectBuilder(extendstruc.Struct);
+    }
     private void UnwrapStaticField(StaticFieldBuilder builder, FieldObject source)
     {
         builder.Type = source.Type switch
@@ -195,13 +212,7 @@ public class Compressor
     }
     private void UnwrapInstanceField(InstanceFieldBuilder builder, FieldObject source)
     {
-        builder.Type = source.Type switch
-        {
-            RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
-            SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
-            UnsolvedTypeReference => throw new UnreachableException("Local type should not be unsolved at this step!"),
-            _ => throw new NotImplementedException(),
-        };
+        builder.Type = ConvType(source.Type);
     }
     
     private void UnwrapFunctionBody(OmegaBytecodeBuilder builder, FunctionObject source)
@@ -485,9 +496,11 @@ public class Compressor
         return tref switch
         {
             RuntimeIntegerTypeReference @ri => new IntegerTypeReference(ri.Signed, ri.PtrSized ? null : ri.BitSize),
+            BuilderAnytypeTypeReference => new AnytypeTypeReference(),
             VoidTypeReference => null!,
             
             SolvedStructTypeReference @ss => new NodeTypeReference((StructureBuilder)GetObjectBuilder(ss.Struct)),
+            SolvedTypedefTypeReference @st => new NodeTypeReference((TypeDefinitionBuilder)GetObjectBuilder(st.Typedef)),
             BuilderStringTypeReference @sr => new SliceTypeReference(new IntegerTypeReference(false, 8)),
             BuilderReferenceTypeReference @rr => new ReferenceTypeReference(ConvType(rr.InternalType)),
             
