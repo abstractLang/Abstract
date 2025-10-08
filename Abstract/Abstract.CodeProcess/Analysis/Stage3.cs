@@ -378,9 +378,9 @@ public partial class Analyzer
                 langobj = res2.Value.Item2;
                 break;
             }
-
-            // Search in imports
-            var res3 = SearchReference_Import(reference[0], ctx.Parent.Namespace);
+            
+            // Search in namespace
+            var res3 = SearchReference_ChildrenOf(reference[0], ctx.Parent.Namespace);
             if (res3.HasValue)
             {
                 referenceChain.Add(res3.Value.Item1);
@@ -388,9 +388,18 @@ public partial class Analyzer
                 break;
             }
 
+            // Search in imports
+            var res4 = SearchReference_Import(reference[0], ctx.Parent.Namespace);
+            if (res4.HasValue)
+            {
+                referenceChain.Add(res4.Value.Item1);
+                langobj = res4.Value.Item2;
+                break;
+            }
+
             // Search in globals
-            var res4 = SearchReference_Global(reference);
-            if (res4 != null) referenceChain.Add(res4);
+            var res5 = SearchReference_Global(reference);
+            if (res5 != null) referenceChain.Add(res5);
             goto end;
             
         } while (false);
@@ -462,7 +471,7 @@ public partial class Analyzer
 
         do // capturing root
         {
-            // Vhecking if is a sibling
+            // Checking if is a sibling
             var res1 = SearchReference_ChildrenOf(reference[0], obj.Parent);
             if (res1.HasValue)
             {
@@ -470,17 +479,25 @@ public partial class Analyzer
                 break;
             }
             
-            // Checking if is a import
-            var res2 = SearchReference_Import(reference[0], obj.Namespace);
+            // Checking if is inside namespace
+            var res2 = SearchReference_ChildrenOf(reference[0], obj.Namespace);
             if (res2.HasValue)
             {
                 referenceChain.Add(res2.Value.Item1);
                 break;
             }
             
+            // Checking if is a import
+            var res3 = SearchReference_Import(reference[0], obj.Namespace);
+            if (res3.HasValue)
+            {
+                referenceChain.Add(res3.Value.Item1);
+                break;
+            }
+            
             // Checking if is a global
-            var res3 = SearchReference_Global(reference);
-            if (res3 != null) referenceChain.Add(res3);
+            var res4 = SearchReference_Global(reference);
+            if (res4 != null) referenceChain.Add(res4);
             goto end;
             
         } while (false);

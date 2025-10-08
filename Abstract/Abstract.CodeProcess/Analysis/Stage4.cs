@@ -365,6 +365,7 @@ public partial class Analyzer
     {
         switch (typeTo)
         { 
+            case AnytypeTypeReference: return Suitability.Perfect;
             
             case RuntimeIntegerTypeReference intParam:
                 switch (typeFrom)

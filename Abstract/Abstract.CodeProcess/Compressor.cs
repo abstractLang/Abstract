@@ -116,6 +116,8 @@ public class Compressor
             } break;
             case FunctionObject @fnobj   when parent is NamespaceBuilder @parentnmsp:
             {
+                if (fnobj.Extern.domain is "__abstract.compiler.internal__") return;
+
                 var name = string.Join('.', fnobj.Global[(langParent?.Global.Length ?? 0) ..]);
                 
                 BaseFunctionBuilder fn = fnobj.Extern == (null, null)
@@ -135,10 +137,16 @@ public class Compressor
             
             case FunctionObject @fnobj   when parent is StructureBuilder @parentstruc:
             {
+                if (fnobj.Extern.domain is "__abstract.compiler.internal__") return;
+
                 var name = string.Join('.', fnobj.Global[(langParent?.Global.Length ?? 0) ..]);
-                var fn = parentstruc.AddField(name);
-                _membersMap.Add(langObject, fn);
+                BaseFunctionBuilder fn;
+
+                if (fnobj.Abstract) fn = parentstruc.AddAbstractFunction(name);
+                else fn = parentstruc.AddFunction(name);
                 
+                _membersMap.Add(langObject, fn);
+
             } break;
             case FieldObject @vobj       when parent is StructureBuilder @parentstruc:
             {
@@ -164,7 +172,7 @@ public class Compressor
     
     private void UnwrapFunction(BaseFunctionBuilder builder, FunctionObject source)
     {
-
+        
         foreach (var p in source.Parameters)
         {
             AbstractTypeReference typeref = ConvType(p.Type);
@@ -180,9 +188,15 @@ public class Compressor
 
                 fb.ExportSymbol = source.Export;
                 
-                if (source.Body == null) return;
+                if (source.Body == null) throw new Exception("Concrete function must have a body");
                 UnwrapFunctionBody(fb.GetOrCreateOmegaBuilder(), source);
                 
+            } break;
+
+            case AbstractFunctionBuilder @afb:
+            {
+                if (source.Body != null)
+                    throw new Exception("Abstract function cannot have a body, use @virtual instead");
             } break;
             
             case ImportedFunctionBuilder @ifb:
@@ -235,9 +249,7 @@ public class Compressor
                 break;
             
             case IRInvoke @iv:
-                UnwrapFunctionBody_Call(builder, iv.Target);
-                foreach (var i in iv.Arguments) UnwrapFunctionBody_IRNode(builder, i);
-
+                UnwrapFunctionBody_Call(builder, iv);
                 break;
 
             case IRIntegerLiteral @itlit:
@@ -326,7 +338,7 @@ public class Compressor
             
             case IRNewObject @newobj:
             {
-                builder.Writer.LdNewObject((TypeBuilder)GetTypeReferenceBuilder(newobj.Type));
+                builder.Writer.LdNewObject((StructureBuilder)GetTypeReferenceBuilder(newobj.Type));
                 foreach (var ia in newobj.InlineAssignments) UnwrapFunctionBody_IRNode(builder, ia);
             } break;
             
@@ -430,14 +442,31 @@ public class Compressor
         }
     }
 
-    private void UnwrapFunctionBody_Call(OmegaBytecodeBuilder builder, IRExpression reference)
+    private void UnwrapFunctionBody_Call(OmegaBytecodeBuilder builder, IRInvoke invoke)
     {
+        var reference = invoke.Target;
         if (reference is not IRSolvedReference @solved) throw new Exception();
         
         switch (solved.Reference)
         {
             case SolvedFunctionReference @f:
-                builder.Writer.Call((BaseFunctionBuilder)GetObjectBuilder(f.Function));
+                if (f.Function.Extern.domain is "__abstract.compiler.internal__")
+                {
+                    switch (f.Function.Extern.symbol)
+                    {
+                        case "type_of":
+                        {
+                            builder.Writer.LdTypeRefOf();
+                            UnwrapFunctionBody_IRNode(builder, invoke.Arguments[0]);
+                        } break;
+                        default: throw new Exception($"Invalid symbol {f.Function.Extern.symbol}");
+                    }
+                }
+                else
+                {
+                    builder.Writer.Call((BaseFunctionBuilder)GetObjectBuilder(f.Function));
+                    foreach (var i in invoke.Arguments) UnwrapFunctionBody_IRNode(builder, i);
+                }
                 break;
                     
             default: throw new NotImplementedException();
@@ -496,13 +525,15 @@ public class Compressor
         return tref switch
         {
             RuntimeIntegerTypeReference @ri => new IntegerTypeReference(ri.Signed, ri.PtrSized ? null : ri.BitSize),
-            BuilderAnytypeTypeReference => new AnytypeTypeReference(),
-            VoidTypeReference => null!,
+            BuilderStringTypeReference @sr => new SliceTypeReference(new IntegerTypeReference(false, 8)),
+            BuilderReferenceTypeReference @rr => new ReferenceTypeReference(ConvType(rr.InternalType)),
             
             SolvedStructTypeReference @ss => new NodeTypeReference((StructureBuilder)GetObjectBuilder(ss.Struct)),
             SolvedTypedefTypeReference @st => new NodeTypeReference((TypeDefinitionBuilder)GetObjectBuilder(st.Typedef)),
-            BuilderStringTypeReference @sr => new SliceTypeReference(new IntegerTypeReference(false, 8)),
-            BuilderReferenceTypeReference @rr => new ReferenceTypeReference(ConvType(rr.InternalType)),
+            
+            BuilderAnytypeTypeReference => new AnytypeTypeReference(),
+            TypeTypeReference => new ProgramMemberTypeReference(),
+            VoidTypeReference => null!,
             
             _ => throw new UnreachableException()
         };
