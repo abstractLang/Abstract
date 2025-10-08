@@ -1,0 +1,5 @@
+@extern("__abstract.compiler.internal__", "import(0)")
+@comptime func importExtern(string symbol) *anytype
+
+@extern("__abstract.compiler.internal__", "import(1)")
+@comptime func importExtern(string domain, string symbol) *anytype

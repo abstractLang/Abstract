@@ -1,5 +1,6 @@
 from Std.Console import
 from Std.Memory import
+from Std.Types import
 
 @export("main") func main() void {
 
@@ -79,8 +80,7 @@ from Std.Memory import
 
 	writeln(monologue)
 
-	# For some reason, this is valid syntax but generates a
-	# internal runtime error a.a
+	# For some reason, this is valid syntax but generates an internal error a.a
 	#let string a = ((let string b = "stringB") + (let string c = "stringC"))
 	#writeln(a)
 
@@ -97,7 +97,14 @@ from Std.Memory import
 	writeln(valueToChange.h)
 	writeln(valueToChange.i)
 
+	# Testing:
+	#	- Memory allocation
+	#	- Extended types
+	#	- Virtual tables
 	let WasmAllocator allocator = new WasmAllocator()
+
+	# Testing type metadata (this should be also hardly tested in backend!)
+	#let type allocType = typeOf(allocator)
 
 	return
 }
