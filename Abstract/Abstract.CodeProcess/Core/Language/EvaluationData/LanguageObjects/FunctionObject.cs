@@ -32,6 +32,7 @@ public class FunctionObject(string[] g, string n, FunctionDeclarationNode synnod
     public bool Generic { get; set; } = false;
     public bool ConstExp { get; set; } = false;
 
+    public uint VirtualIndex = 0;
 
     public TypeReference ReturnType = null!;
     public ParameterObject[] Parameters => [.. _parameters];

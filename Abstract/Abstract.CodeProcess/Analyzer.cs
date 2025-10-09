@@ -32,7 +32,7 @@ public partial class Analyzer(ErrorHandler handler)
         if (dumpGlobalTable) DumpGlobalTable();
         
         // Stage 3
-        LazyScanObjectHeaders();
+        ScanObjectHeaders();
         ScanObjectBodies();
         
         // Stage 4

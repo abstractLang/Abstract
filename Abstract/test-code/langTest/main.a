@@ -169,3 +169,9 @@ struct StructPackingTest {
 	@public let u32 i
 
 }
+
+# Uncomment these to test cyclic inheritence detection
+#struct CyclicA extends CyclicB {}
+#struct CyclicB extends CyclicC {}
+#struct CyclicC extends CyclicA {}
+#struct CyclicD extends CyclicC {}

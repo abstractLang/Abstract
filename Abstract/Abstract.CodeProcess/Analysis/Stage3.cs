@@ -18,7 +18,7 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Statement;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
-using Abstract.Realizer.Builder.References;
+
 using IntegerTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.Integer.IntegerTypeReference;
 using ReferenceTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.ReferenceTypeReference;
 using SliceTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.SliceTypeReference;
@@ -37,25 +37,28 @@ namespace Abstract.CodeProcess;
 
 public partial class Analyzer
 {
-    private void LazyScanObjectHeaders()
+    private void ScanObjectHeaders()
     {
         foreach (var i in _globalReferenceTable)
         {
             switch (i.Value)
             {
-                case NamespaceObject @nmsp: LazyScanNamespaceMeta(nmsp); break;
-                case FunctionObject @funcobj: LazyScanFunctionMeta(funcobj); break;
-                case StructObject @structobj: LazyScanStructureMeta(structobj); break;
+                case NamespaceObject @nmsp: ScanNamespaceMeta(nmsp); break;
+                case FunctionObject @funcobj: ScanFunctionMeta(funcobj); break;
+                case StructObject @structobj: ScanStructureMeta(structobj); break;
                 
                 case FunctionGroupObject @funcgroup:
-                    foreach (var i2 in funcgroup.Overloads) LazyScanFunctionMeta(i2);
+                    foreach (var i2 in funcgroup.Overloads) ScanFunctionMeta(i2);
                     break;
             }
         }
+
+        var structsSortedList = TopologicalSort(_globalReferenceTable.Values.OfType<StructObject>());
+        foreach (var structs in structsSortedList) LazyScanStructureMeta(structs);
     }
     
     
-    private void LazyScanNamespaceMeta(NamespaceObject nmsp)
+    private void ScanNamespaceMeta(NamespaceObject nmsp)
     {
         foreach (var n in nmsp.Imports)
         {
@@ -70,7 +73,7 @@ public partial class Analyzer
             if (n.Value.specific != null) throw new UnreachableException();
         }
     }
-    private void LazyScanStructureMeta(StructObject structure)
+    private void ScanStructureMeta(StructObject structure)
     {
         if (structure.Extends != null)
         {
@@ -92,11 +95,12 @@ public partial class Analyzer
                 case FunctionGroupObject group:
                 case FunctionObject function:
                     break; // Not handled here!
+
                 default: throw new UnreachableException();
             }
         }
     }
-    private void LazyScanFunctionMeta(FunctionObject function)
+    private void ScanFunctionMeta(FunctionObject function)
     {
         foreach (var t in function.Parameters)
         {
@@ -105,7 +109,6 @@ public partial class Analyzer
         if (!IsSolved(function.ReturnType))
             function.ReturnType = SolveTypeLazy(function.ReturnType, function);
     }
-
     
     private void ScanObjectBodies()
     {
@@ -327,6 +330,69 @@ public partial class Analyzer
         };
     }
 
+
+
+    private void LazyScanStructureMeta(StructObject structure)
+    {
+        // This functions ensures that the structure's dependency tree
+        // was already scanned!
+
+        var parent = (structure.Extends as SolvedStructTypeReference)?.Struct;
+        var virtualCount = EnumerateFunctions(structure.Children).Count(e => e.Abstract || e.Virtual);
+        virtualCount += parent?.VirtualTable.Length ?? 0;
+
+        structure.VirtualTable = new (FunctionObject, FunctionObject?, bool)[virtualCount];
+        if (parent != null) foreach (var (idx, e) in parent.VirtualTable.Index())
+            structure.VirtualTable[idx].parent = e.overrided ?? e.parent;
+        
+        var virtualStartAt = parent?.VirtualTable.Length ?? 0;
+
+        uint i = 0;
+        foreach (var func in EnumerateFunctions(structure.Children))
+        {
+            // Checking if it is virtual, so a new entries
+            // Should be allocated in the vtable
+            if (func.Abstract || func.Virtual)
+            {
+                structure.VirtualTable[i].parent = func;
+                structure.VirtualTable[i].overrided = func;
+                func.VirtualIndex = i;
+                i++;
+            }
+            
+            // Solving a override function
+            if (func.Override) SolveOverridingFunction(func, structure);
+        }
+
+    }
+
+    private void SolveOverridingFunction(FunctionObject func, StructObject parent)
+    {
+        foreach (var (i, e) in parent.VirtualTable.Index())
+        {
+            var basefunc = e.parent;
+            
+            // I Suppose it is impossible to override a already
+            // overrided function in the same structure, so skipping
+            // here will be quicker
+            if (e.overrided != null) continue;
+            if (func.Name != basefunc.Name) continue;
+            if (func.Parameters.Length != basefunc.Parameters.Length) continue;
+
+            for (var j = 0; j < func.Parameters.Length; j++)
+            {
+                if (CalculateTypeSuitability(func.Parameters[j].Type, basefunc.Parameters[j].Type, false)
+                    != Suitability.Perfect) continue;
+            }
+            
+            parent.VirtualTable[i].overrided = basefunc;
+            func.VirtualIndex = (uint)i;
+            return;
+        }
+
+        throw new Exception("No virtual function to override");
+    }
+    
     
     private IRReference SearchReference(ExpressionNode node, ExecutionContextData ctx)
     {
@@ -669,4 +735,32 @@ public partial class Analyzer
         }
         return typeref;
     }
+
+    private List<StructObject> TopologicalSort(IEnumerable<StructObject> structs)
+    {
+        var visited = new HashSet<StructObject>();
+        var visiting = new HashSet<StructObject>();
+        var ordered = new List<StructObject>();
+
+        foreach (var s in structs) Visit(s);
+        return ordered;
+
+        void Visit(StructObject s)
+        {
+            if (visited.Contains(s))
+                return;
+
+            if (!visiting.Add(s))
+                throw new Exception($"Cyclic dependency detected at struct '{string.Join('.', s.Global)}'");
+
+            var parent = (s.Extends as SolvedStructTypeReference)?.Struct;
+            if (parent != null)
+                Visit(parent);
+
+            visiting.Remove(s);
+            visited.Add(s);
+            ordered.Add(s);
+        }
+    }
+
 }

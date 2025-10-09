@@ -20,6 +20,7 @@ public class StructObject(string[] g, string n, StructureDeclarationNode synnode
     public bool Final { get; set; } =  false;
     
     public TypeReference? Extends { get; set; }
+    public (FunctionObject parent, FunctionObject? overrided, bool isSealed)[] VirtualTable { get; set; }
     
     public readonly StructureDeclarationNode syntaxNode = synnode;
     

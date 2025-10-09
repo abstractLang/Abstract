@@ -60,13 +60,13 @@ public partial class Analyzer
             i.Type = SolveTypeLazy(i.Type, function);
         }
     }
-
     private void FieldSemaAnal(FieldObject field)
     {
         if (IsSolved(field.Type)) return;
         field.Type = SolveTypeLazy(field.Type, field);
     }
 
+    
     private void BlockSemaAnal(IRBlock block, FunctionObject function)
     {
         var ctx = new IrBlockExecutionContextData(function);
@@ -294,147 +294,13 @@ public partial class Analyzer
     }
     private IRNode NodeSemaAnal_Return(IRReturn node, IrBlockExecutionContextData ctx)
     {
-        if (node.Value != null)
-        {
-            node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
-            node.Value = SolveTypeCast(ctx.Function.ReturnType!, node.Value, false);
-        }
+        if (node.Value == null) return node;
+        
+        node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
+        node.Value = SolveTypeCast(ctx.Function.ReturnType!, node.Value, false);
         return node;
     }
     
     
-    /// <summary>
-    /// With a desired type and a value node,
-    /// returns a node that explicitly solves
-    /// any applicable casting.
-    /// Value must already have been evaluated!
-    /// </summary>
-    /// <param name="typeTo"> Target type </param>
-    /// <param name="value"> Value to cast </param>
-    /// <returns></returns>
-    private IRExpression SolveTypeCast(TypeReference typeTo, IRExpression value, bool @explicit = false)
-    {
-        if (typeTo is RuntimeIntegerTypeReference typetoRi)
-        {
-            if (value is IRIntegerLiteral @lit)
-                    return new IRIntegerLiteral(lit.Origin, lit.Value, typetoRi.PtrSized? null : typetoRi.BitSize);
-
-            var valType = GetEffectiveTypeReference(value);
-            if (valType is RuntimeIntegerTypeReference valueRi)
-            {
-                // If same type, do nothing
-                if (typetoRi.BitSize == valueRi.BitSize
-                    && typetoRi.Signed == valueRi.Signed) {}
-                
-                // If pointer sized, delegate check for backend
-                else if (valueRi.PtrSized || typetoRi.PtrSized)
-                    return new IRIntCast(value.Origin, value, typetoRi);
-
-                var val = valueRi;
-                var tar = typetoRi;
-                var o = value.Origin;
-                
-                if (val.Signed == tar.Signed)
-                {
-                    if (val.BitSize == tar.BitSize) return value;
-                    if (val.BitSize < tar.BitSize) return new IRIntExtend(o, value, tar);
-                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
-                }
-                else if (!val.Signed && tar.Signed)
-                {
-                    
-                    if (val.BitSize == tar.BitSize && @explicit) return new IRIntCast(o, value, tar);
-                    if (val.BitSize < tar.BitSize) return new IRIntExtend(o, value, tar);
-                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
-                }
-                else
-                {
-                    if (val.BitSize == tar.BitSize && @explicit) return new IRIntCast(o, value, tar);
-                    if (val.BitSize < tar.BitSize && @explicit) return new IRIntExtend(o, value, tar);
-                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
-                }
-                    
-                throw new Exception($"Cannot convert type {val} to {tar} in {value.Origin:pos}");
-            }
-        }
-        
-        return value;
-    }
     
-    private Suitability CalculateTypeSuitability(TypeReference typeTo, TypeReference typeFrom, bool allowImplicit)
-    {
-        switch (typeTo)
-        { 
-            case AnytypeTypeReference: return Suitability.Perfect;
-            
-            case RuntimeIntegerTypeReference intParam:
-                switch (typeFrom)
-                {
-                    case ComptimeIntegerTypeReference: return Suitability.Perfect;
-                    case RuntimeIntegerTypeReference intArg:
-                    {
-                        if (intParam.PtrSized && intArg.PtrSized)
-                        {
-                            if (intParam.Signed == intArg.Signed) return Suitability.Perfect;
-                            if (allowImplicit) return Suitability.NeedsSoftCast;
-                        }
-                    
-                        if (intParam.PtrSized || intArg.PtrSized) return Suitability.NeedsSoftCast;
-                    
-                        if (intParam.BitSize == intArg.BitSize
-                            && intParam.Signed == intArg.Signed) return Suitability.Perfect;
-
-                        var val = intArg;
-                        var tar = intParam;
-                
-                        if (val.Signed == tar.Signed)
-                        {
-                            if (val.BitSize == tar.BitSize) return Suitability.Perfect;
-                            if (val.BitSize < tar.BitSize) return Suitability.NeedsSoftCast;
-                            if (val.BitSize > tar.BitSize && @allowImplicit) return Suitability.NeedsSoftCast;
-                            return 0;
-                        }
-                        if (!val.Signed && tar.Signed)
-                        {
-
-                            if (val.BitSize == tar.BitSize && @allowImplicit) return Suitability.NeedsHardCast;
-                            if (val.BitSize < tar.BitSize) return Suitability.NeedsHardCast;
-                            if (val.BitSize > tar.BitSize && @allowImplicit) return Suitability.NeedsHardCast;
-                            return 0;
-                        }
-                        return allowImplicit
-                            ? Suitability.NeedsHardCast
-                            : Suitability.None;
-                    }
-                    default: return Suitability.None;
-                }
-
-            case StringTypeReference stringParam:
-                if (typeFrom is StringTypeReference @strArg
-                    && (strArg.Encoding == StringEncoding.Undefined
-                        || strArg.Encoding == stringParam.Encoding)) return Suitability.Perfect;
-                return Suitability.None;
-
-            case ReferenceTypeReference @refe:
-                return typeFrom is ReferenceTypeReference @refArg 
-                       && CalculateTypeSuitability(refe.InternalType, refArg.InternalType, false) == Suitability.Perfect
-                    ? Suitability.Perfect
-                    : Suitability.None;
-            
-            case SolvedStructTypeReference @solvedstruct:
-                if (typeFrom is SolvedStructTypeReference @solvedstructarg)
-                    return (Suitability)solvedstruct.CalculateSuitability(solvedstructarg);
-                return Suitability.None;
-            
-        }
-        throw new UnreachableException();
-    }
-
-    private enum Suitability
-    {
-        None = 0,
-        NeedsHardCast = 1,
-        NeedsSoftCast = 2,
-        Perfect = 3
-    }
 }

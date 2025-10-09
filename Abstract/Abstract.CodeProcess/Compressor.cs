@@ -140,10 +140,11 @@ public class Compressor
                 if (fnobj.Extern.domain is "__abstract.compiler.internal__") return;
 
                 var name = string.Join('.', fnobj.Global[(langParent?.Global.Length ?? 0) ..]);
-                BaseFunctionBuilder fn;
-
-                if (fnobj.Abstract) fn = parentstruc.AddAbstractFunction(name);
-                else fn = parentstruc.AddFunction(name);
+                var isvirt = fnobj.Abstract || fnobj.Virtual || fnobj.Override;
+                
+                BaseFunctionBuilder fn = isvirt
+                    ? parentstruc.AddVirtualFunction(name, fnobj.VirtualIndex) 
+                    : parentstruc.AddFunction(name);
                 
                 _membersMap.Add(langObject, fn);
 
@@ -188,15 +189,11 @@ public class Compressor
 
                 fb.ExportSymbol = source.Export;
                 
-                if (source.Body == null) throw new Exception("Concrete function must have a body");
+                if (fb is VirtualFunctionBuilder) break;
+                if (source.Body == null) throw new Exception("Concrete static function must have a body");
+                
                 UnwrapFunctionBody(fb.GetOrCreateOmegaBuilder(), source);
                 
-            } break;
-
-            case AbstractFunctionBuilder @afb:
-            {
-                if (source.Body != null)
-                    throw new Exception("Abstract function cannot have a body, use @virtual instead");
             } break;
             
             case ImportedFunctionBuilder @ifb:
@@ -527,6 +524,7 @@ public class Compressor
             RuntimeIntegerTypeReference @ri => new IntegerTypeReference(ri.Signed, ri.PtrSized ? null : ri.BitSize),
             BuilderStringTypeReference @sr => new SliceTypeReference(new IntegerTypeReference(false, 8)),
             BuilderReferenceTypeReference @rr => new ReferenceTypeReference(ConvType(rr.InternalType)),
+            BooleanTypeReference => new IntegerTypeReference(false, 1),
             
             SolvedStructTypeReference @ss => new NodeTypeReference((StructureBuilder)GetObjectBuilder(ss.Struct)),
             SolvedTypedefTypeReference @st => new NodeTypeReference((TypeDefinitionBuilder)GetObjectBuilder(st.Typedef)),
