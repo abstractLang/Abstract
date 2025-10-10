@@ -205,16 +205,14 @@ public partial class Analyzer
                 if (identifier.incomplete) throw new Exception($"Cannot complete identifier {identifier}");
                 extendsVal = identifier;
             }
-            
+
             if (extendsImplements.Count > 0 && extendsImplements.Dequeue() is TokenNode { Value: "implements" })
             {
-                while (extendsImplements.Count > 0)
-                {
-                    throw new UnreachableException();
-                }
+                while (extendsImplements.Count > 0) throw new UnreachableException();
             }
 
             structure.Extends = extendsVal == null ? null : new UnsolvedTypeReference(extendsVal);
         }
+        
     }
 }

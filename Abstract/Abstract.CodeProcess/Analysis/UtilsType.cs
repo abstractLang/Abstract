@@ -42,11 +42,15 @@ public partial class Analyzer
                 // FIXME it should in reality return a FunctionTypeReference,
                 // not the function's return type
                 GetEffectiveTypeReference(invoke.Target),
+            
             IRBinaryExp @exp => exp.ResultType
-                                ?? throw new UnreachableException("This function should not be called when this value is null"),
+                                ?? throw new UnreachableException(
+                                    "This function should not be called when this value is null"),
+            
             IRUnaryExp @unexp => unexp.Prefix != IRUnaryExp.UnaryPrefix.Reference
                 ? GetEffectiveTypeReference(unexp.Value)
                 : new ReferenceTypeReference(GetEffectiveTypeReference(@unexp.Value)),
+            
             IrConv @conv => conv.TargetType,
             IRIntCast @tcast => tcast.TargetType,
             IRIntExtend @icast => icast.toType,
@@ -65,7 +69,6 @@ public partial class Analyzer
     {
         while (true)
         {
-
             switch (node)
             {
                 case TypeExpressionNode @texp:
@@ -122,48 +125,61 @@ public partial class Analyzer
     /// <returns></returns>
     private IRExpression SolveTypeCast(TypeReference typeTo, IRExpression value, bool @explicit = false)
     {
-        if (typeTo is RuntimeIntegerTypeReference typetoRi)
+        var a = typeTo;
+        var b = value;
+        
+        switch (typeTo)
         {
-            if (value is IRIntegerLiteral @lit)
-                    return new IRIntegerLiteral(lit.Origin, lit.Value, typetoRi.PtrSized? null : typetoRi.BitSize);
-
-            var valType = GetEffectiveTypeReference(value);
-            if (valType is RuntimeIntegerTypeReference valueRi)
+            case RuntimeIntegerTypeReference typetoRi when value is IRIntegerLiteral @lit:
+                return new IRIntegerLiteral(lit.Origin, lit.Value, typetoRi.PtrSized ? null : typetoRi.BitSize);
+            
+            case RuntimeIntegerTypeReference typetoRi:
             {
-                // If same type, do nothing
-                if (typetoRi.BitSize == valueRi.BitSize
-                    && typetoRi.Signed == valueRi.Signed) {}
+                var valType = GetEffectiveTypeReference(value);
+                if (valType is RuntimeIntegerTypeReference valueRi)
+                {
+                    // If same type, do nothing
+                    if (typetoRi.BitSize == valueRi.BitSize
+                        && typetoRi.Signed == valueRi.Signed) {}
                 
-                // If pointer sized, delegate check for backend
-                else if (valueRi.PtrSized || typetoRi.PtrSized)
-                    return new IRIntCast(value.Origin, value, typetoRi);
+                    // If pointer sized, delegate check for backend
+                    else if (valueRi.PtrSized || typetoRi.PtrSized)
+                        return new IRIntCast(value.Origin, value, typetoRi);
 
-                var val = valueRi;
-                var tar = typetoRi;
-                var o = value.Origin;
+                    var val = valueRi;
+                    var tar = typetoRi;
+                    var o = value.Origin;
                 
-                if (val.Signed == tar.Signed)
-                {
-                    if (val.BitSize == tar.BitSize) return value;
-                    if (val.BitSize < tar.BitSize) return new IRIntExtend(o, value, tar);
-                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
-                }
-                else if (!val.Signed && tar.Signed)
-                {
+                    if (val.Signed == tar.Signed)
+                    {
+                        if (val.BitSize == tar.BitSize) return value;
+                        if (val.BitSize < tar.BitSize) return new IRIntExtend(o, value, tar);
+                        if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
+                    }
+                    else if (!val.Signed && tar.Signed)
+                    {
                     
-                    if (val.BitSize == tar.BitSize && @explicit) return new IRIntCast(o, value, tar);
-                    if (val.BitSize < tar.BitSize) return new IRIntExtend(o, value, tar);
-                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
-                }
-                else
-                {
-                    if (val.BitSize == tar.BitSize && @explicit) return new IRIntCast(o, value, tar);
-                    if (val.BitSize < tar.BitSize && @explicit) return new IRIntExtend(o, value, tar);
-                    if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
-                }
+                        if (val.BitSize == tar.BitSize && @explicit) return new IRIntCast(o, value, tar);
+                        if (val.BitSize < tar.BitSize) return new IRIntExtend(o, value, tar);
+                        if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
+                    }
+                    else
+                    {
+                        if (val.BitSize == tar.BitSize && @explicit) return new IRIntCast(o, value, tar);
+                        if (val.BitSize < tar.BitSize && @explicit) return new IRIntExtend(o, value, tar);
+                        if (val.BitSize > tar.BitSize && @explicit) return new IRIntTrunc(o, value, tar);
+                    }
                     
-                throw new Exception($"Cannot convert type {val} to {tar} in {value.Origin:pos}");
+                    throw new Exception($"Cannot convert type {val} to {tar} in {value.Origin:pos}");
+                }
+
+                break;
             }
+
+            case SolvedTypedefTypeReference typedef:
+            {
+              // TODO idk handle it somehow  
+            } break;
         }
         
         return value;
@@ -235,6 +251,7 @@ public partial class Analyzer
                 return Suitability.None;
             
             case SolvedTypedefTypeReference @solvedTypedef:
+                if (typeFrom is ComptimeIntegerTypeReference) return Suitability.Perfect;
                 if (typeFrom is not SolvedTypedefTypeReference @solvedTypedefarg) return Suitability.None;
                 return solvedTypedef.Typedef == solvedTypedefarg.Typedef ? Suitability.Perfect : Suitability.None;
         }

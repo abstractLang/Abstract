@@ -26,15 +26,22 @@ public partial class Analyzer
         };
     }
 
-    private static bool IsSolved(TypeReference typeref) =>
-        typeref switch
+    private static bool IsSolved(TypeReference typeref) => IsSolved(typeref, out _);
+    private static bool IsSolved(TypeReference typeref, out UnsolvedTypeReference unsolved)
+    {
+        while (true)
         {
-            UnsolvedTypeReference @unsolv => false,
-            SliceTypeReference @slice => IsSolved(slice.InternalType),
-            ReferenceTypeReference @refe => IsSolved(refe.InternalType),
-            _ => true
-        };
-    
+            switch (typeref)
+            {
+                case UnsolvedTypeReference @unsolv: unsolved = unsolv; return false;
+                case SliceTypeReference @slice: typeref = slice.InternalType; continue;
+                case ReferenceTypeReference @refe: typeref = refe.InternalType; continue;
+
+                default: unsolved = null!; return true;
+            }
+        }
+    }
+
     private IEnumerable<FunctionObject> EnumerateFunctions(IEnumerable<LangObject> list)
     {
         foreach (var i in list)

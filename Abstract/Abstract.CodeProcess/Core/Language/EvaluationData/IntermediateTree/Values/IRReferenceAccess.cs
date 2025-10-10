@@ -6,8 +6,8 @@ namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Val
 
 public class IRReferenceAccess(SyntaxNode origin, LanguageReference a, IRExpression b) : IRReference(origin)
 {
-    public readonly LanguageReference A = a;
-    public readonly IRExpression B = b;
+    public LanguageReference A = a;
+    public IRExpression B = b;
 
     public override string ToString() => $"{A}->{B}";
 }

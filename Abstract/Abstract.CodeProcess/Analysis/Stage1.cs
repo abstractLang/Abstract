@@ -139,8 +139,6 @@ public partial class Analyzer
         string[] g = parent != null
             ? [..parent.Global, funcnode.Identifier.Value]
             : [funcnode.Identifier.Value];
-
-        var aaa = string.Join('.', g);
         
         FunctionGroupObject? funcg = null;
         if (!_globalReferenceTable.TryGetValue(g, out var a))

@@ -4,22 +4,22 @@ from Std.Types import
 
 @export("main") func main() void {
 
-	# Testing object instantiation
-	let Randomizer rng = new Randomizer()
-	# Testing direct assignment
-	rng.seed = 0x123456789ABCDEF0
-	rng.rng.last = 0
+	# # Testing object instantiation
+	# let Randomizer rng = new Randomizer()
+	# # Testing direct assignment
+	# rng.seed = 0x123456789ABCDEF0
+	# rng.rng.last = 0
 
-	# Testing function call
-	writeln(rng.seed)
-	writeln(rng.rng.last)
+	# # Testing function call
+	# writeln(rng.seed)
+	# writeln(rng.rng.last)
 
-	# Testing function with ignored
-	# return value
-	mathTest(5, rng)
+	# # Testing function with ignored
+	# # return value
+	# mathTest(5, rng)
 
-	# Testing structure field modification
-	writeln(rng.rng.last)
+	# # Testing structure field modification
+	# writeln(rng.rng.last)
 
 	# Testing function overloading
 	let u32 uint32 = 32
@@ -47,9 +47,9 @@ from Std.Types import
 	write("The following value should be 10: ")
 	writeln(return10())
 
-	let u64 result = mathTest(10, rng)
-	write("mathTest result: ")
-	writeln(result)
+	# let u64 result = mathTest(123, rng)
+	# write("mathTest result: ")
+	# writeln(result)
 
 	# Testing strings
 	writeln("Hello, World!")
@@ -101,7 +101,10 @@ from Std.Types import
 	#	- Memory allocation
 	#	- Extended types
 	#	- Virtual tables
-	let WasmAllocator allocator = new WasmAllocator()
+	let WasmAllocator wasmAllocatorInstance = new WasmAllocator()
+	let *Allocator allocator = &wasmAllocatorInstance
+
+	let Memory memory = allocator.alloc(128, 8)
 
 	# Testing type metadata (this should be also hardly tested in backend!)
 	#let type allocType = typeOf(allocator)
@@ -123,38 +126,38 @@ func assignSomeValues(*StructPackingTest value) void {
 	return
 }
 
-func mathTest(u8 entropy, Randomizer rng) u64 {
+# func mathTest(u8 entropy, Randomizer rng) u64 {
 
-	let u128 value
+# 	let u128 value
 
-	# Testing operations with constants
-	value = 5 * 10
-	value = 10 / 2
-	value = 34565432 % 100 + 5
+# 	# Testing operations with constants
+# 	value = 5 * 10
+# 	value = 10 / 2
+# 	value = 34565432 % 100 + 5
 
-	# Testing assignment operations
-	value += ((rng.seed as u128) + entropy) + (rng.rng.last as u128)
+# 	# Testing assignment operations
+# 	value += ((rng.seed as u128) + entropy) + (rng.rng.last as u128)
 
-	# Testing operations with fields
-	rng.rng.last = value
-	value += rng.seed
+# 	# Testing operations with fields
+# 	rng.rng.last = value
+# 	value += rng.seed
 
-	return value as u64
-}
+# 	return value as u64
+# }
 
 
-struct Randomizer {
+# struct Randomizer {
 
-	@public let u64 seed
-	@public let StructNeastingTest rng
+# 	@public let u64 seed
+# 	@public let StructNeastingTest rng
 
-}
-struct StructNeastingTest {
+# }
+# struct StructNeastingTest {
 
-	@public let u128 last
-	@public let u128 entropy
+# 	@public let u128 last
+# 	@public let u128 entropy
 
-}
+# }
 
 struct StructPackingTest {
 

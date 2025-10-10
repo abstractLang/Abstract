@@ -8,9 +8,8 @@ using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Stateme
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
-using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
-using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.Integer;
+using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
 namespace Abstract.CodeProcess;
 
@@ -107,72 +106,108 @@ public partial class Analyzer
     
     private IRNode NodeSemaAnal_Invoke(IRInvoke node, IrBlockExecutionContextData ctx)
     {
-        if (node.Target is IRSolvedReference @solvedref)
+        switch (node.Target)
         {
 
-            for (var i = 0; i < node.Arguments.Length; i++)
-                node.Arguments[i] = (IRExpression)NodeSemaAnal(node.Arguments[i], ctx);
-            
-            if (solvedref.Reference is SolvedFunctionGroupReference @fgroupref)
+            case IRSolvedReference @solvedref:
             {
-                // Node is a function group and must be analysed to point
-                // to the correct or most optimal overload
 
-                var overloads = fgroupref.FunctionGroup.Overloads;
-                var arguments = node.Arguments;
-                FunctionObject? betterFound = null;
-                var betterFoundSum = 0;
-                
-                foreach (var ov in overloads)
-                {
-                    if (ov.Parameters.Length != arguments.Length) continue;
-                    if (ov.Parameters.Length == 0)
-                    {
-                        betterFound = ov;
-                        betterFoundSum = 0;
-                        continue;
-                    }
-                    
-                    var parameters = ov.Parameters;
-                    var suitability = new int[parameters.Length];
+                for (var i = 0; i < node.Arguments.Length; i++)
+                    node.Arguments[i] = (IRExpression)NodeSemaAnal(node.Arguments[i], ctx);
 
-                    foreach (var (i, e) in parameters.Index())
-                    {
-                        var argt = GetEffectiveTypeReference(arguments[i]);
-                        var s = (int)CalculateTypeSuitability(e.Type, argt, true);
-                        if (s == 0) goto NoSuitability;
-                        suitability[i] = s;
-                    }
-                    
-                    var sum = (suitability.Sum() * 100) / parameters.Length;
-                    if (sum <= betterFoundSum) continue;
-                    betterFound = ov;
-                    betterFoundSum = sum;
-                    
-                    NoSuitability:
-                    continue;
-                }
+                if (solvedref.Reference is SolvedFunctionGroupReference @fgroupref)
+                    node.Target = NodeSemaAnal_Invoke_GetFunctionOverload(fgroupref.FunctionGroup, node.Arguments, node.Origin);
 
-                if (betterFound == null)  throw new Exception($"CompError:" + 
-                                                             $"No overload that matches function call {node.Origin}");
-                node.Target = new IRSolvedReference(solvedref.Origin, new SolvedFunctionReference(betterFound));
+                // I SUPPOSE it is impossible that the analizer stages before here
+                // are able to assign anything other than a FunctionGroup ref...
+                // i may be wrong...
+                else throw new NotImplementedException();
+            } break;
 
+            case IRReferenceAccess @refacc:
+            {
+                // instance access detected, instance type will be handled as one
+                // of the arguments
+
+                var instance = refacc.A;
+                var call = (IRSolvedReference)refacc.B; // FIXME conversion not reliable
                 
                 for (var i = 0; i < node.Arguments.Length; i++)
-                    node.Arguments[i] = SolveTypeCast(betterFound.Parameters[i].Type, node.Arguments[i]);
+                    node.Arguments[i] = (IRExpression)NodeSemaAnal(node.Arguments[i], ctx);
+
+                var nargs = new IRExpression[node.Arguments.Length + 1];
+                nargs[0] = new IRSolvedReference(refacc.Origin, instance);
+                node.Arguments.CopyTo(nargs.AsSpan(1));
+                
+                if (call.Reference is SolvedFunctionGroupReference @fgroupref)
+                    node.Target = NodeSemaAnal_Invoke_GetFunctionOverload(fgroupref.FunctionGroup, nargs, node.Origin);
+                else throw new NotImplementedException();
+
+                node.Arguments = nargs;
+            } break;
+            
+            default: throw new NotImplementedException();
+        }
+
+        return node;
+    }
+
+    private IRReference NodeSemaAnal_Invoke_GetFunctionOverload(
+        FunctionGroupObject group, IRExpression[] arguments, SyntaxNode origin)
+    {
+        // Node is a function group and must be analysed to point
+        // to the correct or most optimal overload
+
+        var overloads = group.Overloads;
+        FunctionObject? betterFound = null;
+        var betterFoundInstance = false;
+        var betterFoundSum = 0;
+
+        var instanceableStruct = group.Parent is StructObject { Static: false };
+
+        foreach (var ov in overloads)
+        {
+            var instanceFunc = instanceableStruct && !ov.Static;
+            
+            if (ov.Parameters.Length + (instanceFunc ? 1 : 0) != arguments.Length) continue;
+            if (ov.Parameters.Length == 0)
+            {
+                betterFound = ov;
+                betterFoundSum = 0;
+                continue;
             }
             
-            // I SUPPOSE it is impossible that the analizer stages before here
-            // are able to assign anything other than a FunctionGroup ref...
-            // i may be wrong...
-            else throw new NotImplementedException();
+            var parameters = ov.Parameters;
+            var suitability = new int[parameters.Length];
+
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                var argt = GetEffectiveTypeReference(arguments[instanceFunc ? i + 1 : i]);
+                var s = (int)CalculateTypeSuitability(parameters[i].Type, argt, true);
+                if (s == 0) goto NoSuitability;
+                suitability[i] = s;
+            }
+
+            var sum = (suitability.Sum() * 100) / parameters.Length;
+            if (sum <= betterFoundSum) continue;
+            betterFound = ov;
+            betterFoundSum = sum;
+            betterFoundInstance = instanceFunc;
+
+            NoSuitability: ;
         }
-        else throw new NotImplementedException();
+
+        if (betterFound == null) throw new Exception($"CompError: No overload that matches function call {origin}");
+
+
+        for (var i = betterFoundInstance ? 1 : 0; i < arguments.Length; i++)
+            arguments[i] = SolveTypeCast(betterFound.Parameters[betterFoundInstance ? i-1 : i].Type, arguments[i]);
         
-        return node;
+        return new IRSolvedReference(origin, new SolvedFunctionReference(betterFound));
     }
     private IRNode NodeSemaAnal_Assign(IRAssign node, IrBlockExecutionContextData ctx)
     {
+        var a = node;
         node.Target = (IRExpression)NodeSemaAnal(node.Target, ctx);
         node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
 
@@ -300,7 +335,5 @@ public partial class Analyzer
         node.Value = SolveTypeCast(ctx.Function.ReturnType!, node.Value, false);
         return node;
     }
-    
-    
     
 }

@@ -173,6 +173,8 @@ public class Compressor
     
     private void UnwrapFunction(BaseFunctionBuilder builder, FunctionObject source)
     {
+        if (!source.Static) builder.AddParameter("self",
+            new ReferenceTypeReference(new NodeTypeReference((StructureBuilder)GetObjectBuilder(source.Parent))));
         
         foreach (var p in source.Parameters)
         {
@@ -186,14 +188,14 @@ public class Compressor
         {
             case FunctionBuilder @fb:
             {
-
                 fb.ExportSymbol = source.Export;
-                
-                if (fb is VirtualFunctionBuilder) break;
-                if (source.Body == null) throw new Exception("Concrete static function must have a body");
-                
+                if (source.Body == null)
+                {
+                    if (builder is VirtualFunctionBuilder) break;
+                    throw new Exception("Concrete static function must have a body");
+                }
                 UnwrapFunctionBody(fb.GetOrCreateOmegaBuilder(), source);
-                
+               
             } break;
             
             case ImportedFunctionBuilder @ifb:
@@ -204,12 +206,12 @@ public class Compressor
             } break;
         }
         
-
     }
     private void UnwrapStruct(StructureBuilder builder, StructObject source)
     {
         if (source.Extends is SolvedStructTypeReference @extendstruc)
             builder.Extends = (StructureBuilder)GetObjectBuilder(extendstruc.Struct);
+        builder.VTableSize = (uint)source.VirtualTable.Length;
     }
     private void UnwrapStaticField(StaticFieldBuilder builder, FieldObject source)
     {
@@ -328,9 +330,8 @@ public class Compressor
                 switch (unexp.Prefix)
                 {
                     case IRUnaryExp.UnaryPrefix.Reference: UnwrapFunctionBody_Ref(builder, unexp.Value); break;
-                    default: throw new UnreachableException();
+                    default: UnwrapFunctionBody_IRNode(builder, unexp.Value); break;
                 }
-                UnwrapFunctionBody_IRNode(builder, unexp.Value);
             } break;
             
             case IRNewObject @newobj:
@@ -505,6 +506,7 @@ public class Compressor
                 break;
         }
     }
+    
     
     private ProgramMemberBuilder GetObjectBuilder(LangObject obj) => _membersMap[obj];
     private ProgramMemberBuilder GetTypeReferenceBuilder(BuilderTypeReference tref)

@@ -4,15 +4,17 @@
 
 	@publc @override func alloc(uptr length, Alignment alignment) Memory {
         let Memory ret = new Memory()
-
         return ret
     }
-    @publc @override func resize(Memory old, uptr newLength) bool {}
+    @publc @override func resize(Memory old, uptr newLength) bool {
+        return false
+    }
     @publc @override func realloc(Memory old, uptr newLength) Memory {
-
+        let Memory ret = new Memory()
+        return ret
     }
     @publc @override func free(Memory memory) void {
-
+        return
     }
 
 }

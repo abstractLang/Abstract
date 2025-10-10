@@ -297,6 +297,7 @@ public partial class Analyzer
                 if (strlit.IsSimple) return new IRStringLiteral(strlit, strlit.RawContent);
                 else throw new NotImplementedException();
             }
+            case BooleanLiteralNode @boollit: return new IRIntegerLiteral(boollit, boollit.Value ? 1 : 0, 1);
             
             case NewObjectNode @newobj:
             {
@@ -479,17 +480,20 @@ public partial class Analyzer
                 referenceChain.Add(res.Value.Item1);
                 var children = res.Value.Item2;
                 
-                var tref = children switch
+                switch (children)
                 {
-                    FieldObject f => f.Type,
-                    _ => throw new UnreachableException()
-                };
-                langobj = tref switch
-                {
-                    SolvedStructTypeReference st => st.Struct,
-                    IntegerTypeReference => null,
-                    _ => throw new UnreachableException()
-                };
+                    case FieldObject f:
+                        langobj = f.Type switch
+                        {
+                            SolvedStructTypeReference st => st.Struct,
+                            IntegerTypeReference => null,
+                            _ => throw new UnreachableException()
+                        };
+                        break;
+                    
+                    case FunctionGroupObject g: langobj = null; break;
+                    default: throw new UnreachableException();
+                }
             }
             else
             {
@@ -695,24 +699,35 @@ public partial class Analyzer
     
     private TypeReference SolveTypeLazy(TypeReference typeref, ExecutionContextData? ctx)
     {
-        switch (typeref)
+        var i = 0;
+        while (true)
         {
-            case UnsolvedTypeReference @unsolved:
+            i++;
+            switch (typeref)
             {
-                var node = unsolved.syntaxNode;
-                var shallow = SolveShallowType(node);
-                if (IsSolved(shallow)) return shallow;
-
-                if (ctx == null) return new UnsolvedTypeReference(node);
-
-                var reef = SearchReference(node, ctx);
-                if (reef is not IRSolvedReference @solv) return new UnsolvedTypeReference(node);
-                return (solv.Reference as TypeReference) ?? new UnsolvedTypeReference(node);
+                case UnsolvedTypeReference @unsolved:
+                {
+                    var node = unsolved.syntaxNode;
+                    if (i == 1)
+                    {
+                        typeref = SolveShallowType(node);
+                        if (IsSolved(typeref)) return typeref;
+                        if (ctx == null) return new UnsolvedTypeReference(node);
+                        continue;
+                    }
+                    else
+                    {
+                        var reef = SearchReference(node, ctx);
+                        if (reef is not IRSolvedReference @solv) return new UnsolvedTypeReference(node);
+                        return (solv.Reference as TypeReference) ?? new UnsolvedTypeReference(node);   
+                    }
+                }
+                case SliceTypeReference @slice: slice.InternalType = SolveTypeLazy(@slice.InternalType, ctx); break;
+                case ReferenceTypeReference @refer: refer.InternalType = SolveTypeLazy(@refer.InternalType, ctx); break;
             }
-            case SliceTypeReference @slice: slice.InternalType = SolveTypeLazy(@slice.InternalType, ctx); break;
-            case ReferenceTypeReference @refer: refer.InternalType = SolveTypeLazy(@refer.InternalType, ctx); break;
+
+            return typeref;
         }
-        return typeref;
     }
     private TypeReference SolveTypeLazy(TypeReference typeref, LangObject? obj)
     {
