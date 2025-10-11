@@ -226,6 +226,7 @@ public class Parser(ErrorHandler errHandler)
                 node.AppendChild(ParseExpression()); // <condition>
                 TryEndLine();
                 node.AppendChild(ParseStatement()); // <statement>
+                if (Taste(TokenType.ElifKeyword, TokenType.ElseKeyword)) endLine = false;
 
             } catch { DiscardLine(); throw; }
             break;
@@ -238,6 +239,7 @@ public class Parser(ErrorHandler errHandler)
                 node.AppendChild(ParseExpression()); // <condition>
                 TryEndLine();
                 node.AppendChild(ParseStatement()); // <statement>
+                if (Taste(TokenType.ElifKeyword, TokenType.ElseKeyword)) endLine = false;
 
             } catch { DiscardLine(); throw; }
             break;

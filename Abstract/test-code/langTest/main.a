@@ -4,22 +4,22 @@ from Std.Types import
 
 @export("main") func main() void {
 
-	# # Testing object instantiation
-	# let Randomizer rng = new Randomizer()
-	# # Testing direct assignment
-	# rng.seed = 0x123456789ABCDEF0
-	# rng.rng.last = 0
+	# Testing object instantiation
+	let Randomizer rng = new Randomizer()
+	# Testing direct assignment
+	rng.seed = 0x123456789ABCDEF0
+	rng.rng.last = 0
 
-	# # Testing function call
-	# writeln(rng.seed)
-	# writeln(rng.rng.last)
+	# Testing function call
+	writeln(rng.seed)
+	writeln(rng.rng.last)
 
-	# # Testing function with ignored
-	# # return value
-	# mathTest(5, rng)
+	# Testing function with ignored
+	# return value
+	logicalTest(5, rng)
 
-	# # Testing structure field modification
-	# writeln(rng.rng.last)
+	# Testing structure field modification
+	writeln(rng.rng.last)
 
 	# Testing function overloading
 	let u32 uint32 = 32
@@ -97,6 +97,29 @@ from Std.Types import
 	writeln(valueToChange.h)
 	writeln(valueToChange.i)
 
+	# Testing simple conditionals
+	let bool option = false
+
+	if option {
+		writeln("Condition is true")
+	}
+	# Testing inline conditionals
+	if option writeln("Condition is true")
+
+	# Testing else block
+	if option {
+		writeln("Condition is true")
+	} else {
+		writeln("Condition is false")
+	}
+
+	option = false
+	if option {
+		writeln("Condition is true")
+	} else {
+		writeln("Condition is false")
+	}
+
 	# Testing:
 	#	- Memory allocation
 	#	- Extended types
@@ -128,7 +151,7 @@ func assignSomeValues(*StructPackingTest value) void {
 	return
 }
 
-func mathTest(u8 entropy, Randomizer rng) u64 {
+func logicalTest(u8 entropy, Randomizer rng) u64 {
 
 	let u128 value
 

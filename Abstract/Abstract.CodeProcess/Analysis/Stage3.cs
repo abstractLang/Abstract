@@ -130,7 +130,8 @@ public partial class Analyzer
         var body = GetFunctionBody(function.syntaxNode);
         if (body == null) return;
 
-        function.Body = UnwrapExecutionContext_Block(function, body);
+        var ctx = new ExecutionContextData(function, new IRBlock(body));
+        function.Body = UnwrapExecutionContext_Block(ctx, body);
     }
     private static BlockNode? GetFunctionBody(FunctionDeclarationNode functionNode)
     {
@@ -149,14 +150,14 @@ public partial class Analyzer
     }
 
     
-    private IRBlock UnwrapExecutionContext_Block(LangObject parent, BlockNode block)
+    private IRBlock UnwrapExecutionContext_Block(ExecutionContextData ctx, BlockNode block)
     {
         var rootBlock = new IRBlock(block);
-        var execctx = new ExecutionContextData(parent, rootBlock);
 
         foreach (var i in block.Content)
         {
-            var res = UnwrapExecutionContext_Statement(i, execctx);
+            var res = UnwrapExecutionContext_Statement(i, ctx);
+            ctx.Last = res;
             if (res != null) rootBlock.Content.Add(res);
         }
 
@@ -202,17 +203,62 @@ public partial class Analyzer
                 if (op != null) right = new IRBinaryExp(assign, op.Value, left, right);
                 return new IRAssign(assign, left, right);
             }
+
+            case IfStatementNode @if:
+            {
+                return ParseIfElif(@if, @if.Then, @if.Condition);
+            }
+            case ElifStatementNode @elif:
+            {
+                if (ctx.Last is not IRIf @irif)
+                    throw new Exception("elif blocks only allowed after if or elif statements");
+                
+                var a = ParseIfElif(elif, elif.Then, elif.Condition);
+                irif.Else = a;
+                return a;
+            } break;
+            case ElseStatementNode @_else:
+            {
+                if (ctx.Last is not IRIf @irif)
+                    throw new Exception("else blocks only allowed after if or elif statements");
+                
+                IRBlock then = new IRBlock(_else.Then);
+                ctx.PushBlock(then);
+
+                if (_else.Then is BlockNode @block) then = UnwrapExecutionContext_Block(ctx, block);
+                else
+                {
+                    var res = UnwrapExecutionContext_Statement(_else.Then, ctx);
+                    if (res != null) then.Content.Add(res);
+                }
+
+                return new IRElse(_else, then);
+            }
+            
             
             case ReturnStatementNode @ret:
             {
-                var exp = ret.HasExpression
-                    ? UnwrapExecutionContext_Expression(ret.Expression, ctx)
-                    : null;
-                
+                var exp = ret.HasExpression ? UnwrapExecutionContext_Expression(ret.Expression, ctx) : null;
                 return new IRReturn(ret, exp);
             }
             
             default: return UnwrapExecutionContext_Expression(node, ctx);
+        }
+        
+        IRIf ParseIfElif(SyntaxNode origin, SyntaxNode origin_then, SyntaxNode cond)
+        {
+            var condition = UnwrapExecutionContext_Expression(cond, ctx);
+            IRBlock then = new IRBlock(origin_then);
+            ctx.PushBlock(then);
+
+            if (origin_then is BlockNode @block) then = UnwrapExecutionContext_Block(ctx, block);
+            else
+            {
+                var res = UnwrapExecutionContext_Statement(origin_then, ctx);
+                if (res != null) then.Content.Add(res);
+            }
+                
+            return new IRIf(@origin, then);
         }
     }
 
@@ -422,6 +468,7 @@ public partial class Analyzer
                     switch (v2)
                     {
                         case RuntimeIntegerTypeReference:
+                        case BooleanTypeReference:
                         case StringTypeReference:
                             goto end; break;
 
