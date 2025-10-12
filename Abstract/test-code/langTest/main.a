@@ -99,11 +99,15 @@ from Std.Types import
 
 	# Testing simple conditionals
 	let bool option = true
+	let bool option2 = false
 
 	if option {
 		writeln("Condition is true")
 		writeln("Testing more instructions in the block")
 		writeln("... One more")
+	}
+	elif option2 {
+		writeln("Testing elif")
 	}
 	# Testing inline conditionals
 	if option writeln("Condition is true")

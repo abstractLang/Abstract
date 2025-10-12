@@ -372,17 +372,15 @@ public class Compressor
                 if (@if.Else != null)
                 {
                     builder.Writer.Else();
-                    if (@if.Else is IRIf @subif) UnwrapFunctionBody_IRNode(builder, @subif.Condition);
-                    else UnwrapFunctionBody_IRNode(builder, (IRElse)@if.Else);
+                    switch (@if.Else)
+                    {
+                        case IRIf @subif: UnwrapFunctionBody_IRNode(builder, subif); break;
+                        case IRElse @subelse: UnwrapFunctionBody_Block(builder, subelse.Then); break;
+                        default: throw new UnreachableException();
+                    }
                 }
                 builder.Writer.End();
                 break;
-            case IRElse @else:
-            {
-                // Else instruction should be added by instruction before
-                UnwrapFunctionBody_Block(builder, @else.Then);
-                break;
-            }
             
             
             default: throw new NotImplementedException();
