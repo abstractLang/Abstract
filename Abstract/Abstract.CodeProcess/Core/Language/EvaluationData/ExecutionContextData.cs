@@ -1,14 +1,15 @@
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Macros;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObjects;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData;
 
-public class ExecutionContextData(LangObject parent, IRBlock root)
+public class ExecutionContextData(LangObject parent)
 {
     private readonly LangObject _parent = parent;
-    private readonly List<IRBlock> _blocks = [root];
+    private readonly List<IRBlock> _blocks = [];
     public IRNode? Last = null;
     
     public LangObject Parent => _parent;
@@ -18,6 +19,7 @@ public class ExecutionContextData(LangObject parent, IRBlock root)
         StructObject @struc => throw new NotImplementedException(),
         _ => []
     };
+    public IRDefLocal[] Locals => _blocks.SelectMany(e => e.Content.OfType<IRDefLocal>()).ToArray();
 
     public IRBlock CurrentBlock => _blocks[^1];
 

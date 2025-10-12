@@ -231,18 +231,19 @@ public class Compressor
     private void UnwrapFunctionBody(OmegaBytecodeBuilder builder, FunctionObject source)
     {
         var block = source.Body ?? throw new NullReferenceException();
-        UnwrapFunctionBody_IRNode(builder, block);
+        UnwrapFunctionBody_Block(builder, block);
     }
 
     // Bruh switch hell
+    private void UnwrapFunctionBody_Block(OmegaBytecodeBuilder builder, IRBlock block)
+    {
+        foreach (var i in block.Content)
+            UnwrapFunctionBody_IRNode(builder, i);
+    }
     private void UnwrapFunctionBody_IRNode(OmegaBytecodeBuilder builder, IRNode node)
     {
         switch (node)
         {
-            case IRBlock @b:
-                foreach (var i in  b.Content) UnwrapFunctionBody_IRNode(builder, i);
-                break;
-            
             case IRDefLocal @defl:
                 builder.Writer.MacroDefineLocal(ConvType(defl.LocalVariable.Type));
                 break;
@@ -362,6 +363,26 @@ public class Compressor
                 builder.Writer.Conv();
                 UnwrapFunctionBody_IRNode(builder, cast.Expression);
                 break;
+            
+            case IRIf @if:
+                builder.Writer.If();
+                UnwrapFunctionBody_IRNode(builder, @if.Condition);
+                UnwrapFunctionBody_Block(builder, @if.Then);
+
+                if (@if.Else != null)
+                {
+                    builder.Writer.Else();
+                    if (@if.Else is IRIf @subif) UnwrapFunctionBody_IRNode(builder, @subif.Condition);
+                    else UnwrapFunctionBody_IRNode(builder, (IRElse)@if.Else);
+                }
+                builder.Writer.End();
+                break;
+            case IRElse @else:
+            {
+                // Else instruction should be added by instruction before
+                UnwrapFunctionBody_Block(builder, @else.Then);
+                break;
+            }
             
             
             default: throw new NotImplementedException();

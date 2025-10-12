@@ -48,7 +48,10 @@ public partial class Analyzer
         
         // Excution analysis
         foreach (var fun in funclist)
-            if (fun.Body != null) BlockSemaAnal(fun.Body, fun);
+        {
+            var ctx = new IrBlockExecutionContextData(fun);
+            if (fun.Body != null) BlockSemaAnal(fun.Body, ctx);
+        }
     } 
     
     private void FunctionSemaAnal(FunctionObject function)
@@ -66,11 +69,11 @@ public partial class Analyzer
     }
 
     
-    private void BlockSemaAnal(IRBlock block, FunctionObject function)
+    private void BlockSemaAnal(IRBlock block, IrBlockExecutionContextData ctx)
     {
-        var ctx = new IrBlockExecutionContextData(function);
-        for (var i = 0; i < block.Content.Count; i++)
-            block.Content[i] = NodeSemaAnal(block.Content[i], ctx);
+        ctx.PushFrame();
+        for (var i = 0; i < block.Content.Count; i++) block.Content[i] = NodeSemaAnal(block.Content[i], ctx);
+        ctx.PopFrame();
     }
 
     private IRNode NodeSemaAnal(IRNode node, IrBlockExecutionContextData ctx)
@@ -86,6 +89,7 @@ public partial class Analyzer
             IrConv @tc =>NodeSemaAnal_Conv(tc, ctx),
             IRNewObject @no => NodeSemaAnal_NewObj(no, ctx),
             IRReturn @re => NodeSemaAnal_Return(re, ctx),
+            IRIf @iff => NodeSemaAnal_If(iff, ctx),
             
             IRReferenceAccess
                 or IRSolvedReference
@@ -333,6 +337,20 @@ public partial class Analyzer
         
         node.Value = (IRExpression)NodeSemaAnal(node.Value, ctx);
         node.Value = SolveTypeCast(ctx.Function.ReturnType!, node.Value, false);
+        return node;
+    }
+    private IRNode NodeSemaAnal_If(IRIf node, IrBlockExecutionContextData ctx)
+    {
+        node.Condition = (IRExpression)NodeSemaAnal(node.Condition, ctx);
+        if (node.Else != null)
+            node.Else = (IIfElse)(node.Else is IRIf @if
+                ? NodeSemaAnal_If(@if, ctx) : NodeSemaAnal_Else((IRElse)node.Else, ctx));
+        BlockSemaAnal(node.Then, ctx);
+        return node;
+    }
+    private IRNode NodeSemaAnal_Else(IRElse node, IrBlockExecutionContextData ctx)
+    {
+        BlockSemaAnal(node.Then, ctx);
         return node;
     }
     

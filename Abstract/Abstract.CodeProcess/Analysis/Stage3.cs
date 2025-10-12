@@ -130,7 +130,7 @@ public partial class Analyzer
         var body = GetFunctionBody(function.syntaxNode);
         if (body == null) return;
 
-        var ctx = new ExecutionContextData(function, new IRBlock(body));
+        var ctx = new ExecutionContextData(function);
         function.Body = UnwrapExecutionContext_Block(ctx, body);
     }
     private static BlockNode? GetFunctionBody(FunctionDeclarationNode functionNode)
@@ -154,16 +154,19 @@ public partial class Analyzer
     {
         var rootBlock = new IRBlock(block);
 
+        ctx.PushBlock(rootBlock);
         foreach (var i in block.Content)
         {
             var res = UnwrapExecutionContext_Statement(i, ctx);
-            ctx.Last = res;
-            if (res != null) rootBlock.Content.Add(res);
+            ctx.Last = res.node;
+            
+            if (res is { node: not null, include: true }) rootBlock.Content.Add(res.node);
         }
+        ctx.PopBlock();
 
         return rootBlock;
     }
-    private IRNode? UnwrapExecutionContext_Statement(SyntaxNode node, ExecutionContextData ctx)
+    private (IRNode? node, bool include) UnwrapExecutionContext_Statement(SyntaxNode node, ExecutionContextData ctx)
     {
         switch (node)
         {
@@ -178,7 +181,9 @@ public partial class Analyzer
                 var identnode = localvar.TypedIdentifier.Identifier;
 
                 var type = SolveTypeLazy(new UnsolvedTypeReference(localvar.TypedIdentifier.Type), ctx);
-                return new IRDefLocal(localvar, new LocalVariableObject(type, identnode.Value));
+                var deflocal = new IRDefLocal(localvar, new LocalVariableObject(type, identnode.Value));
+                ctx.CurrentBlock.Content.Add(deflocal);
+                return (deflocal, true);
             }
 
             case AssignmentExpressionNode @assign:
@@ -201,12 +206,12 @@ public partial class Analyzer
                 }
                 
                 if (op != null) right = new IRBinaryExp(assign, op.Value, left, right);
-                return new IRAssign(assign, left, right);
+                return (new IRAssign(assign, left, right), true);
             }
 
             case IfStatementNode @if:
             {
-                return ParseIfElif(@if, @if.Then, @if.Condition);
+                return (ParseIfElif(@if, @if.Then, @if.Condition), true);
             }
             case ElifStatementNode @elif:
             {
@@ -215,8 +220,8 @@ public partial class Analyzer
                 
                 var a = ParseIfElif(elif, elif.Then, elif.Condition);
                 irif.Else = a;
-                return a;
-            } break;
+                return (a, false);
+            }
             case ElseStatementNode @_else:
             {
                 if (ctx.Last is not IRIf @irif)
@@ -228,37 +233,40 @@ public partial class Analyzer
                 if (_else.Then is BlockNode @block) then = UnwrapExecutionContext_Block(ctx, block);
                 else
                 {
-                    var res = UnwrapExecutionContext_Statement(_else.Then, ctx);
+                    var (res, _) = UnwrapExecutionContext_Statement(_else.Then, ctx);
                     if (res != null) then.Content.Add(res);
                 }
 
-                return new IRElse(_else, then);
+                var a = new IRElse(_else, then);
+                irif.Else = a;
+                return (a, false);
             }
             
             
             case ReturnStatementNode @ret:
             {
                 var exp = ret.HasExpression ? UnwrapExecutionContext_Expression(ret.Expression, ctx) : null;
-                return new IRReturn(ret, exp);
+                return (new IRReturn(ret, exp), true);
             }
             
-            default: return UnwrapExecutionContext_Expression(node, ctx);
+            default: return (UnwrapExecutionContext_Expression(node, ctx), true);
         }
         
         IRIf ParseIfElif(SyntaxNode origin, SyntaxNode origin_then, SyntaxNode cond)
         {
             var condition = UnwrapExecutionContext_Expression(cond, ctx);
             IRBlock then = new IRBlock(origin_then);
+            
             ctx.PushBlock(then);
-
             if (origin_then is BlockNode @block) then = UnwrapExecutionContext_Block(ctx, block);
             else
             {
-                var res = UnwrapExecutionContext_Statement(origin_then, ctx);
+                var (res, _) = UnwrapExecutionContext_Statement(origin_then, ctx);
                 if (res != null) then.Content.Add(res);
             }
+            ctx.PopBlock();
                 
-            return new IRIf(@origin, then);
+            return new IRIf(@origin, condition, then);
         }
     }
 
@@ -696,9 +704,7 @@ public partial class Analyzer
     }
     private (LanguageReference, TypeReference)? SearchReference_ExecCtx(string part, ExecutionContextData ctx)
     {
-        var local = ctx.CurrentBlock.Content
-            .OfType<IRDefLocal>()
-            .FirstOrDefault(e => e.LocalVariable.Name == part);
+        var local = ctx.Locals.FirstOrDefault(e => e.LocalVariable.Name == part);
         if (local != null) return (new LocalReference(local.LocalVariable), local.LocalVariable.Type);
         
         var param = ctx.Parameters.FirstOrDefault(e => e.Name == part);
