@@ -97,7 +97,7 @@ from Std.Types import
 	writeln(valueToChange.h)
 	writeln(valueToChange.i)
 
-	# Testing simple conditionals
+	#Testing simple conditionals
 	let bool option = true
 	let bool option2 = false
 
@@ -125,6 +125,13 @@ from Std.Types import
 	} else {
 		writeln("Condition is false")
 	}
+
+	let string conditionalValue
+
+	if (option) conditionalValue = "option was true"
+	else conditionalValue = "option was false"
+
+	writeln(conditionalValue)
 
 	# Testing:
 	#	- Memory allocation

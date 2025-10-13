@@ -194,7 +194,7 @@ public class Compressor
                     if (builder is VirtualFunctionBuilder) break;
                     throw new Exception("Concrete static function must have a body");
                 }
-                UnwrapFunctionBody(fb.GetOrCreateOmegaBuilder(), source);
+                UnwrapFunctionBody(fb, source);
                
             } break;
             
@@ -228,19 +228,21 @@ public class Compressor
         builder.Type = ConvType(source.Type);
     }
     
-    private void UnwrapFunctionBody(OmegaBytecodeBuilder builder, FunctionObject source)
+    private void UnwrapFunctionBody(FunctionBuilder fnb, FunctionObject source)
     {
         var block = source.Body ?? throw new NullReferenceException();
-        UnwrapFunctionBody_Block(builder, block);
+        var builder = fnb.CreateOmegaBytecodeBlock("entry");
+        
+        UnwrapFunctionBody_Block(ref builder, block);
     }
 
     // Bruh switch hell
-    private void UnwrapFunctionBody_Block(OmegaBytecodeBuilder builder, IRBlock block)
+    private void UnwrapFunctionBody_Block(ref OmegaBlockBuilder builder, IRBlock block)
     {
         foreach (var i in block.Content)
-            UnwrapFunctionBody_IRNode(builder, i);
+            UnwrapFunctionBody_IRNode(ref builder, i);
     }
-    private void UnwrapFunctionBody_IRNode(OmegaBytecodeBuilder builder, IRNode node)
+    private void UnwrapFunctionBody_IRNode(ref OmegaBlockBuilder builder, IRNode node)
     {
         switch (node)
         {
@@ -284,13 +286,13 @@ public class Compressor
             case IRReferenceAccess @refaccess:
             {
                 UnwrapFunctionBody_Load_Reference(builder, refaccess.A);
-                UnwrapFunctionBody_IRNode(builder, refaccess.B);
+                UnwrapFunctionBody_IRNode(ref builder, refaccess.B);
             } break;
 
             case IRAssign @assig:
             {
                 UnwrapFunctionBody_Store(builder, assig.Target);
-                UnwrapFunctionBody_IRNode(builder, assig.Value);
+                UnwrapFunctionBody_IRNode(ref builder, assig.Value);
             } break;
 
             case IRBinaryExp @bexp:
@@ -323,71 +325,81 @@ public class Compressor
                     default: throw new Exception();
                 }
                 
-                UnwrapFunctionBody_IRNode(builder, bexp.Left);
-                UnwrapFunctionBody_IRNode(builder, bexp.Right);
+                UnwrapFunctionBody_IRNode(ref builder, bexp.Left);
+                UnwrapFunctionBody_IRNode(ref builder, bexp.Right);
             } break;
             case IRUnaryExp @unexp:
             {
                 switch (unexp.Prefix)
                 {
                     case IRUnaryExp.UnaryPrefix.Reference: UnwrapFunctionBody_Ref(builder, unexp.Value); break;
-                    default: UnwrapFunctionBody_IRNode(builder, unexp.Value); break;
+                    default: UnwrapFunctionBody_IRNode(ref builder, unexp.Value); break;
                 }
             } break;
             
             case IRNewObject @newobj:
             {
                 builder.Writer.LdNewObject((StructureBuilder)GetTypeReferenceBuilder(newobj.Type));
-                foreach (var ia in newobj.InlineAssignments) UnwrapFunctionBody_IRNode(builder, ia);
+                foreach (var ia in newobj.InlineAssignments) UnwrapFunctionBody_IRNode(ref builder, ia);
             } break;
             
             case IRReturn @ret:
                 builder.Writer.Ret(ret.Value != null);
-                if (ret.Value != null) UnwrapFunctionBody_IRNode(builder, ret.Value);
+                if (ret.Value != null) UnwrapFunctionBody_IRNode(ref builder, ret.Value);
                 break;
             
             
             case IRIntExtend @ex:
                 UnwrapFunctionBody_FlagType(builder, ex.toType);
                 builder.Writer.Extend();
-                UnwrapFunctionBody_IRNode(builder, ex.Value);
+                UnwrapFunctionBody_IRNode(ref builder, ex.Value);
                 break;
             case IRIntTrunc @tr:
                 UnwrapFunctionBody_FlagType(builder, tr.toType);
                 builder.Writer.Trunc();
-                UnwrapFunctionBody_IRNode(builder, tr.Value);
+                UnwrapFunctionBody_IRNode(ref builder, tr.Value);
                 break;
 
             case IRIntCast @cast:
                 UnwrapFunctionBody_FlagType(builder, cast.TargetType);
                 builder.Writer.Conv();
-                UnwrapFunctionBody_IRNode(builder, cast.Expression);
+                UnwrapFunctionBody_IRNode(ref builder, cast.Expression);
                 break;
             
             case IRIf @if:
-                builder.Writer.If();
-                UnwrapFunctionBody_IRNode(builder, @if.Condition);
-                UnwrapFunctionBody_Block(builder, @if.Then);
+                var function = builder.Parent;
+                
+                var iftrue = function.CreateOmegaBytecodeBlock("iftrue");
+                var iffalse = @if.Else == null
+                    ? function.CreateOmegaBytecodeBlock("continue")
+                    : function.CreateOmegaBytecodeBlock("iffalse");
+                var rest = @if.Else == null ? iffalse : function.CreateOmegaBytecodeBlock("continue");
+                
+                builder.Writer.BranchIf(iftrue.Index, iffalse.Index);
+                UnwrapFunctionBody_IRNode(ref builder, @if.Condition);
+                
+                UnwrapFunctionBody_Block(ref iftrue, @if.Then);
+                iftrue.Writer.Branch(rest.Index);
 
                 if (@if.Else != null)
                 {
-                    builder.Writer.Else();
                     switch (@if.Else)
                     {
-                        case IRIf @subif: UnwrapFunctionBody_IRNode(builder, subif); break;
-                        case IRElse @subelse: UnwrapFunctionBody_Block(builder, subelse.Then); break;
+                        case IRIf @subif: UnwrapFunctionBody_IRNode(ref iffalse, subif); break;
+                        case IRElse @subelse: UnwrapFunctionBody_Block(ref iffalse, subelse.Then); break;
                         default: throw new UnreachableException();
                     }
+                    iffalse.Writer.Branch(rest.Index);
                 }
-                builder.Writer.End();
+
+                builder = rest;
                 break;
-            
             
             default: throw new NotImplementedException();
         }
     }
 
-    private void UnwrapFunctionBody_Store(OmegaBytecodeBuilder builder, IRExpression reference)
+    private void UnwrapFunctionBody_Store(OmegaBlockBuilder builder, IRExpression reference)
     {
         while (true)
         {
@@ -425,7 +437,7 @@ public class Compressor
             } break;
         }
     }
-    private void UnwrapFunctionBody_Ref(OmegaBytecodeBuilder builder, IRExpression reference)
+    private void UnwrapFunctionBody_Ref(OmegaBlockBuilder builder, IRExpression reference)
     {
         while (true)
         {
@@ -459,7 +471,7 @@ public class Compressor
         }
     }
 
-    private void UnwrapFunctionBody_Call(OmegaBytecodeBuilder builder, IRInvoke invoke)
+    private void UnwrapFunctionBody_Call(OmegaBlockBuilder builder, IRInvoke invoke)
     {
         var reference = invoke.Target;
         if (reference is not IRSolvedReference @solved) throw new Exception();
@@ -474,7 +486,7 @@ public class Compressor
                         case "type_of":
                         {
                             builder.Writer.LdTypeRefOf();
-                            UnwrapFunctionBody_IRNode(builder, invoke.Arguments[0]);
+                            UnwrapFunctionBody_IRNode(ref builder, invoke.Arguments[0]);
                         } break;
                         default: throw new Exception($"Invalid symbol {f.Function.Extern.symbol}");
                     }
@@ -482,7 +494,7 @@ public class Compressor
                 else
                 {
                     builder.Writer.Call((BaseFunctionBuilder)GetObjectBuilder(f.Function));
-                    foreach (var i in invoke.Arguments) UnwrapFunctionBody_IRNode(builder, i);
+                    foreach (var i in invoke.Arguments) UnwrapFunctionBody_IRNode(ref builder, i);
                 }
                 break;
                     
@@ -491,7 +503,7 @@ public class Compressor
     }
 
     
-    private void UnwrapFunctionBody_Load_Reference(OmegaBytecodeBuilder builder, LanguageReference refe)
+    private void UnwrapFunctionBody_Load_Reference(OmegaBlockBuilder builder, LanguageReference refe)
     {
         switch (refe)
         {
@@ -516,7 +528,7 @@ public class Compressor
         }
     }
 
-    private void UnwrapFunctionBody_FlagType(OmegaBytecodeBuilder builder, BuilderTypeReference type)
+    private void UnwrapFunctionBody_FlagType(OmegaBlockBuilder builder, BuilderTypeReference type)
     {
         switch (type)
         {
