@@ -139,10 +139,11 @@ public class Lexer
                 case '@': tokens.Add(Tokenize(TokenType.AtSiginChar, src.GetSlice())); break;
                 case ',': tokens.Add(Tokenize(TokenType.CommaChar, src.GetSlice())); break;
                 case '.': tokens.Add(Tokenize(TokenType.DotChar, src.GetSlice())); break;
+                case ':': tokens.Add(Tokenize(TokenType.ColonChar, src.GetSlice())); break;
 
                 case '<':
                 {
-                    if (src.NextIs('=')) Tokenize(TokenType.LessEqualsOperator, src.GetSlice());
+                    if (src.NextIs('=')) tokens.Add(Tokenize(TokenType.LessEqualsOperator, src.GetSlice()));
                     else if (src.NextIs('<')) tokens.Add(src.NextIs('=')
                             ? Tokenize(TokenType.BitShiftLeftAssign, src.GetSlice())
                             : Tokenize(TokenType.BitShiftLeftOperator, src.GetSlice()));
@@ -151,7 +152,7 @@ public class Lexer
                 
                 case '>':
                 {
-                    if (src.NextIs('=')) Tokenize(TokenType.GreatEqualsOperator, src.GetSlice());
+                    if (src.NextIs('=')) tokens.Add(Tokenize(TokenType.GreatEqualsOperator, src.GetSlice()));
                     else if (src.NextIs('>')) tokens.Add(src.NextIs('=')
                         ? Tokenize(TokenType.BitShiftRightAssign, src.GetSlice())
                         : Tokenize(TokenType.BitShiftLeftOperator, src.GetSlice()));

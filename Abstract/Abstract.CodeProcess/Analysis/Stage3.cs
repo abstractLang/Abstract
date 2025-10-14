@@ -236,6 +236,7 @@ public partial class Analyzer
                     var (res, _) = UnwrapExecutionContext_Statement(_else.Then, ctx);
                     if (res != null) then.Content.Add(res);
                 }
+                ctx.PopBlock();
 
                 var a = new IRElse(_else, then);
                 irif.Else = a;
@@ -251,11 +252,11 @@ public partial class Analyzer
 
                 if (@while.Children.Length == 6)
                 {
-                    step = new IRBlock(@while.Children[1]);
-                    step.Content.Add(UnwrapExecutionContext_Expression(@while.Children[1], ctx));
+                    step = new IRBlock(@while.Children[3]);
+                    step.Content.Add(UnwrapExecutionContext_Expression(@while.Children[3], ctx));
                 }
 
-                var bodyidx = (@while.Children.Length == 4) ? 3 : 6;
+                var bodyidx = (@while.Children.Length == 4) ? 3 : 5;
                     
                 var content = @while.Children[bodyidx];
                 if (content is BlockNode @bn) then = UnwrapExecutionContext_Block(ctx, bn);

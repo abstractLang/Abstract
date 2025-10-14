@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using System.Text;
 using Abstract.CodeProcess.Core.Language.EvaluationData;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
@@ -361,7 +362,9 @@ public class Compressor
                         UnwrapFunctionBody_FlagType(builder, unexp.ResultType!);
                         builder.Writer.Add();
                         UnwrapFunctionBody_IRNode(ref builder, unexp.Value);
-                        builder.Writer.LdConstI(((RuntimeIntegerTypeReference)unexp.ResultType!).BitSize, 1);
+                        builder.Writer.LdConstI(((RuntimeIntegerTypeReference)unexp.ResultType!).BitSize, BigInteger.One);
+                        
+                        //UnwrapFunctionBody_IRNode(ref builder, unexp.Value);
                         break;
                     
                     case IRUnaryExp.UnaryOperation.PreDecrement: 
@@ -369,7 +372,9 @@ public class Compressor
                         UnwrapFunctionBody_FlagType(builder, unexp.ResultType!);
                         builder.Writer.Sub();
                         UnwrapFunctionBody_IRNode(ref builder, unexp.Value);
-                        builder.Writer.LdConstI(((RuntimeIntegerTypeReference)unexp.ResultType!).BitSize, 1);
+                        builder.Writer.LdConstI(((RuntimeIntegerTypeReference)unexp.ResultType!).BitSize, BigInteger.One);
+                        
+                        //UnwrapFunctionBody_IRNode(ref builder, unexp.Value);
                         break;
                     
                     default: throw new UnreachableException();
@@ -452,14 +457,13 @@ public class Compressor
                 
                 if (step != null)
                 {
-                    loop.Writer.Branch(step.Index);
-                    
                     UnwrapFunctionBody_Block(ref step, @while.Step!);
                     step.Writer.Branch(check.Index);
                 }
                 
                 UnwrapFunctionBody_Block(ref loop, @while.Process);
                 if (step == null) loop.Writer.Branch(check.Index);
+                else loop.Writer.Branch(step.Index);
                 
                 builder = brk;
             } break;

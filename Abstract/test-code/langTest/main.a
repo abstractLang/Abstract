@@ -135,6 +135,17 @@ from Std.Types import
 	}
 	writeln("Loop break")
 
+	while (i < 50) : ++i => {
+		write("Iteration nº ")
+		writeln(i)
+	}
+	
+	while (let u8 j < 128) : ++j => {
+		write("j was ")
+		writeln(j)
+	}
+
+
 	# Testing:
 	#	- Memory allocation
 	#	- Extended types
