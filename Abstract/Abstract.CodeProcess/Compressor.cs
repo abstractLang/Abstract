@@ -445,11 +445,14 @@ public class Compressor
             {
                 var function = builder.Parent;
                 
+                if (@while.Define != null) UnwrapFunctionBody_Block(ref builder, @while.Define);
+                
                 var check = function.CreateOmegaBytecodeBlock("check");
                 var loop = function.CreateOmegaBytecodeBlock("loop");
                 var step = @while.Step == null ? null : function.CreateOmegaBytecodeBlock("loopstep");
                 var brk = function.CreateOmegaBytecodeBlock("break");
 
+                
                 builder.Writer.Branch(check.Index);
 
                 check.Writer.BranchIf(loop.Index, brk.Index);

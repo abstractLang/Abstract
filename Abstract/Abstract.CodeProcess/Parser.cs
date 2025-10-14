@@ -261,13 +261,18 @@ public class Parser(ErrorHandler errHandler)
 
                 node = new WhileStatementNode();
                 node.AppendChild(EatAsNode()); // while
-                node.AppendChild(ParseExpression()); // <condition>
-                if (TryEatAsNode(TokenType.ColonChar, out var t))
+                node.AppendChild(ParseExpression());
+                if (TryEatAsNode(TokenType.ColonChar, out var c1))
                 {
-                    node.AppendChild(t);
+                    node.AppendChild(c1);
                     node.AppendChild(ParseExpression());
                 }
-                node.AppendChild(DietAsNode(TokenType.RightArrowOperator, (t)
+                if (TryEatAsNode(TokenType.ColonChar, out var c2))
+                {
+                    node.AppendChild(c2);
+                    node.AppendChild(ParseExpression());
+                }
+                node.AppendChild(DietAsNode(TokenType.DoKeyword, (t)
                     => throw new Exception($"Unexpected token '{Bite()}'")));
                 node.AppendChild(ParseStatement()); // <statement>
 

@@ -178,10 +178,13 @@ public partial class Analyzer
                 // must return a reference to the local variable!
                 
                 var typenode = localvar.TypedIdentifier.Type;
-                var identnode = localvar.TypedIdentifier.Identifier;
-
+                var name = localvar.TypedIdentifier.Identifier.Value;
                 var type = SolveTypeLazy(new UnsolvedTypeReference(localvar.TypedIdentifier.Type), ctx);
-                var deflocal = new IRDefLocal(localvar, new LocalVariableObject(type, identnode.Value));
+                
+                if (ctx.Locals.Any(e => e.LocalVariable.Name == name))
+                    throw new Exception($"{localvar:pos} shadows \'{name}\' declaration");
+                
+                var deflocal = new IRDefLocal(localvar, new LocalVariableObject(type, name));
                 ctx.CurrentBlock.Content.Add(deflocal);
                 return (deflocal, true);
             }
@@ -245,19 +248,52 @@ public partial class Analyzer
 
             case WhileStatementNode @while:
             {
-
-                IRExpression condition = UnwrapExecutionContext_Expression(@while.Children[1], ctx);
+                var clen = @while.Children.Length;
+                
+                IRBlock? def = null;
                 IRBlock? step = null;
                 IRBlock then;
-
-                if (@while.Children.Length == 6)
+                
+                var defidx  = clen switch
                 {
-                    step = new IRBlock(@while.Children[3]);
-                    step.Content.Add(UnwrapExecutionContext_Expression(@while.Children[3], ctx));
+                    4 => -1,
+                    6 => -1,
+                    _ => 1
+                };
+                var conidx = clen switch
+                {
+                    4 => 1,
+                    6 => 1,
+                    _ => 3
+                };
+                var stepidx = clen switch
+                {
+                    4 => -1,
+                    6 => 3,
+                    _ => 5
+                };
+                var bodyidx = clen switch
+                {
+                    4 => 3,
+                    6 => 5,
+                    _ => 7
+                };
+                
+                if (defidx != -1)
+                {
+                    def = new IRBlock(@while.Children[defidx]);
+                    ctx.PushBlock(def);
+                    var res = UnwrapExecutionContext_Statement(@while.Children[defidx], ctx);
+                    if (res.include && res.node != null) def.Content.Add(res.node);
                 }
-
-                var bodyidx = (@while.Children.Length == 4) ? 3 : 5;
-                    
+                if (stepidx != -1)
+                {
+                    step = new IRBlock(@while.Children[stepidx]);
+                    step.Content.Add(UnwrapExecutionContext_Expression(@while.Children[stepidx], ctx));
+                }
+                
+                var condition = UnwrapExecutionContext_Expression(@while.Children[conidx], ctx);
+                
                 var content = @while.Children[bodyidx];
                 if (content is BlockNode @bn) then = UnwrapExecutionContext_Block(ctx, bn);
                 else
@@ -267,7 +303,8 @@ public partial class Analyzer
                     if (n is { include: true, node: not null }) then.Content.Add(n.node);
                 }
 
-                return (new IRWhile(@while, condition, step, then), true);
+                if (def != null) ctx.PopBlock();
+                return (new IRWhile(@while, def, condition, step, then), true);
             } break;
             
             case ReturnStatementNode @ret:
@@ -296,16 +333,19 @@ public partial class Analyzer
             return new IRIf(@origin, condition, then);
         }
     }
-
     private IRExpression UnwrapExecutionContext_Expression(SyntaxNode node, ExecutionContextData ctx)
     {
         switch (node)
         {
             case LocalVariableNode @localvar:
             {
+                var name = localvar.TypedIdentifier.Identifier.Value;
+                
+                if (ctx.Locals.Any(e => e.LocalVariable.Name == name))
+                    throw new Exception($"{localvar:pos} shadows \'{name}\' declaration");
+                
                 var newLocal = new LocalVariableObject(
-                    SolveTypeLazy(new UnsolvedTypeReference(localvar.TypedIdentifier.Type), ctx),
-                    localvar.TypedIdentifier.Identifier.Value);
+                    SolveTypeLazy(new UnsolvedTypeReference(localvar.TypedIdentifier.Type), ctx), name);
                 
                 ctx.CurrentBlock.Content.Add(new IRDefLocal(localvar, newLocal));
                 return new IRSolvedReference(

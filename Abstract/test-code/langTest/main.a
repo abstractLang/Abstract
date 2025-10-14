@@ -124,27 +124,28 @@ from Std.Types import
 
 	# Testing loops
 	let u64 i = 0
-	while (i < 10) => ++i
+	while (i < 10) do ++i
 	writeln("Loop break")
 
 	i = 10
-	while (i < 25) => {
+	while (i < 25) do {
 		write("Iteration nº ")
 		writeln(i)
 		++i
 	}
 	writeln("Loop break")
 
-	while (i < 50) : ++i => {
+	while (i < 50) : ++i do {
 		write("Iteration nº ")
 		writeln(i)
 	}
 	
-	while (let u8 j < 128) : ++j => {
-		write("j was ")
-		writeln(j)
+	while let u10 j = 0 : (j < 128) : (++j) do {
+	 	write("j was ")
+	 	writeln(j)
 	}
 
+	#let string j = "does it work?"
 
 	# Testing:
 	#	- Memory allocation

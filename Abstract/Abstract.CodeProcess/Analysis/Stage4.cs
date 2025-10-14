@@ -69,11 +69,11 @@ public partial class Analyzer
     }
 
     
-    private void BlockSemaAnal(IRBlock block, IrBlockExecutionContextData ctx)
+    private void BlockSemaAnal(IRBlock block, IrBlockExecutionContextData ctx, bool newFrame = true)
     {
-        ctx.PushFrame();
+        if (newFrame) ctx.PushFrame();
         for (var i = 0; i < block.Content.Count; i++) block.Content[i] = NodeSemaAnal(block.Content[i], ctx);
-        ctx.PopFrame();
+        if (newFrame) ctx.PopFrame();
     }
 
     private IRNode NodeSemaAnal(IRNode node, IrBlockExecutionContextData ctx)
@@ -413,6 +413,7 @@ public partial class Analyzer
 
     public IRNode NodeSemaAnal_While(IRWhile node, IrBlockExecutionContextData ctx)
     {
+        if (node.Define != null) BlockSemaAnal(node.Define, ctx, false);
         node.Condition = (IRExpression)NodeSemaAnal(node.Condition, ctx);
         if (node.Step != null) BlockSemaAnal(node.Step, ctx);
         BlockSemaAnal(node.Process, ctx);
