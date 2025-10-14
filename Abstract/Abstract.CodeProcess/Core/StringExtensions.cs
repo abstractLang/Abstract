@@ -9,7 +9,12 @@ public static class StringExtensions
         if (str == null) return "<nil>";
         var sb = new StringBuilder();
         var lines = str.Split(Environment.NewLine);
-        foreach (var l in lines) sb.AppendLine($"\t{l}");
+        foreach (var l in lines)
+        {
+            if (string.IsNullOrEmpty(l)) sb.AppendLine();
+            else sb.AppendLine($"\t{l}");
+        }
+
         if (lines.Length > 0) sb.Length -= Environment.NewLine.Length;
         return sb.ToString();
     }

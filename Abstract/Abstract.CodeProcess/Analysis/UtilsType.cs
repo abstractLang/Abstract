@@ -47,7 +47,7 @@ public partial class Analyzer
                                 ?? throw new UnreachableException(
                                     "This function should not be called when this value is null"),
             
-            IRUnaryExp @unexp => unexp.Prefix != IRUnaryExp.UnaryPrefix.Reference
+            IRUnaryExp @unexp => unexp.Operation != IRUnaryExp.UnaryOperation.Reference
                 ? GetEffectiveTypeReference(unexp.Value)
                 : new ReferenceTypeReference(GetEffectiveTypeReference(@unexp.Value)),
             

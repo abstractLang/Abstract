@@ -306,14 +306,6 @@ public class Parser(ErrorHandler errHandler)
     {
         var t = _tokens[_tokens_cursor];
         var node = ParseAssignmentExpression();
-
-        if (
-            !canFallTrough
-            && node is not AssignmentExpressionNode
-            && node is not LocalVariableNode
-            && node is not FunctionCallExpressionNode
-        ) throw new Exception($"Unexpected token {Bite()}");
-
         return node;
     }
 
@@ -452,14 +444,26 @@ public class Parser(ErrorHandler errHandler)
         if(Taste(
                TokenType.CrossChar, // +
                TokenType.MinusChar,  // -
-               TokenType.AmpersandChar  // &
+               TokenType.AmpersandChar,  // &
+               TokenType.IncrementOperator, // ++
+               TokenType.DecrementOperator // --
            ))
         {
-            node = new UnaryExpressionNode();
+            node = new UnaryPrefixExpressionNode();
             node.AppendChild(EatAsNode());
             node.AppendChild(ParseValue());
         }
         else node = ParseValue();
+
+        if (!Taste(
+                TokenType.IncrementOperator, // ++,
+                TokenType.DecrementOperator // --
+            )) return node;
+        
+        var n = new UnaryPostfixExpressionNode();
+        n.AppendChild(node);
+        n.AppendChild(EatAsNode());
+        node = n;
 
         return node;
     }    

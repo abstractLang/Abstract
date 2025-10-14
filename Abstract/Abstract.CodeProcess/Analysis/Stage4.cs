@@ -84,12 +84,14 @@ public partial class Analyzer
             
             IRInvoke @iv => NodeSemaAnal_Invoke(iv, ctx),
             IRAssign @ass => NodeSemaAnal_Assign(ass, ctx),
+            IRCompareExp @ce => NodeSemaAnal_CmpExp(ce, ctx),
             IRBinaryExp @be => NodeSemaAnal_BinExp(be, ctx),
             IRUnaryExp @ue => NodeSemaAnal_UnExp(ue, ctx),
             IrConv @tc =>NodeSemaAnal_Conv(tc, ctx),
             IRNewObject @no => NodeSemaAnal_NewObj(no, ctx),
             IRReturn @re => NodeSemaAnal_Return(re, ctx),
             IRIf @iff => NodeSemaAnal_If(iff, ctx),
+            IRWhile @iwhile => NodeSemaAnal_While(iwhile, ctx),
             
             IRReferenceAccess
                 or IRSolvedReference
@@ -221,6 +223,54 @@ public partial class Analyzer
         
         return node;
     }
+
+    private IRNode NodeSemaAnal_CmpExp(IRCompareExp node, IrBlockExecutionContextData ctx)
+    {
+        node.Left = (IRExpression)NodeSemaAnal(node.Left, ctx);
+        var leftTypeRef = GetEffectiveTypeReference(node.Left);
+        node.Right = SolveTypeCast(leftTypeRef, (IRExpression)NodeSemaAnal(node.Right, ctx));
+
+        switch (node)
+        {
+            case { Left: IRIntegerLiteral @leftInt, Right: IRIntegerLiteral @rightInt }:
+                return new IRIntegerLiteral(node.Origin, node.Operator switch
+                {
+                    IRCompareExp.Operators.GreaterThan => leftInt.Value > rightInt.Value,
+                    IRCompareExp.Operators.LessThan => leftInt.Value < rightInt.Value,
+                    IRCompareExp.Operators.LessThanOrEqual => leftInt.Value <= rightInt.Value,
+                    IRCompareExp.Operators.GreaterThanOrEqual => leftInt.Value >= rightInt.Value,
+                    _ => throw new UnreachableException()
+                } ? 1 : 0);
+        }
+        
+        var ltype = GetEffectiveTypeReference(node.Left);
+        var rtype = GetEffectiveTypeReference(node.Right);
+        
+        if (ltype is RuntimeIntegerTypeReference @left &&
+            rtype is RuntimeIntegerTypeReference @right)
+        {
+            if (left.BitSize >= right.BitSize) node.ResultType = left;
+            else if (left.BitSize < right.BitSize) node.ResultType = right;
+        }
+        
+        else if (ltype is RuntimeIntegerTypeReference @left2 &&
+                 rtype is ComptimeIntegerTypeReference)
+        {
+            node.ResultType = left2;
+            node.Right = new IRIntegerLiteral(node.Right.Origin, ((IRIntegerLiteral)node.Right).Value, left2.BitSize);
+        }
+        
+        else if (ltype is ComptimeIntegerTypeReference @left3 &&
+                 rtype is RuntimeIntegerTypeReference @right3)
+        {
+            node.Left = new IRIntegerLiteral(node.Left.Origin, ((IRIntegerLiteral)node.Left).Value, right3.BitSize);
+            node.ResultType = right3;
+        }
+        
+        else throw new NotImplementedException();
+
+        return node;
+    }
     private IRNode NodeSemaAnal_BinExp(IRBinaryExp node, IrBlockExecutionContextData ctx)
     {
         node.Left = (IRExpression)NodeSemaAnal(node.Left, ctx);
@@ -295,15 +345,22 @@ public partial class Analyzer
 
         if (node is { Value: IRIntegerLiteral @valInt })
         {
-            return new IRIntegerLiteral(node.Origin, node.Prefix switch
+            return new IRIntegerLiteral(node.Origin, node.Operation switch
             {
-                IRUnaryExp.UnaryPrefix.Plus => valInt.Value,
-                IRUnaryExp.UnaryPrefix.Minus => BigInteger.Negate(valInt.Value),
-                IRUnaryExp.UnaryPrefix.Not => ~valInt.Value,
+                IRUnaryExp.UnaryOperation.Plus => valInt.Value,
+                IRUnaryExp.UnaryOperation.Minus => BigInteger.Negate(valInt.Value),
+                IRUnaryExp.UnaryOperation.Not => ~valInt.Value,
+                
+                IRUnaryExp.UnaryOperation.PreIncrement => valInt.Value + 1,
+                IRUnaryExp.UnaryOperation.PreDecrement => valInt.Value - 1,
+                IRUnaryExp.UnaryOperation.PostIncrement or
+                IRUnaryExp.UnaryOperation.PostDecrement => valInt.Value,
+                
                 _ => throw new UnreachableException(),
             });
         }
 
+        node.ResultType = GetEffectiveTypeReference(node.Value);
         return node;
     }
 
@@ -351,6 +408,15 @@ public partial class Analyzer
     private IRNode NodeSemaAnal_Else(IRElse node, IrBlockExecutionContextData ctx)
     {
         BlockSemaAnal(node.Then, ctx);
+        return node;
+    }
+
+    public IRNode NodeSemaAnal_While(IRWhile node, IrBlockExecutionContextData ctx)
+    {
+        node.Condition = (IRExpression)NodeSemaAnal(node.Condition, ctx);
+        if (node.Step != null) BlockSemaAnal(node.Step, ctx);
+        BlockSemaAnal(node.Process, ctx);
+        
         return node;
     }
     

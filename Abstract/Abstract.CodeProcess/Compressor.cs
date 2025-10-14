@@ -314,26 +314,65 @@ public class Compressor
                     case IRBinaryExp.Operators.Divide: builder.Writer.Div(); break;
                     case IRBinaryExp.Operators.Reminder: builder.Writer.Rem(); break;
 
+                    case IRBinaryExp.Operators.Logical_And:
                     case IRBinaryExp.Operators.Bitwise_And: builder.Writer.And(); break;
+                    case IRBinaryExp.Operators.Logical_Or:
                     case IRBinaryExp.Operators.Bitwise_Or: builder.Writer.Or(); break;
                     case IRBinaryExp.Operators.Bitwise_Xor: builder.Writer.Xor(); break;
 
                     case IRBinaryExp.Operators.Left_Shift:
                     case IRBinaryExp.Operators.Right_Shift:
-                    case IRBinaryExp.Operators.Logical_And:
-                    case IRBinaryExp.Operators.Logical_Or:
                     default: throw new Exception();
                 }
                 
                 UnwrapFunctionBody_IRNode(ref builder, bexp.Left);
                 UnwrapFunctionBody_IRNode(ref builder, bexp.Right);
             } break;
+            case IRCompareExp @cexp:
+            {
+                switch (cexp.ResultType)
+                {
+                    case RuntimeIntegerTypeReference @rint: builder.Writer.TypeInt(rint.Signed, 1); break;
+                    
+                    default: throw new UnreachableException();
+                }
+                
+                switch (cexp.Operator)
+                {
+                    case IRCompareExp.Operators.LessThan: builder.Writer.CmpLr(); break;
+                    case IRCompareExp.Operators.LessThanOrEqual: builder.Writer.CmpLe(); break;
+                    case IRCompareExp.Operators.GreaterThan: builder.Writer.CmpGr(); break;
+                    case IRCompareExp.Operators.GreaterThanOrEqual: builder.Writer.CmpGe(); break;
+
+                    default: throw new Exception();
+                }
+                
+                UnwrapFunctionBody_IRNode(ref builder, cexp.Left);
+                UnwrapFunctionBody_IRNode(ref builder, cexp.Right);
+            } break;
             case IRUnaryExp @unexp:
             {
-                switch (unexp.Prefix)
+                switch (unexp.Operation)
                 {
-                    case IRUnaryExp.UnaryPrefix.Reference: UnwrapFunctionBody_Ref(builder, unexp.Value); break;
-                    default: UnwrapFunctionBody_IRNode(ref builder, unexp.Value); break;
+                    case IRUnaryExp.UnaryOperation.Reference: UnwrapFunctionBody_Ref(builder, unexp.Value); break;
+                    
+                    case IRUnaryExp.UnaryOperation.PreIncrement:
+                        UnwrapFunctionBody_Store(builder, unexp.Value);
+                        UnwrapFunctionBody_FlagType(builder, unexp.ResultType!);
+                        builder.Writer.Add();
+                        UnwrapFunctionBody_IRNode(ref builder, unexp.Value);
+                        builder.Writer.LdConstI(((RuntimeIntegerTypeReference)unexp.ResultType!).BitSize, 1);
+                        break;
+                    
+                    case IRUnaryExp.UnaryOperation.PreDecrement: 
+                        UnwrapFunctionBody_Store(builder, unexp.Value);
+                        UnwrapFunctionBody_FlagType(builder, unexp.ResultType!);
+                        builder.Writer.Sub();
+                        UnwrapFunctionBody_IRNode(ref builder, unexp.Value);
+                        builder.Writer.LdConstI(((RuntimeIntegerTypeReference)unexp.ResultType!).BitSize, 1);
+                        break;
+                    
+                    default: throw new UnreachableException();
                 }
             } break;
             
@@ -365,19 +404,20 @@ public class Compressor
                 builder.Writer.Conv();
                 UnwrapFunctionBody_IRNode(ref builder, cast.Expression);
                 break;
-            
+
             case IRIf @if:
+            {
                 var function = builder.Parent;
-                
+
                 var iftrue = function.CreateOmegaBytecodeBlock("iftrue");
                 var iffalse = @if.Else == null
                     ? function.CreateOmegaBytecodeBlock("continue")
                     : function.CreateOmegaBytecodeBlock("iffalse");
                 var rest = @if.Else == null ? iffalse : function.CreateOmegaBytecodeBlock("continue");
-                
+
                 builder.Writer.BranchIf(iftrue.Index, iffalse.Index);
                 UnwrapFunctionBody_IRNode(ref builder, @if.Condition);
-                
+
                 UnwrapFunctionBody_Block(ref iftrue, @if.Then);
                 iftrue.Writer.Branch(rest.Index);
 
@@ -389,11 +429,40 @@ public class Compressor
                         case IRElse @subelse: UnwrapFunctionBody_Block(ref iffalse, subelse.Then); break;
                         default: throw new UnreachableException();
                     }
+
                     iffalse.Writer.Branch(rest.Index);
                 }
 
                 builder = rest;
-                break;
+            } break;
+
+            case IRWhile @while:
+            {
+                var function = builder.Parent;
+                
+                var check = function.CreateOmegaBytecodeBlock("check");
+                var loop = function.CreateOmegaBytecodeBlock("loop");
+                var step = @while.Step == null ? null : function.CreateOmegaBytecodeBlock("loopstep");
+                var brk = function.CreateOmegaBytecodeBlock("break");
+
+                builder.Writer.Branch(check.Index);
+
+                check.Writer.BranchIf(loop.Index, brk.Index);
+                UnwrapFunctionBody_IRNode(ref check, @while.Condition);
+                
+                if (step != null)
+                {
+                    loop.Writer.Branch(step.Index);
+                    
+                    UnwrapFunctionBody_Block(ref step, @while.Step!);
+                    step.Writer.Branch(check.Index);
+                }
+                
+                UnwrapFunctionBody_Block(ref loop, @while.Process);
+                if (step == null) loop.Writer.Branch(check.Index);
+                
+                builder = brk;
+            } break;
             
             default: throw new NotImplementedException();
         }

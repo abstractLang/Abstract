@@ -21,17 +21,6 @@ from Std.Types import
 	# Testing structure field modification
 	writeln(rng.rng.last)
 
-	# Testing function overloading
-	let u32 uint32 = 32
-	let u64 uint64 = 64
-	let i32 sint32 = -32
-	let i64 sint64 = -64
-
-	writeln(uint32)
-	writeln(uint64)
-	writeln(sint32)
-	writeln(sint64)
-
 	# Testing explicit type casting
 	const u64 realy_long_number = 0x8888888888888888
 	writeln(realy_long_number)
@@ -132,6 +121,19 @@ from Std.Types import
 	else conditionalValue = "option was false"
 
 	writeln(conditionalValue)
+
+	# Testing loops
+	let u64 i = 0
+	while (i < 10) => ++i
+	writeln("Loop break")
+
+	i = 10
+	while (i < 25) => {
+		write("Iteration nº ")
+		writeln(i)
+		++i
+	}
+	writeln("Loop break")
 
 	# Testing:
 	#	- Memory allocation

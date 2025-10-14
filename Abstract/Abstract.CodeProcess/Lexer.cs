@@ -160,11 +160,15 @@ public class Lexer
                 
                 case '+': tokens.Add(src.NextIs('=')
                     ? Tokenize(TokenType.AddAssigin, src.GetSlice())
-                    : Tokenize(TokenType.CrossChar, src.GetSlice())); break;
+                    : src.NextIs('+')
+                        ? Tokenize(TokenType.IncrementOperator, src.GetSlice())
+                        : Tokenize(TokenType.CrossChar, src.GetSlice())); break;
                 
                 case '-': tokens.Add(src.NextIs('=')
                     ? Tokenize(TokenType.SubAssigin, src.GetSlice())
-                    : Tokenize(TokenType.MinusChar, src.GetSlice())); break;
+                    : src.NextIs('-')
+                        ? Tokenize(TokenType.DecrementOperator, src.GetSlice())
+                        : Tokenize(TokenType.MinusChar, src.GetSlice())); break;
                 
                 case '*': tokens.Add(src.NextIs('=')
                     ? Tokenize(TokenType.MulAssigin, src.GetSlice())
@@ -180,7 +184,9 @@ public class Lexer
                 
                 case '=': tokens.Add(src.NextIs('=')
                     ? Tokenize(TokenType.EqualOperator, src.GetSlice())
-                    : Tokenize(TokenType.EqualsChar, src.GetSlice())); break;
+                    : src.NextIs('>') 
+                        ? Tokenize(TokenType.RightArrowOperator, src.GetSlice())
+                        : Tokenize(TokenType.EqualsChar, src.GetSlice())); break;
                 
                 case '^': tokens.Add(src.NextIs('=')
                     ? Tokenize(TokenType.BitwiseXorAssign, src.GetSlice())

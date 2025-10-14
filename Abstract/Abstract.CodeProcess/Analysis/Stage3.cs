@@ -241,7 +241,33 @@ public partial class Analyzer
                 irif.Else = a;
                 return (a, false);
             }
-            
+
+            case WhileStatementNode @while:
+            {
+
+                IRExpression condition = UnwrapExecutionContext_Expression(@while.Children[1], ctx);
+                IRBlock? step = null;
+                IRBlock then;
+
+                if (@while.Children.Length == 6)
+                {
+                    step = new IRBlock(@while.Children[1]);
+                    step.Content.Add(UnwrapExecutionContext_Expression(@while.Children[1], ctx));
+                }
+
+                var bodyidx = (@while.Children.Length == 4) ? 3 : 6;
+                    
+                var content = @while.Children[bodyidx];
+                if (content is BlockNode @bn) then = UnwrapExecutionContext_Block(ctx, bn);
+                else
+                {
+                    then = new IRBlock(content);
+                    var n = UnwrapExecutionContext_Statement(content, ctx);
+                    if (n is { include: true, node: not null }) then.Content.Add(n.node);
+                }
+
+                return (new IRWhile(@while, condition, step, then), true);
+            } break;
             
             case ReturnStatementNode @ret:
             {
@@ -293,9 +319,21 @@ public partial class Analyzer
                     funccal.Arguments.Select(i
                         => UnwrapExecutionContext_Expression(i, ctx)).ToArray());
             }
-
+    
             case BinaryExpressionNode @bexp:
             {
+                if (bexp.Operator is ">" or "<" or ">=" or "<=") return new IRCompareExp(bexp,
+                    bexp.Operator switch
+                    {
+                        ">" => IRCompareExp.Operators.GreaterThan,
+                        ">=" => IRCompareExp.Operators.GreaterThanOrEqual,
+                        "<" => IRCompareExp.Operators.LessThan,
+                        "<=" => IRCompareExp.Operators.LessThanOrEqual,
+                        _ => throw new UnreachableException(),
+                    },
+                    UnwrapExecutionContext_Expression(bexp.Left, ctx),
+                    UnwrapExecutionContext_Expression(bexp.Right, ctx));
+
                 return new IRBinaryExp(bexp,
                     bexp.Operator switch
                     {
@@ -304,34 +342,48 @@ public partial class Analyzer
                         "*" => IRBinaryExp.Operators.Multiply,
                         "/" => IRBinaryExp.Operators.Divide,
                         "%" => IRBinaryExp.Operators.Reminder,
-                        
+
                         "&" => IRBinaryExp.Operators.Bitwise_And,
                         "|" => IRBinaryExp.Operators.Bitwise_Or,
                         "^" => IRBinaryExp.Operators.Bitwise_Xor,
-                        
+
                         "<<" => IRBinaryExp.Operators.Left_Shift,
                         ">>" => IRBinaryExp.Operators.Right_Shift,
                         
                         "or" => IRBinaryExp.Operators.Logical_Or,
                         "and" => IRBinaryExp.Operators.Logical_And,
-                        
+
                         _ => throw new UnreachableException(),
                     },
                     UnwrapExecutionContext_Expression(bexp.Left, ctx),
                     UnwrapExecutionContext_Expression(bexp.Right, ctx));
             }
-            case UnaryExpressionNode @uexp:
+            case UnaryPrefixExpressionNode @uexp:
             {
                 return new IRUnaryExp(uexp, uexp.Operator switch
                 {
-                    "+" => IRUnaryExp.UnaryPrefix.Plus,
-                    "-" => IRUnaryExp.UnaryPrefix.Minus,
-                    "!" => IRUnaryExp.UnaryPrefix.Not,
+                    "+" => IRUnaryExp.UnaryOperation.Plus,
+                    "-" => IRUnaryExp.UnaryOperation.Minus,
+                    "!" => IRUnaryExp.UnaryOperation.Not,
                     
-                    "&" => IRUnaryExp.UnaryPrefix.Reference,
+                    "&" => IRUnaryExp.UnaryOperation.Reference,
+                    
+                    "++" => IRUnaryExp.UnaryOperation.PreIncrement,
+                    "--" => IRUnaryExp.UnaryOperation.PreDecrement,
                     
                     _ => throw new UnreachableException(),
                 },
+                    UnwrapExecutionContext_Expression(uexp.Expression, ctx));
+            }
+            case UnaryPostfixExpressionNode @uexp:
+            {
+                return new IRUnaryExp(uexp, uexp.Operator switch
+                    {
+                        "++" => IRUnaryExp.UnaryOperation.PostIncrement,
+                        "--" => IRUnaryExp.UnaryOperation.PostDecrement,
+                    
+                        _ => throw new UnreachableException(),
+                    },
                     UnwrapExecutionContext_Expression(uexp.Expression, ctx));
             }
 

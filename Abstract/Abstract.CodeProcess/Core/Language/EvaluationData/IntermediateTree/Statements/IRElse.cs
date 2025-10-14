@@ -5,4 +5,6 @@ namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Sta
 public class IRElse(SyntaxNode origin, IRBlock then) : IRStatement(origin), IIfElse
 {
     public IRBlock Then = then;
+
+    public override string ToString() => Then.ToString();
 }
