@@ -150,11 +150,11 @@ public class Compressor
                 _membersMap.Add(langObject, fn);
 
             } break;
-            case FieldObject @vobj       when parent is StructureBuilder @parentstruc:
+            case FieldObject @fobj       when parent is StructureBuilder @parentstruc:
             {
-                var name = string.Join('.', vobj.Global[(langParent?.Global.Length ?? 0) ..]);
-                var fn = parentstruc.AddField(name);
-                _membersMap.Add(langObject, fn);
+                var name = string.Join('.', fobj.Global[(langParent?.Global.Length ?? 0) ..]);
+                if (fobj.Static) _membersMap.Add(langObject, parentstruc.AddStaticField(name));
+                else _membersMap.Add(langObject, parentstruc.AddField(name));
                 
             } break;
             
@@ -594,11 +594,12 @@ public class Compressor
             case FieldReference @fie:
             {
                 var field = ((SolvedFieldReference)fie).Field;
-                
                 if (((SolvedFieldReference)fie).Field.Static) builder.Writer.LdField((StaticFieldBuilder)GetObjectBuilder(field));
                 else builder.Writer.LdField((InstanceFieldBuilder)GetObjectBuilder(field));
                 
             } break;
+
+            case SelfReference: builder.Writer.LdSelf(); break;
 
             default: throw new NotFiniteNumberException();
         }

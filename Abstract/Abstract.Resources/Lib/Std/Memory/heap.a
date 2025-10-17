@@ -1,20 +1,30 @@
 @public struct WasmAllocator
 {
+    @static const u32 page_size = 64 * 1024
 
 	func alloc(uptr length, Alignment alignment) Memory {
         let Memory ret = new Memory()
-        ret.length = 10
+
+        Std.Console.write("Page size is: ")
+		Std.Console.writeln(page_size)
+
         return ret
     }
     func resize(Memory old, uptr newLength) bool {
         return false
     }
+
     func realloc(Memory old, uptr newLength) Memory {
         let Memory ret = new Memory()
         return ret
     }
+
     func free(Memory memory) void {
         return
     }
 
 }
+
+
+@extern("env", "mem_grow") func memgrow(u32 len) u32
+@extern("env", "mem_size") func memsize() u32

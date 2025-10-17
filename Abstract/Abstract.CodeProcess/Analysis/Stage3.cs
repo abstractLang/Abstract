@@ -451,8 +451,7 @@ public partial class Analyzer
                 List<IRAssign> asisgns = [];
 
                 var typer = SolveTypeLazy(new UnsolvedTypeReference(newobj.Type), ctx)
-                                as SolvedStructTypeReference
-                            ?? throw new Exception($"Undefined symbol {newobj.Type}");
+                                as SolvedStructTypeReference ?? throw new Exception($"Undefined symbol {newobj.Type}");
 
                 if (newobj.Inlined != null)
                 {
@@ -585,10 +584,15 @@ public partial class Analyzer
                 break;
             }
 
-            // Search in sibilings
+            // Search in siblings
             var res2 = SearchReference_ChildrenOf(reference[0], ctx.Parent.Parent);
             if (res2.HasValue)
             {
+                if (ctx.Parent.Parent is StructObject { Static: false })
+                {
+                    if (res2.Value.Item2 is FieldObject { Static: false })
+                        referenceChain.Add(new SelfReference());
+                }
                 referenceChain.Add(res2.Value.Item1);
                 langobj = res2.Value.Item2;
                 break;
@@ -693,6 +697,11 @@ public partial class Analyzer
             var res1 = SearchReference_ChildrenOf(reference[0], obj.Parent);
             if (res1.HasValue)
             {
+                if (obj.Parent is StructObject { Static: false })
+                {
+                    if (res1.Value.Item2 is FieldObject { Static: false })
+                        referenceChain.Add(new SelfReference());
+                }
                 referenceChain.Add(res1.Value.Item1);
                 break;
             }

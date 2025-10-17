@@ -145,18 +145,18 @@ from Std.Types import
 	 	writeln(j)
 	}
 
-	#let string j = "does it work?"
+	let string j = "does it work?"
 
 	# Testing:
 	#	- Memory allocation
 	#	- Extended types
 	#	- Virtual tables
-	#let WasmAllocator allocator = new WasmAllocator()
+	let WasmAllocator allocator = new WasmAllocator()
 	#let *Allocator allocator = &wasmAllocatorInstance
 
-	#let Memory memory = allocator.alloc(128, 8)
+	let Memory memory = allocator.alloc(128, 8)
 
-	#writeln(memory.length)
+	writeln(memory.length)
 
 	# Testing type metadata (this should be also hardly tested in backend!)
 	#let type allocType = typeOf(allocator)
