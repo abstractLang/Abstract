@@ -159,25 +159,32 @@ public class Lexer
                     else tokens.Add(Tokenize(TokenType.RightAngleChar, src.GetSlice()));
                 } break;
                 
-                case '+': tokens.Add(src.NextIs('=')
-                    ? Tokenize(TokenType.AddAssigin, src.GetSlice())
-                    : src.NextIs('+')
-                        ? Tokenize(TokenType.IncrementOperator, src.GetSlice())
-                        : Tokenize(TokenType.CrossChar, src.GetSlice())); break;
+                case '+': tokens.Add(Tokenize(
+                          src.NextIs('=') ? TokenType.AddAssigin
+                        : src.NextIs('+') ? TokenType.IncrementOperator
+                        : src.NextIs('%') ? TokenType.AddWarpOperator
+                        : src.NextIs('|') ? TokenType.SubOnBoundsOperator
+                        : TokenType.CrossChar
+                    , src.GetSlice())); break;
                 
-                case '-': tokens.Add(src.NextIs('=')
-                    ? Tokenize(TokenType.SubAssigin, src.GetSlice())
-                    : src.NextIs('-')
-                        ? Tokenize(TokenType.DecrementOperator, src.GetSlice())
-                        : Tokenize(TokenType.MinusChar, src.GetSlice())); break;
+                case '-': tokens.Add(Tokenize(
+                          src.NextIs('=') ? TokenType.SubAssigin
+                        : src.NextIs('-') ? TokenType.DecrementOperator
+                        : src.NextIs('%') ? TokenType.SubWarpOperator
+                        : src.NextIs('|') ? TokenType.SubOnBoundsOperator
+                        : TokenType.MinusChar
+                    , src.GetSlice())); break;
                 
                 case '*': tokens.Add(src.NextIs('=')
                     ? Tokenize(TokenType.MulAssigin, src.GetSlice())
                     : Tokenize(TokenType.StarChar, src.GetSlice())); break;
                 
-                case '/': tokens.Add(src.NextIs('=')
-                    ? Tokenize(TokenType.DivAssigin, src.GetSlice())
-                    : Tokenize(TokenType.SlashChar, src.GetSlice())); break;
+                case '/': tokens.Add(Tokenize(
+                          src.NextIs('=') ? TokenType.DivAssigin
+                        : src.NextIs('^') ? TokenType.DivideCeilOperator
+                        : src.NextIs('_') ? TokenType.DivideFloorOperator
+                        : TokenType.SlashChar
+                    , src.GetSlice())); break;
                 
                 case '%': tokens.Add(src.NextIs('=')
                     ? Tokenize(TokenType.RestAssigin, src.GetSlice())
@@ -351,8 +358,7 @@ public class Lexer
         for (int index = 0; index < tokensList.Count; index++)
         {
             var currToken = tokensList[index];
-
-            // Se precisa remover quebras de linha à esquerda
+            
             if ((lineJunctions["justLeft"].Contains(currToken.type)
                  || lineJunctions["bothSides"].Contains(currToken.type)) && index > 0)
             {
@@ -365,8 +371,7 @@ public class Lexer
                     else break;
                 }
             }
-
-            // Se precisa remover quebras de linha à direita
+            
             if (lineJunctions["justRight"].Contains(currToken.type)
                 || lineJunctions["bothSides"].Contains(currToken.type))
             {

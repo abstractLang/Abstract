@@ -19,6 +19,7 @@ using Abstract.Realizer.Builder;
 using Abstract.Realizer.Builder.Language.Omega;
 using Abstract.Realizer.Builder.ProgramMembers;
 using Abstract.Realizer.Builder.References;
+using Abstract.Realizer.Core.Intermediate.Values;
 
 using IntegerTypeReference = Abstract.Realizer.Builder.References.IntegerTypeReference;
 using AbstractTypeReference = Abstract.Realizer.Builder.References.TypeReference;
@@ -27,7 +28,8 @@ using BuilderAnytypeTypeReference = Abstract.CodeProcess.Core.Language.Evaluatio
 using BuilderTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.TypeReference;
 using BuilderStringTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.StringTypeReference;
 using BuilderReferenceTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.ReferenceTypeReference;
-
+using BuilderNullableTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.NullableTypeReference;
+using NullableTypeReference = Abstract.Realizer.Builder.References.NullableTypeReference;
 using SliceTypeReference = Abstract.Realizer.Builder.References.SliceTypeReference;
 using ReferenceTypeReference = Abstract.Realizer.Builder.References.ReferenceTypeReference;
 using StringEncoding = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.StringEncoding;
@@ -216,13 +218,8 @@ public class Compressor
     }
     private void UnwrapStaticField(StaticFieldBuilder builder, FieldObject source)
     {
-        builder.Type = source.Type switch
-        {
-            RuntimeIntegerTypeReference @inr => new IntegerTypeReference(inr.Signed, inr.BitSize),
-            SolvedStructTypeReference @str => new NodeTypeReference((_membersMap[str.Struct] as StructureBuilder)!),
-            UnsolvedTypeReference => throw new UnreachableException("Local type should not be unsolved at this step!"),
-            _ => throw new NotImplementedException(),
-        };
+        builder.Type = ConvType(source.Type);
+        builder.Value = source.Value == null ? null : UnwrapConstant(source.Value);
     }
     private void UnwrapInstanceField(InstanceFieldBuilder builder, FieldObject source)
     {
@@ -238,12 +235,14 @@ public class Compressor
     }
 
     // Bruh switch hell
-    private void UnwrapFunctionBody_Block(ref OmegaBlockBuilder builder, IRBlock block)
+    private bool UnwrapFunctionBody_Block(ref OmegaBlockBuilder builder, IRBlock block)
     {
+        bool branched = false;
         foreach (var i in block.Content)
-            UnwrapFunctionBody_IRNode(ref builder, i);
+            branched = branched || UnwrapFunctionBody_IRNode(ref builder, i);
+        return branched;
     }
-    private void UnwrapFunctionBody_IRNode(ref OmegaBlockBuilder builder, IRNode node)
+    private bool UnwrapFunctionBody_IRNode(ref OmegaBlockBuilder builder, IRNode node)
     {
         switch (node)
         {
@@ -257,36 +256,36 @@ public class Compressor
 
             case IRIntegerLiteral @itlit:
             {
-                if (itlit.Size == null) builder.Writer.LdConstIptr((ulong)itlit.Value);
-                else builder.Writer.LdConstI(itlit.Size.Value, itlit.Value);
+                builder.Writer.LdConst(itlit.Size == null
+                    ? new IntegerConstantValue(0, itlit.Value)
+                    : new IntegerConstantValue(itlit.Size.Value, itlit.Value));
             } break;
             case IRStringLiteral @strlit:
             {
-                if (strlit.Encoding is StringEncoding.Utf8 or StringEncoding.Undefined)
-                    builder.Writer.LdStringUtf8(strlit.Data);
-
-                else
+                var bytes = strlit.Encoding switch
                 {
-                    var data = strlit.Encoding switch
-                    {
-                        StringEncoding.Ascii => Encoding.ASCII.GetBytes(strlit.Data),
-                        StringEncoding.Utf16 => Encoding.Unicode.GetBytes(strlit.Data),
-                        StringEncoding.Utf32 => Encoding.UTF32.GetBytes(strlit.Data),
-                        _ => throw new ArgumentOutOfRangeException()
-                    };
-
-                    builder.Writer.LdSlice(data);
-
-                }
+                    StringEncoding.Ascii => Encoding.ASCII.GetBytes(strlit.Data),
+                    StringEncoding.Utf16 => Encoding.Unicode.GetBytes(strlit.Data),
+                    StringEncoding.Utf32 => Encoding.UTF32.GetBytes(strlit.Data),
+                    _ => Encoding.UTF8.GetBytes(strlit.Data)
+                };
+                
+                var data = new SliceConstantValue(new IntegerTypeReference(false, 8),
+                    bytes.Select(e => new IntegerConstantValue(8, e))
+                    .ToArray<RealizerConstantValue>());
+                
+                var index = builder.Parent.AddDataBlock(data);
+                
+                builder.Writer.LdSlice(index);
             } break;
             
             case IRSolvedReference @solvref:
                 UnwrapFunctionBody_Load_Reference(builder, solvref.Reference);
                 break;
 
-            case IRReferenceAccess @refaccess:
+            case IRAccess @refaccess:
             {
-                UnwrapFunctionBody_Load_Reference(builder, refaccess.A);
+                UnwrapFunctionBody_IRNode(ref builder, refaccess.A);
                 UnwrapFunctionBody_IRNode(ref builder, refaccess.B);
             } break;
 
@@ -298,7 +297,7 @@ public class Compressor
 
             case IRBinaryExp @bexp:
             {
-                switch (bexp.ResultType)
+                switch (bexp.Type)
                 {
                     case RuntimeIntegerTypeReference @rint:
                         builder.Writer.TypeInt(rint.Signed, rint.PtrSized ? null : rint.BitSize);
@@ -309,8 +308,14 @@ public class Compressor
                 
                 switch (bexp.Operator)
                 {
+                    case IRBinaryExp.Operators.AddWarpAround: builder.Writer.AllowOvf(); goto case IRBinaryExp.Operators.Add;
+                    case IRBinaryExp.Operators.AddOnBounds: builder.Writer.Saturated(); goto case IRBinaryExp.Operators.Add;
                     case IRBinaryExp.Operators.Add: builder.Writer.Add(); break;
+                    
+                    case IRBinaryExp.Operators.SubtractWarpAround: builder.Writer.AllowOvf(); goto case IRBinaryExp.Operators.Subtract;
+                    case IRBinaryExp.Operators.SubtractOnBounds: builder.Writer.Saturated(); goto case IRBinaryExp.Operators.Subtract;
                     case IRBinaryExp.Operators.Subtract: builder.Writer.Sub(); break;
+                    
                     case IRBinaryExp.Operators.Multiply: builder.Writer.Mul(); break;
                     case IRBinaryExp.Operators.Divide: builder.Writer.Div(); break;
                     case IRBinaryExp.Operators.Reminder: builder.Writer.Rem(); break;
@@ -331,9 +336,10 @@ public class Compressor
             } break;
             case IRCompareExp @cexp:
             {
-                switch (cexp.ResultType)
+                switch (cexp.Type)
                 {
-                    case RuntimeIntegerTypeReference @rint: builder.Writer.TypeInt(rint.Signed, 1); break;
+                    case BooleanTypeReference: builder.Writer.TypeInt(false, 1); break;
+                    case RuntimeIntegerTypeReference @rint: builder.Writer.TypeInt(rint.Signed, rint.BitSize); break;
                     
                     default: throw new UnreachableException();
                 }
@@ -356,27 +362,34 @@ public class Compressor
                 switch (unexp.Operation)
                 {
                     case IRUnaryExp.UnaryOperation.Reference: UnwrapFunctionBody_Ref(builder, unexp.Value); break;
-                    
+
                     case IRUnaryExp.UnaryOperation.PreIncrement:
+                    {
                         UnwrapFunctionBody_Store(builder, unexp.Value);
-                        UnwrapFunctionBody_FlagType(builder, unexp.ResultType!);
+                        UnwrapFunctionBody_FlagType(builder, unexp.Type!);
                         builder.Writer.Add();
                         UnwrapFunctionBody_IRNode(ref builder, unexp.Value);
-                        builder.Writer.LdConstI(((RuntimeIntegerTypeReference)unexp.ResultType!).BitSize, BigInteger.One);
-                        
+
+                        var bs = ((RuntimeIntegerTypeReference)unexp.Type!).BitSize;
+                        builder.Writer.LdConst(new IntegerConstantValue(bs, BigInteger.One));
+
                         //UnwrapFunctionBody_IRNode(ref builder, unexp.Value);
-                        break;
-                    
-                    case IRUnaryExp.UnaryOperation.PreDecrement: 
+                    } break;
+
+                    case IRUnaryExp.UnaryOperation.PreDecrement:
+                    {
                         UnwrapFunctionBody_Store(builder, unexp.Value);
-                        UnwrapFunctionBody_FlagType(builder, unexp.ResultType!);
+                        UnwrapFunctionBody_FlagType(builder, unexp.Type!);
                         builder.Writer.Sub();
                         UnwrapFunctionBody_IRNode(ref builder, unexp.Value);
-                        builder.Writer.LdConstI(((RuntimeIntegerTypeReference)unexp.ResultType!).BitSize, BigInteger.One);
-                        
+
+                        var bs = ((RuntimeIntegerTypeReference)unexp.Type!).BitSize;
+                        builder.Writer.LdConst(new IntegerConstantValue(bs, BigInteger.One));
+
                         //UnwrapFunctionBody_IRNode(ref builder, unexp.Value);
-                        break;
-                    
+
+                    } break;
+
                     default: throw new UnreachableException();
                 }
             } break;
@@ -390,22 +403,22 @@ public class Compressor
             case IRReturn @ret:
                 builder.Writer.Ret(ret.Value != null);
                 if (ret.Value != null) UnwrapFunctionBody_IRNode(ref builder, ret.Value);
-                break;
+                return true;
             
             
             case IRIntExtend @ex:
-                UnwrapFunctionBody_FlagType(builder, ex.toType);
+                UnwrapFunctionBody_FlagType(builder, ex.Type);
                 builder.Writer.Extend();
                 UnwrapFunctionBody_IRNode(ref builder, ex.Value);
                 break;
             case IRIntTrunc @tr:
-                UnwrapFunctionBody_FlagType(builder, tr.toType);
+                UnwrapFunctionBody_FlagType(builder, tr.Type);
                 builder.Writer.Trunc();
                 UnwrapFunctionBody_IRNode(ref builder, tr.Value);
                 break;
 
             case IRIntCast @cast:
-                UnwrapFunctionBody_FlagType(builder, cast.TargetType);
+                UnwrapFunctionBody_FlagType(builder, cast.Type);
                 builder.Writer.Conv();
                 UnwrapFunctionBody_IRNode(ref builder, cast.Expression);
                 break;
@@ -423,19 +436,19 @@ public class Compressor
                 builder.Writer.BranchIf(iftrue.Index, iffalse.Index);
                 UnwrapFunctionBody_IRNode(ref builder, @if.Condition);
 
-                UnwrapFunctionBody_Block(ref iftrue, @if.Then);
-                iftrue.Writer.Branch(rest.Index);
+                if (!UnwrapFunctionBody_Block(ref iftrue, @if.Then))
+                    iftrue.Writer.Branch(rest.Index);
 
                 if (@if.Else != null)
                 {
+                    bool branch = false;
                     switch (@if.Else)
                     {
                         case IRIf @subif: UnwrapFunctionBody_IRNode(ref iffalse, subif); break;
-                        case IRElse @subelse: UnwrapFunctionBody_Block(ref iffalse, subelse.Then); break;
+                        case IRElse @subelse: branch = UnwrapFunctionBody_Block(ref iffalse, subelse.Then); break;
                         default: throw new UnreachableException();
                     }
-
-                    iffalse.Writer.Branch(rest.Index);
+                    if (!branch) iffalse.Writer.Branch(rest.Index);
                 }
 
                 builder = rest;
@@ -473,6 +486,8 @@ public class Compressor
             
             default: throw new NotImplementedException();
         }
+
+        return false;
     }
 
     private void UnwrapFunctionBody_Store(OmegaBlockBuilder builder, IRExpression reference)
@@ -503,9 +518,9 @@ public class Compressor
                     }
                     break;
                     
-                case IRReferenceAccess @refaccess:
+                case IRAccess @refaccess:
                 {
-                    UnwrapFunctionBody_Load_Reference(builder, refaccess.A);
+                    UnwrapFunctionBody_IRNode(ref builder, refaccess.A);
                     reference = refaccess.B;
                 } continue;
 
@@ -536,9 +551,9 @@ public class Compressor
                     }
                     break;
                     
-                case IRReferenceAccess @refaccess:
+                case IRAccess @refaccess:
                 {
-                    UnwrapFunctionBody_Load_Reference(builder, refaccess.A);
+                    UnwrapFunctionBody_IRNode(ref builder, refaccess.A);
                     reference = refaccess.B;
                 } continue;
 
@@ -562,6 +577,13 @@ public class Compressor
                         case "type_of":
                         {
                             builder.Writer.LdTypeRefOf();
+                            UnwrapFunctionBody_IRNode(ref builder, invoke.Arguments[0]);
+                        } break;
+                        case "int_to_ref":
+                        {
+                            builder.Writer
+                                .TypeReference()
+                                .Conv();
                             UnwrapFunctionBody_IRNode(ref builder, invoke.Arguments[0]);
                         } break;
                         default: throw new Exception($"Invalid symbol {f.Function.Extern.symbol}");
@@ -601,6 +623,23 @@ public class Compressor
 
             case SelfReference: builder.Writer.LdSelf(); break;
 
+            case MetaReference @m:
+            {
+                switch (m.Type)
+                {
+                    case MetaReference.MetaReferenceType.Name:
+                        builder.Writer.LdMeta(OmegaMetadataKind.StructureName); break;
+                    case MetaReference.MetaReferenceType.ByteSize:
+                        builder.Writer.LdMeta(OmegaMetadataKind.StructureSizeBytes); break;
+                    case MetaReference.MetaReferenceType.BitSize:
+                        builder.Writer.LdMeta(OmegaMetadataKind.StructureSizeBits); break;
+                    case MetaReference.MetaReferenceType.Alignment:
+                        builder.Writer.LdMeta(OmegaMetadataKind.StructureAlign); break;
+                    
+                    default: throw new ArgumentOutOfRangeException();
+                }
+            } break;
+            
             default: throw new NotFiniteNumberException();
         }
     }
@@ -612,7 +651,24 @@ public class Compressor
             case RuntimeIntegerTypeReference @intt:
                 builder.Writer.TypeInt(intt.Signed, intt.PtrSized ? null : intt.BitSize);
                 break;
+            
+            case BuilderReferenceTypeReference @reft:
+                builder.Writer.TypeReference();
+                break;
+            
+            default: throw new UnreachableException();
         }
+    }
+
+
+    private RealizerConstantValue UnwrapConstant(IRExpression exp)
+    {
+        return exp switch
+        {
+            IRIntegerLiteral @intlit => new IntegerConstantValue(intlit.Size ?? 0, intlit.Value),
+            IRNullLiteral @null => new NullConstantValue(),
+            _ => throw new UnreachableException(),
+        };
     }
     
     
@@ -634,6 +690,7 @@ public class Compressor
             RuntimeIntegerTypeReference @ri => new IntegerTypeReference(ri.Signed, ri.PtrSized ? null : ri.BitSize),
             BuilderStringTypeReference @sr => new SliceTypeReference(new IntegerTypeReference(false, 8)),
             BuilderReferenceTypeReference @rr => new ReferenceTypeReference(ConvType(rr.InternalType)),
+            BuilderNullableTypeReference @nullable => new NullableTypeReference(ConvType(nullable.InternalType)),
             BooleanTypeReference => new IntegerTypeReference(false, 1),
             
             SolvedStructTypeReference @ss => new NodeTypeReference((StructureBuilder)GetObjectBuilder(ss.Struct)),
@@ -642,7 +699,9 @@ public class Compressor
             BuilderAnytypeTypeReference => new AnytypeTypeReference(),
             TypeTypeReference => new ProgramMemberTypeReference(),
             VoidTypeReference => null!,
+            NoReturnTypeReference => new NoreturnTypeReference(),
             
+                
             _ => throw new UnreachableException()
         };
     }

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Abstract.CodeProcess.Core;
+using Abstract.CodeProcess.Core.Language;
 using Abstract.CodeProcess.Core.Language.EvaluationData;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
@@ -8,10 +9,8 @@ using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Stateme
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObjects;
-using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.CodeReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
-using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.Integer;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
@@ -19,7 +18,6 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Statement;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
-using IntegerTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.Integer.IntegerTypeReference;
 using ReferenceTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.ReferenceTypeReference;
 using SliceTypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin.SliceTypeReference;
 using TypeReference = Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.TypeReference;
@@ -60,24 +58,12 @@ public partial class Analyzer
     
     private void ScanNamespaceMeta(NamespaceObject nmsp)
     {
-        foreach (var n in nmsp.Imports)
-        {
-            var member = _globalReferenceTable.Values
-                .FirstOrDefault(e => IdentifierComparer.IsEquals(e.Global, n.Key));
-            
-            if (member is not NamespaceObject @nmspObj)
-                throw new Exception($"\"{string.Join('.', n.Key)}\" is not a namespace");
-
-            nmsp.Imports[n.Key] = (n.Value.specific, nmspObj);
-
-            if (n.Value.specific != null) throw new UnreachableException();
-        }
     }
     private void ScanStructureMeta(StructObject structure)
     {
         if (structure.Extends != null)
         {
-            structure.Extends = SolveTypeLazy(structure.Extends, structure);
+            structure.Extends = SolveTypeLazy(structure.Extends, null, structure);
             if (structure.Extends is UnsolvedTypeReference)
                 throw new NotImplementedException();
             if (structure.Extends is not SolvedStructTypeReference)
@@ -89,7 +75,7 @@ public partial class Analyzer
             switch (i)
             {
                 case FieldObject field:
-                    if (!IsSolved(field.Type)) field.Type = SolveTypeLazy(field.Type, structure);
+                    if (!IsSolved(field.Type)) field.Type = SolveTypeLazy(field.Type, null, structure);
                     break;
                 
                 case FunctionGroupObject group:
@@ -104,10 +90,10 @@ public partial class Analyzer
     {
         foreach (var t in function.Parameters)
         {
-            if (!IsSolved(t.Type)) t.Type = SolveTypeLazy(t.Type, function);
+            if (!IsSolved(t.Type)) t.Type = SolveTypeLazy(t.Type, null, function);
         }
         if (!IsSolved(function.ReturnType))
-            function.ReturnType = SolveTypeLazy(function.ReturnType, function);
+            function.ReturnType = SolveTypeLazy(function.ReturnType, null, function);
     }
     
     private void ScanObjectBodies()
@@ -122,8 +108,19 @@ public partial class Analyzer
                     foreach (var i2 in funcgroup.Overloads) ScanFunctionExecutionBody(i2);
                     break;
                 }
+                case FieldObject @fld: ScanFieldValueBody(fld); break;
             }
         }
+    }
+
+    private void ScanFieldValueBody(FieldObject field)
+    {
+        var nodes = field.syntaxNode.Children;
+
+        if (nodes is not [_, _, TokenNode { token.type: TokenType.EqualsChar }, ExpressionNode @value]) return;
+        
+        var ctx = new ExecutionContextData(field);
+        field.Value = UnwrapExecutionContext_Expression(value, ctx);
     }
     private void ScanFunctionExecutionBody(FunctionObject function)
     {
@@ -179,7 +176,7 @@ public partial class Analyzer
                 
                 var typenode = localvar.TypedIdentifier.Type;
                 var name = localvar.TypedIdentifier.Identifier.Value;
-                var type = SolveTypeLazy(new UnsolvedTypeReference(localvar.TypedIdentifier.Type), ctx);
+                var type = SolveTypeLazy(new UnsolvedTypeReference(localvar.TypedIdentifier.Type), ctx, null);
                 
                 if (ctx.Locals.Any(e => e.LocalVariable.Name == name))
                     throw new Exception($"{localvar:pos} shadows \'{name}\' declaration");
@@ -345,7 +342,7 @@ public partial class Analyzer
                     throw new Exception($"{localvar:pos} shadows \'{name}\' declaration");
                 
                 var newLocal = new LocalVariableObject(
-                    SolveTypeLazy(new UnsolvedTypeReference(localvar.TypedIdentifier.Type), ctx), name);
+                    SolveTypeLazy(new UnsolvedTypeReference(localvar.TypedIdentifier.Type), ctx, null), name);
                 
                 ctx.CurrentBlock.Content.Add(new IRDefLocal(localvar, newLocal));
                 return new IRSolvedReference(
@@ -379,9 +376,19 @@ public partial class Analyzer
                     bexp.Operator switch
                     {
                         "+" => IRBinaryExp.Operators.Add,
+                        "+%" => IRBinaryExp.Operators.AddWarpAround,
+                        "+|" => IRBinaryExp.Operators.AddOnBounds,
+                        
                         "-" => IRBinaryExp.Operators.Subtract,
+                        "-%" =>  IRBinaryExp.Operators.SubtractWarpAround,
+                        "-|" => IRBinaryExp.Operators.SubtractOnBounds,
+                        
                         "*" => IRBinaryExp.Operators.Multiply,
+                        
                         "/" => IRBinaryExp.Operators.Divide,
+                        "/_" => IRBinaryExp.Operators.DivideFloor,
+                        "/^" => IRBinaryExp.Operators.DivideCeil,
+                        
                         "%" => IRBinaryExp.Operators.Reminder,
 
                         "&" => IRBinaryExp.Operators.Bitwise_And,
@@ -432,26 +439,29 @@ public partial class Analyzer
             {
                 return new IrConv(tcast,
                     UnwrapExecutionContext_Expression(tcast.Value, ctx),
-                    SolveTypeLazy(new UnsolvedTypeReference(tcast.TargetType), ctx));
+                    SolveTypeLazy(new UnsolvedTypeReference(tcast.TargetType), ctx, null));
             }
             
-            case IdentifierCollectionNode @identc: return SearchReference(identc, ctx);
-            case IdentifierNode @ident: return SearchReference(ident, ctx);
-                
-            case IntegerLiteralNode @intlit: return new IRIntegerLiteral(intlit, intlit.Value);
+            case AccessNode @identc: return SolveReferenceChain(identc, ctx, null);
+            case IdentifierNode @ident: return SolveReferenceChain(ident, ctx, null);
+
+            case IntegerLiteralNode @intlit:
+                return new IRIntegerLiteral(intlit, intlit.Value, new ComptimeIntegerTypeReference());
             case StringLiteralNode @strlit:
             {
                 if (strlit.IsSimple) return new IRStringLiteral(strlit, strlit.RawContent);
-                else throw new NotImplementedException();
+                throw new NotImplementedException();
             }
-            case BooleanLiteralNode @boollit: return new IRIntegerLiteral(boollit, boollit.Value ? 1 : 0, 1);
+            case BooleanLiteralNode @boollit:
+                return new IRIntegerLiteral(boollit, boollit.Value ? 1 : 0, new RuntimeIntegerTypeReference(false, 1));
+            case NullLiteralNode @nulllit: 
+                return new IRNullLiteral(nulllit);
             
             case NewObjectNode @newobj:
             {
                 List<IRAssign> asisgns = [];
 
-                var typer = SolveTypeLazy(new UnsolvedTypeReference(newobj.Type), ctx)
-                                as SolvedStructTypeReference ?? throw new Exception($"Undefined symbol {newobj.Type}");
+                var typer = SolveTypeLazy(new UnsolvedTypeReference(newobj.Type), ctx, null);
 
                 if (newobj.Inlined != null)
                 {
@@ -459,7 +469,7 @@ public partial class Analyzer
                     {
                         if (i is not AssignmentExpressionNode @ass) throw new UnreachableException();
                         asisgns.Add(new IRAssign(ass,
-                            SearchReferenceStrictlyInside(ass.Left, typer.Struct),
+                            new IRUnknownReference(ass.Left),
                             UnwrapExecutionContext_Expression(ass.Right, ctx)));
                     }
                 }
@@ -539,320 +549,27 @@ public partial class Analyzer
 
         throw new Exception("No virtual function to override");
     }
-    
-    
-    private IRReference SearchReference(ExpressionNode node, ExecutionContextData ctx)
+
+
+    private IRExpression SolveReferenceChain(ExpressionNode node, ExecutionContextData? ctx, LangObject? obj)
     {
-        string[] reference = node switch
+        return node switch
         {
-            IdentifierCollectionNode @idc => idc.Values,
-            IdentifierNode @idn => [idn.Value],
-            _ => throw new NotImplementedException(),
+            AccessNode @access => new IRAccess(node,
+                SolveReferenceChain(access.Left, ctx, obj), SolveReferenceChain(access.Right, ctx, obj)),
+            
+            IdentifierNode @ident => ((Func<IRExpression>)(() =>
+            {
+                var a = SolveShallowType(ident);
+                return a is UnsolvedTypeReference
+                    ? new IRUnknownReference(ident)
+                    : new IRSolvedReference(ident, a);
+            })).Invoke(),
+            _ => UnwrapExecutionContext_Expression(node, ctx),
         };
-        
-        List<LanguageReference> referenceChain = [];
-        LangObject? langobj = null;
-        
-        if (reference.Length == 0) goto end;
-
-        do // capturing root
-        {
-            // Search in exec context
-            var res1 = SearchReference_ExecCtx(reference[0], ctx);
-            if (res1.HasValue)
-            {
-                referenceChain.Add(res1.Value.Item1);
-                var v2 = res1.Value.Item2;
-                while (true)
-                {
-                    switch (v2)
-                    {
-                        case RuntimeIntegerTypeReference:
-                        case BooleanTypeReference:
-                        case StringTypeReference:
-                            goto end; break;
-
-                        case ReferenceTypeReference @refe:
-                            v2 = refe.InternalType;
-                            continue;
-                        
-                        case SolvedStructTypeReference @sst: langobj = sst.Struct; break;
-                        default: throw new NotImplementedException();
-                    }
-                    break;
-                }
-                break;
-            }
-
-            // Search in siblings
-            var res2 = SearchReference_ChildrenOf(reference[0], ctx.Parent.Parent);
-            if (res2.HasValue)
-            {
-                if (ctx.Parent.Parent is StructObject { Static: false })
-                {
-                    if (res2.Value.Item2 is FieldObject { Static: false })
-                        referenceChain.Add(new SelfReference());
-                }
-                referenceChain.Add(res2.Value.Item1);
-                langobj = res2.Value.Item2;
-                break;
-            }
-            
-            // Search in namespace
-            var res3 = SearchReference_ChildrenOf(reference[0], ctx.Parent.Namespace);
-            if (res3.HasValue)
-            {
-                referenceChain.Add(res3.Value.Item1);
-                langobj = res3.Value.Item2;
-                break;
-            }
-
-            // Search in imports
-            var res4 = SearchReference_Import(reference[0], ctx.Parent.Namespace);
-            if (res4.HasValue)
-            {
-                referenceChain.Add(res4.Value.Item1);
-                langobj = res4.Value.Item2;
-                break;
-            }
-
-            // Search in globals
-            var res5 = SearchReference_Global(reference);
-            if (res5 != null) referenceChain.Add(res5);
-            goto end;
-            
-        } while (false);
-
-        if (reference.Length == 1) goto end;
-        foreach (var i in reference[1..])
-        {
-            var res = SearchReference_ChildrenOf(i, langobj);
-            if (res.HasValue)
-            {
-                referenceChain.Add(res.Value.Item1);
-                var children = res.Value.Item2;
-                
-                switch (children)
-                {
-                    case FieldObject f:
-                        langobj = f.Type switch
-                        {
-                            SolvedStructTypeReference st => st.Struct,
-                            IntegerTypeReference => null,
-                            _ => throw new UnreachableException()
-                        };
-                        break;
-                    
-                    case FunctionGroupObject g: langobj = null; break;
-                    default: throw new UnreachableException();
-                }
-            }
-            else
-            {
-                referenceChain.Clear();
-                break;
-            }
-        }
-        
-        end:
-
-        switch (referenceChain.Count)
-        {
-            case 0: return new IRUnknownReference(node);
-            case 1: return new IRSolvedReference(node, referenceChain[0]);
-            default:
-            {
-                var cnode = ((IdentifierCollectionNode)node)!.Children;
-
-                var first = new IRSolvedReference(cnode[^1], referenceChain[^1]);
-                IRReference last = first;
-            
-                for (var i = referenceChain.Count - 2; i >= 0; i--)
-                {
-                    var e = referenceChain[i];
-                    last = new IRReferenceAccess(cnode[i], referenceChain[i], last);
-                }
-
-                return last;
-            }
-        }
-    }
-    private IRReference SearchReference(ExpressionNode node, LangObject obj)
-    {
-        string[] reference = node switch
-        {
-            IdentifierCollectionNode @idc => idc.Values,
-            IdentifierNode @idn => [idn.Value],
-            _ => throw new NotImplementedException(),
-        };
-        
-        List<LanguageReference> referenceChain = [];
-        LangObject? langobj = null;
-        
-        if (reference.Length == 0) goto end;
-
-        do // capturing root
-        {
-            // Checking if is a sibling
-            var res1 = SearchReference_ChildrenOf(reference[0], obj.Parent);
-            if (res1.HasValue)
-            {
-                if (obj.Parent is StructObject { Static: false })
-                {
-                    if (res1.Value.Item2 is FieldObject { Static: false })
-                        referenceChain.Add(new SelfReference());
-                }
-                referenceChain.Add(res1.Value.Item1);
-                break;
-            }
-            
-            // Checking if is inside namespace
-            var res2 = SearchReference_ChildrenOf(reference[0], obj.Namespace);
-            if (res2.HasValue)
-            {
-                referenceChain.Add(res2.Value.Item1);
-                break;
-            }
-            
-            // Checking if is a import
-            var res3 = SearchReference_Import(reference[0], obj.Namespace);
-            if (res3.HasValue)
-            {
-                referenceChain.Add(res3.Value.Item1);
-                break;
-            }
-            
-            // Checking if is a global
-            var res4 = SearchReference_Global(reference);
-            if (res4 != null) referenceChain.Add(res4);
-            goto end;
-            
-        } while (false);
-
-        if (reference.Length == 1) goto end;
-        foreach (var i in reference[1..])
-        {
-            var res = SearchReference_ChildrenOf(i, langobj);
-            if (res.HasValue)
-            {
-                referenceChain.Add(res.Value.Item1);
-                var children = res.Value.Item2;
-                
-                var tref = children switch
-                {
-                    FieldObject f => f.Type,
-                    _ => throw new UnreachableException()
-                };
-                langobj = tref switch
-                {
-                    SolvedStructTypeReference st => st.Struct,
-                    IntegerTypeReference => null,
-                    _ => throw new UnreachableException()
-                };
-            }
-            else
-            {
-                referenceChain.Clear();
-                break;
-            }
-        }
-        
-        end:
-
-        switch (referenceChain.Count)
-        {
-            case 0: return new IRUnknownReference(node);
-            case 1: return new IRSolvedReference(node, referenceChain[0]);
-            default:
-            {
-                var cnode = ((IdentifierCollectionNode)node)!.Children;
-
-                var first = new IRSolvedReference(cnode[^1], referenceChain[^1]);
-                IRReference last = first;
-            
-                for (var i = referenceChain.Count - 1; i >= 1; i--)
-                {
-                
-                    var e = referenceChain[i];
-                    last = new IRReferenceAccess(cnode[i], referenceChain[i], last);
-                }
-
-                return first;
-            }
-        }
     }
     
-    private (LanguageReference, LangObject)? SearchReference_ChildrenOf(string part, LangObject parent)
-    {
-        var siblings = parent.Children;
-        var found = siblings.FirstOrDefault(e => IdentifierComparer.IsEquals([e.Name], [part]));
-        if (found == null) return null;
-
-        return (GetObjectReference(found), found);
-        
-    }
-    private (LanguageReference, LangObject)? SearchReference_Import(string part, NamespaceObject parentNmsp)
-    {
-        foreach (var i in parentNmsp.Imports)
-        {
-            if (i.Value.specific == null)
-            {
-                var res = SearchReference_ChildrenOf(part, i.Value.nmsp!);
-                if (res != null) return res;
-            }
-            else throw new UnreachableException();
-        }
-        return null;
-    }
-    private (LanguageReference, TypeReference)? SearchReference_ExecCtx(string part, ExecutionContextData ctx)
-    {
-        var local = ctx.Locals.FirstOrDefault(e => e.LocalVariable.Name == part);
-        if (local != null) return (new LocalReference(local.LocalVariable), local.LocalVariable.Type);
-        
-        var param = ctx.Parameters.FirstOrDefault(e => e.Name == part);
-        if (param != null) return (new ParameterReference(param), param.Type);
-
-        return null;
-    }
-    
-    private LanguageReference? SearchReference_Global(string[] parts)
-    {
-        var member = _globalReferenceTable.Values
-            .FirstOrDefault(e => IdentifierComparer.IsEquals(e.Global, parts));
-        return (member == null) ? null : GetObjectReference(member);
-    }
-    
-    
-    private IRReference SearchReferenceStrictlyInside(ExpressionNode node, LangObject container)
-    {
-        string[] reference = node switch
-        {
-            IdentifierCollectionNode @idc => idc.Values,
-            IdentifierNode @idn => [idn.Value],
-            _ => throw new NotImplementedException(),
-        };
-        
-        LanguageReference? foundReference = null;
-        
-        switch (reference.Length)
-        {
-            case 0: goto end;
-            case 1:
-            {
-                var child = container.Children.FirstOrDefault(e => e.Name == reference[0]);
-                if (child != null) foundReference = GetObjectReference(child);
-                goto end;
-            }
-        }
-
-        end:
-        return foundReference != null
-            ? new IRSolvedReference(node, foundReference)
-            : new IRUnknownReference(node);
-    }
-    
-    
-    private TypeReference SolveTypeLazy(TypeReference typeref, ExecutionContextData? ctx)
+    private TypeReference SolveTypeLazy(TypeReference typeref, ExecutionContextData? ctx, LangObject? obj)
     {
         var i = 0;
         while (true)
@@ -870,42 +587,19 @@ public partial class Analyzer
                         if (ctx == null) return new UnsolvedTypeReference(node);
                         continue;
                     }
-                    else
-                    {
-                        var reef = SearchReference(node, ctx);
-                        if (reef is not IRSolvedReference @solv) return new UnsolvedTypeReference(node);
-                        return (solv.Reference as TypeReference) ?? new UnsolvedTypeReference(node);   
-                    }
+
+                    return new UnsolvedTypeReference(node);
                 }
-                case SliceTypeReference @slice: slice.InternalType = SolveTypeLazy(@slice.InternalType, ctx); break;
-                case ReferenceTypeReference @refer: refer.InternalType = SolveTypeLazy(@refer.InternalType, ctx); break;
+                case SliceTypeReference @slice: slice.InternalType = SolveTypeLazy(@slice.InternalType, ctx, obj); break;
+                case ReferenceTypeReference @refer: refer.InternalType = SolveTypeLazy(@refer.InternalType, ctx, obj); break;
             }
 
             return typeref;
         }
     }
-    private TypeReference SolveTypeLazy(TypeReference typeref, LangObject? obj)
-    {
-        switch (typeref)
-        {
-            case UnsolvedTypeReference @unsolved:
-            {
-                var node = unsolved.syntaxNode;
-                var shallow = SolveShallowType(node);
-                if (shallow is not UnsolvedTypeReference) return shallow;
 
-                if (obj == null) return new UnsolvedTypeReference(node);
 
-                var reef = SearchReference(node, obj);
-                if (reef is not IRSolvedReference @solv) return new UnsolvedTypeReference(node);
-                return (solv.Reference as TypeReference) ?? new UnsolvedTypeReference(node);
-            }
-            case SliceTypeReference @slice: slice.InternalType = SolveTypeLazy(@slice.InternalType, obj); break;
-            case ReferenceTypeReference @refer: refer.InternalType = SolveTypeLazy(@refer.InternalType, obj); break;
-        }
-        return typeref;
-    }
-
+    
     private List<StructObject> TopologicalSort(IEnumerable<StructObject> structs)
     {
         var visited = new HashSet<StructObject>();

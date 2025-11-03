@@ -6,7 +6,7 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Value;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 
-public class IRSolvedReference(SyntaxNode origin, LanguageReference refe) : IRReference(origin)
+public class IRSolvedReference(SyntaxNode origin, LanguageReference refe) : IRReference(origin, null)
 {
     public readonly LanguageReference Reference = refe;
     

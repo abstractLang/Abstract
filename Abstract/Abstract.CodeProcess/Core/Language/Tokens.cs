@@ -53,6 +53,7 @@ public enum TokenType : byte
     DoKeyword,              // do
     InKeyword,              // in
     BreakKeyword,           // break
+    UnreachableKeyword,     // unreachable
 
     AsKeyword,              // as
     NewKeyword,             // new
@@ -89,6 +90,14 @@ public enum TokenType : byte
     BangChar,               // !
     PipeChar,               // |
     ColonChar,              // :
+    
+    AddWarpOperator,        // +%
+    AddOnBoundsOperator,    // +|
+    SubWarpOperator,        // -%
+    SubOnBoundsOperator,    // -|
+    
+    DivideFloorOperator,    // /_
+    DivideCeilOperator,     // /^
 
     AtSiginChar,            // @
 

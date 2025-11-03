@@ -3,22 +3,22 @@ using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.CodeObje
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData;
 
-public class IrBlockExecutionContextData(FunctionObject func)
+public class IrBlockExecutionContextData(LangObject obj)
 {
-    private List<LocalVariableObject?> _localVariables = [];
+    public List<LocalVariableObject?> LocalVariables = [];
     private Stack<int> _stack = [];
-    public readonly FunctionObject Function = func;
+    public readonly LangObject Parent = obj;
 
-    public void PushFrame() => _stack.Push(_localVariables.Count);
+    public void PushFrame() => _stack.Push(LocalVariables.Count);
     public void PopFrame()
     {
         var frame = _stack.Pop();
-        _localVariables.RemoveRange(frame, _localVariables.Count - frame);
+        LocalVariables.RemoveRange(frame, LocalVariables.Count - frame);
     }
     
     public void RegisterLocalVariable(LocalVariableObject localVariable)
     {
-        localVariable.index = _localVariables.Count;
-        _localVariables.Add(localVariable);
+        localVariable.index = LocalVariables.Count;
+        LocalVariables.Add(localVariable);
     }
 }

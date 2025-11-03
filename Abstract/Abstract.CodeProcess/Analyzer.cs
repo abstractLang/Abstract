@@ -25,6 +25,9 @@ public partial class Analyzer(ErrorHandler handler)
         // Stage 1
         SearchReferences(modules);
         
+        if (dumpEvaluatedData) DumpEvaluatedData();
+        if (dumpGlobalTable) DumpGlobalTable();
+        
         // Stage 2
         ScanHeadersMetadata();
         
@@ -34,6 +37,9 @@ public partial class Analyzer(ErrorHandler handler)
         // Stage 3
         ScanObjectHeaders();
         ScanObjectBodies();
+        
+        if (dumpEvaluatedData) DumpEvaluatedData();
+        if (dumpGlobalTable) DumpGlobalTable();
         
         // Stage 4
         DoSemanticAnalysis();
@@ -62,7 +68,7 @@ public partial class Analyzer(ErrorHandler handler)
                 PacketObject => "Pack",
                 TypedefObject => "TDef",
                 TypedefItemObject => "DefV",
-                FieldObject => "TVar",
+                FieldObject @fld => fld.Static ? "SFld" : "LFld",
                 AliasedObject => "Alia",
                 _ => throw new NotImplementedException()
             };

@@ -1,4 +1,5 @@
 using System.Text;
+using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageObjects.Attributes;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Control;
@@ -21,6 +22,9 @@ public class FieldObject(string[] g, string n, TopLevelVariableNode synnode, Typ
     public TypeReference Type { get; set; } = t;
     
     public readonly TopLevelVariableNode syntaxNode = synnode;
+
+
+    public IRExpression? Value = null;
     
     public override string ToString()
     {
@@ -33,6 +37,11 @@ public class FieldObject(string[] g, string n, TopLevelVariableNode synnode, Typ
 
         sb.Append(Constant ? "Constant " : "Variable ");
         sb.AppendLine($"'{Name}' ('{string.Join('.', Global)}') : {Type}");
+
+        if (Value != null)
+        {
+            sb.Append($" = {Value}");
+        }
         
         return sb.ToString();
     }

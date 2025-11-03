@@ -56,7 +56,9 @@ public partial class Analyzer
         _onHoldAttributes.Push([]);
         foreach (var t in nmsp.syntaxNode.Trees)
         {
-            foreach (var n in t.Children) SearchGenericScopeRecursive(nmsp, (ControlNode)n);
+            var import = new ImportObject();
+            foreach (var n in t.Children) SearchGenericScopeRecursive(nmsp, (ControlNode)n, import);
+            nmsp.Imports.Add(import);
         }
 
         var poppedList = _onHoldAttributes.Pop();
@@ -68,29 +70,33 @@ public partial class Analyzer
             catch (Exception e) { _errorHandler.RegisterError(e); }
         }
     }
-    private void SearchGenericScopeRecursive(LangObject parent, ControlNode node)
+    private void SearchGenericScopeRecursive(LangObject parent, ControlNode node, ImportObject imports)
     {
         switch (node)
         {
             case AttributeNode @attr:
                 _onHoldAttributes.Peek().Add(EvaluateAttribute(attr));
                 return;
+            
             case FromImportNode @fromimport:
             {
                 if (parent is not NamespaceObject @nmsp)
                     throw new Exception("Imports can only be made inside a namespace root");
-                RegisterImport(nmsp, fromimport);
+                
+                HandleImport(imports, fromimport);
+                nmsp.Imports.Add(imports);
+                
                 return;
             }
         }
 
         LangObject obj = node switch
         {
-            FunctionDeclarationNode @funcnode => RegisterFunction(parent, funcnode),
-            PacketDeclarationNode @packetnode => RegisterPacket(parent, packetnode),
-            StructureDeclarationNode @structnode => RegisterStructure(parent, structnode),
-            TypeDefinitionNode @typedefnode => RegisterTypedef(parent, typedefnode),
-            TopLevelVariableNode @fieldnode => RegisterField(parent, fieldnode),
+            FunctionDeclarationNode @funcnode => RegisterFunction(parent, funcnode, imports),
+            PacketDeclarationNode @packetnode => RegisterPacket(parent, packetnode, imports),
+            StructureDeclarationNode @structnode => RegisterStructure(parent, structnode, imports),
+            TypeDefinitionNode @typedefnode => RegisterTypedef(parent, typedefnode, imports),
+            TopLevelVariableNode @fieldnode => RegisterField(parent, fieldnode, imports),
             
             _ => throw new NotImplementedException()
         };
@@ -100,7 +106,7 @@ public partial class Analyzer
         _onHoldAttributes.Peek().Clear();
 
     }
-    private void SearchTypedefScopeRecursive(LangObject parent, ControlNode node)
+    private void SearchTypedefScopeRecursive(LangObject parent, ControlNode node, ImportObject imports)
     {
         if (node is AttributeNode @attr)
         {
@@ -110,8 +116,8 @@ public partial class Analyzer
 
         LangObject obj = node switch
         {
-            FunctionDeclarationNode @funcnode => RegisterFunction(parent, funcnode),
-            TypeDefinitionItemNode @item => RegisterTypedefItem(parent, item),
+            FunctionDeclarationNode @funcnode => RegisterFunction(parent, funcnode, imports),
+            TypeDefinitionItemNode @item => RegisterTypedefItem(parent, item, imports),
             
             _ => throw new NotImplementedException()
         };
@@ -123,18 +129,20 @@ public partial class Analyzer
     }
 
 
-    private void RegisterImport(NamespaceObject parent, FromImportNode fromImport)
+    private void HandleImport(ImportObject importobj, FromImportNode fromImport)
     {
 
         if (fromImport.Children.Length < 4)
         {
-            var namespaceParts = ((IdentifierCollectionNode)fromImport.Children[1]).Values;
-            parent.AddImportAll(namespaceParts);
+            var namespaceParts = ((AccessNode)fromImport.Children[1]).StringValues;
+
+            if (namespaceParts.Any(string.IsNullOrEmpty)) throw new Exception("Invalid expression inside namespace identifier");
+            importobj.Raw.Add(namespaceParts.Append("*").ToArray());
         }
         else throw new UnreachableException();
     }
     
-    private FunctionObject RegisterFunction(LangObject? parent, FunctionDeclarationNode funcnode)
+    private FunctionObject RegisterFunction(LangObject? parent, FunctionDeclarationNode funcnode, ImportObject imports)
     {
         string[] g = parent != null
             ? [..parent.Global, funcnode.Identifier.Value]
@@ -150,17 +158,19 @@ public partial class Analyzer
         var peepoop = funcg ?? (FunctionGroupObject)a!;
 
         FunctionObject f = new(g, funcnode.Identifier.Value, funcnode);
+        f.Imports = imports;
         peepoop.AddOverload(f);
         
         return f;
     }
-    private StructObject RegisterStructure(LangObject? parent, StructureDeclarationNode structnode)
+    private StructObject RegisterStructure(LangObject? parent, StructureDeclarationNode structnode, ImportObject imports)
     {
         string[] g = parent != null
             ? [..parent.Global, structnode.Identifier.Value]
             : [structnode.Identifier.Value];
         
         StructObject struc = new(g, structnode.Identifier.Value, structnode);
+        struc.Imports = imports;
         parent?.AppendChild(struc);
         _globalReferenceTable.Add(g, struc);
 
@@ -169,7 +179,7 @@ public partial class Analyzer
             _onHoldAttributes.Push([]);
             
             foreach (var i in structnode.Body.Content)
-                SearchGenericScopeRecursive(struc, (ControlNode)i);
+                SearchGenericScopeRecursive(struc, (ControlNode)i, imports);
             
             var poppedList = _onHoldAttributes.Pop();
             if (poppedList.Count == 0) break;
@@ -183,13 +193,15 @@ public partial class Analyzer
 
         return struc;
     }
-    private PacketObject RegisterPacket(LangObject? parent, PacketDeclarationNode packetnode)
+    private PacketObject RegisterPacket(LangObject? parent, PacketDeclarationNode packetnode, ImportObject imports)
     {
         string[] g = parent != null
             ? [..parent.Global, packetnode.Identifier.Value]
             : [packetnode.Identifier.Value];
         
         PacketObject packet = new(g, packetnode.Identifier.Value, packetnode);
+        packet.Imports = imports;
+        
         parent?.AppendChild(packet);
         _globalReferenceTable.Add(g, packet);
 
@@ -198,7 +210,7 @@ public partial class Analyzer
             _onHoldAttributes.Push([]);
             
             foreach (var i in packetnode.Body.Content)
-                SearchGenericScopeRecursive(packet, (ControlNode)i);
+                SearchGenericScopeRecursive(packet, (ControlNode)i, imports);
             
             var poppedList = _onHoldAttributes.Pop();
             if (poppedList.Count == 0) break;
@@ -212,13 +224,15 @@ public partial class Analyzer
 
         return packet;
     }
-    private TypedefObject RegisterTypedef(LangObject? parent, TypeDefinitionNode typedef)
+    private TypedefObject RegisterTypedef(LangObject? parent, TypeDefinitionNode typedef, ImportObject imports)
     {
         string[] g = parent != null
             ? [..parent.Global, typedef.Identifier.Value]
             : [typedef.Identifier.Value];
         
         TypedefObject typd = new(g, typedef.Identifier.Value, typedef);
+        typd.Imports = imports;
+        
         parent?.AppendChild(typd);
         _globalReferenceTable.Add(g, typd);
 
@@ -226,7 +240,7 @@ public partial class Analyzer
         {
             _onHoldAttributes.Push([]);
             foreach (var i in typedef.Body.Content)
-                SearchTypedefScopeRecursive(typd, (ControlNode)i);
+                SearchTypedefScopeRecursive(typd, (ControlNode)i, imports);
 
             var poppedList = _onHoldAttributes.Pop();
             if (poppedList.Count == 0) break;
@@ -240,7 +254,7 @@ public partial class Analyzer
 
         return typd;
     }
-    private TypedefItemObject RegisterTypedefItem(LangObject? parent, TypeDefinitionItemNode typedefitem)
+    private TypedefItemObject RegisterTypedefItem(LangObject? parent, TypeDefinitionItemNode typedefitem, ImportObject imports)
     {
         switch (typedefitem)
         {
@@ -268,13 +282,14 @@ public partial class Analyzer
             default: throw new UnreachableException();
         }
     }
-    private FieldObject RegisterField(LangObject? parent, TopLevelVariableNode variable)
+    private FieldObject RegisterField(LangObject? parent, TopLevelVariableNode variable, ImportObject imports)
     {
         string[] g = parent != null
             ? [..parent.Global, variable.Identifier.Value]
             : [variable.Identifier.Value];
         
         FieldObject vari = new(g, variable.Identifier.Value, variable, SolveShallowType(variable.Type));
+        vari.Imports = imports;
         vari.Constant = variable.IsConstant;
         parent?.AppendChild(vari);
         _globalReferenceTable.Add(g, vari);
@@ -294,12 +309,10 @@ public partial class Analyzer
     
     private static AttributeReference EvaluateAttribute(AttributeNode node)
     {
-        var identifierNode = (node.Children[1] as IdentifierCollectionNode)!;
-        if (identifierNode.incomplete) goto _default; // All buildins are complete!
-        if (identifierNode.Children.Length > 1) goto _default; // All buildins are single-world!
-        var attribname = (identifierNode.Children[0] as IdentifierNode)!.Value;
+        var identifier = (node.Children[1] as IdentifierNode);
+        if (identifier == null) goto _default;
 
-        var builtin = attribname switch
+        var builtin = identifier.Value switch
         {
             "static" => BuiltinAttributes.Static,
             "defineGlobal" => BuiltinAttributes.DefineGlobal,

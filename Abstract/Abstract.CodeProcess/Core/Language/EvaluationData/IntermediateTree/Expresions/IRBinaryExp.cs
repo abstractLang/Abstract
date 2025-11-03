@@ -8,15 +8,12 @@ public class IRBinaryExp(
     BinaryExpressionNode origin,
     IRBinaryExp.Operators ope,
     IRExpression left,
-    IRExpression right) : IRExpression(origin)
+    IRExpression right) : IRExpression(origin, null)
 {
 
     public Operators Operator { get; set; } = ope;
     public IRExpression Left { get; set; } = left;
     public IRExpression Right { get; set; } = right;
-
-
-    public TypeReference? ResultType { get; set; } = null;
     
     public override string ToString()
     {
@@ -33,9 +30,15 @@ public class IRBinaryExp(
     public enum Operators
     {
         Add,
+        AddWarpAround,
+        AddOnBounds,
         Subtract,
+        SubtractWarpAround,
+        SubtractOnBounds,
         Multiply,
         Divide,
+        DivideFloor,
+        DivideCeil,
         Reminder,
         
         Bitwise_And,

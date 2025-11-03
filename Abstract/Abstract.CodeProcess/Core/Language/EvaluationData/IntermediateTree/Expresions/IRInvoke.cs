@@ -2,6 +2,7 @@ using System.Text;
 using Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Values;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences;
 using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.FunctionReferences;
+using Abstract.CodeProcess.Core.Language.EvaluationData.LanguageReferences.TypeReferences.Builtin;
 using Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
@@ -9,7 +10,7 @@ namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Exp
 public class IRInvoke(
     FunctionCallExpressionNode origin,
     IRExpression target,
-    IRExpression[] args) : IRExpression(origin)
+    IRExpression[] args) : IRExpression(origin, ((FunctionTypeReference?)target.Type)?.Returns ?? null!)
 {
 
     public IRExpression Target { get; set; } = target;

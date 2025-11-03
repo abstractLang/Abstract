@@ -1,3 +1,4 @@
+from Std.Process import
 from Std.Console import
 from Std.Memory import
 from Std.Types import
@@ -26,7 +27,7 @@ from Std.Types import
 	writeln(realy_long_number)
 	writeln(realy_long_number as i64)
 	writeln(realy_long_number as u32)
-	writeln(realy_long_number as i32)
+	writeln(realy_long_number as i32) 
 	writeln(realy_long_number as u16)
 	writeln(realy_long_number as i16)
 	writeln(realy_long_number as u8)
@@ -104,14 +105,16 @@ from Std.Types import
 	# Testing else block
 	if option {
 		writeln("Condition is true")
-	} else {
+	}
+	else {
 		writeln("Condition is false")
 	}
 
 	option = false
 	if option {
 		writeln("Condition is true")
-	} else {
+	}
+	else {
 		writeln("Condition is false")
 	}
 
@@ -161,6 +164,11 @@ from Std.Types import
 	# Testing type metadata (this should be also hardly tested in backend!)
 	#let type allocType = typeOf(allocator)
 
+	return
+}
+
+@export("panic") func panic() noreturn {
+	exit(1)
 	return
 }
 

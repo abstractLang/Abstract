@@ -196,13 +196,13 @@ public partial class Analyzer
         {
             var extendsImplements = new Queue<SyntaxNode>(((ExtendsImplementsNode)node.Children[2]).Children);
 
-            IdentifierCollectionNode? extendsVal = null;
-            List<IdentifierCollectionNode> implementsVal = [];
+            AccessNode? extendsVal = null;
+            List<AccessNode> implementsVal = [];
 
             if (extendsImplements.Count > 0 && extendsImplements.Dequeue() is TokenNode { Value: "extends" })
             {
-                var identifier = (IdentifierCollectionNode)extendsImplements.Dequeue();
-                if (identifier.incomplete) throw new Exception($"Cannot complete identifier {identifier}");
+                var identifier = (AccessNode)extendsImplements.Dequeue();
+                if (identifier.Incomplete) throw new Exception($"Cannot complete identifier {identifier}");
                 extendsVal = identifier;
             }
 

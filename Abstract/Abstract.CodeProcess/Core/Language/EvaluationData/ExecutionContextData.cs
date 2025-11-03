@@ -17,6 +17,7 @@ public class ExecutionContextData(LangObject parent)
     {
         FunctionObject @func => @func.Parameters,
         StructObject @struc => throw new NotImplementedException(),
+        FieldObject @field => [],
         _ => []
     };
     public IRDefLocal[] Locals => _blocks.SelectMany(e => e.Content.OfType<IRDefLocal>()).ToArray();

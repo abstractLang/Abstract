@@ -28,10 +28,7 @@ public class Parser(ErrorHandler errHandler)
 
         while(!IsEOF())
         {
-            try
-            {
-                tree.AppendChild(ParseRoot());
-            }
+            try { tree.AppendChild(ParseRoot()); }
             catch (Exception ex) { Eat(); _errHandler.RegisterError(ex); }
         }
 
@@ -60,7 +57,7 @@ public class Parser(ErrorHandler errHandler)
                 if (TryEatAsNode(TokenType.ExtendsKeyword, out var extends)) // extends
                 {
                     extendsImplements.AppendChild(extends);
-                    extendsImplements.AppendChild(ParseIdentifier());
+                    extendsImplements.AppendChild(ParseIdentifierAccess());
                     useExtendsImplements = true;
                 }
 
@@ -145,7 +142,7 @@ public class Parser(ErrorHandler errHandler)
                         case TokenType.IntegerNumberLiteral:
                         {
                             var n = new TypeDefinitionNumericItemNode();
-                            n.AppendChild(ParseValue());
+                            n.AppendChild(ParseValue(false));
                             block.AppendChild(n);
                         } break;
                         
@@ -176,7 +173,7 @@ public class Parser(ErrorHandler errHandler)
 
                 node = new AttributeNode();
                 node.AppendChild(EatAsNode());
-                node.AppendChild(ParseIdentifier());
+                node.AppendChild(ParseIdentifierAccess());
 
                 if (Taste(TokenType.LeftPerenthesisChar))
                     node.AppendChild(ParseArgumentCollection());
@@ -304,7 +301,7 @@ public class Parser(ErrorHandler errHandler)
             break;
 
             default:
-                node = ParseExpression(false);
+                node = ParseExpression();
                 break;
         }
 
@@ -312,18 +309,18 @@ public class Parser(ErrorHandler errHandler)
         return node;
     }
 
-    private ExpressionNode ParseExpression(bool canFallTrough = true)
+    private ExpressionNode ParseExpression(bool recursive = false)
     {
         var t = _tokens[_tokens_cursor];
-        var node = ParseAssignmentExpression();
+        var node = ParseAssignmentExpression(recursive);
         return node;
     }
 
     #region Recursive expression parsing
     
-    private ExpressionNode ParseAssignmentExpression()
+    private ExpressionNode ParseAssignmentExpression(bool recursive)
     {
-        var node = ParseAdditiveExpression();
+        var node = ParseAdditiveExpression(recursive);
 
         if (!Taste(
                 TokenType.EqualsChar, // =
@@ -337,38 +334,44 @@ public class Parser(ErrorHandler errHandler)
         var n = new AssignmentExpressionNode();
         n.AppendChild(node);
         n.AppendChild(EatAsNode());
-        n.AppendChild(ParseAssignmentExpression());
+        n.AppendChild(ParseAssignmentExpression(recursive));
         node = n;
 
         return node;
     }
 
     
-    private ExpressionNode ParseAdditiveExpression()
+    private ExpressionNode ParseAdditiveExpression(bool recursive)
     {
-        var node = ParseMultiplicativeExpression();
+        var node = ParseMultiplicativeExpression(recursive);
 
         if (!Taste(
                 TokenType.CrossChar, // +
-                TokenType.MinusChar // -
+                TokenType.AddOnBoundsOperator, // +|
+                TokenType.AddWarpOperator, // +%
+                TokenType.MinusChar, // -
+                TokenType.SubOnBoundsOperator, // -|
+                TokenType.SubWarpOperator // -%
             )) return node;
         
         var n = new BinaryExpressionNode();
         n.AppendChild(node);
         n.AppendChild(EatAsNode());
-        n.AppendChild(ParseAdditiveExpression());
+        n.AppendChild(ParseAdditiveExpression(recursive));
         node = n;
 
         return node;
     }
     
-    private ExpressionNode ParseMultiplicativeExpression()
+    private ExpressionNode ParseMultiplicativeExpression(bool recursive)
     {
-        var node = ParseBooleanOperationExpression();
+        var node = ParseBooleanOperationExpression(recursive);
 
         if (!Taste(
                 TokenType.StarChar, // *
                 TokenType.SlashChar, // /
+                TokenType.DivideCeilOperator, // /^
+                TokenType.DivideFloorOperator, // /_
                 TokenType.PercentChar, // %
                 TokenType.PowerOperator // **
             )) return node;
@@ -376,15 +379,15 @@ public class Parser(ErrorHandler errHandler)
         var n = new BinaryExpressionNode();
         n.AppendChild(node);
         n.AppendChild(EatAsNode());
-        n.AppendChild(ParseMultiplicativeExpression());
+        n.AppendChild(ParseMultiplicativeExpression(recursive));
         node = n;
 
         return node;
     }
 
-    private ExpressionNode ParseBooleanOperationExpression()
+    private ExpressionNode ParseBooleanOperationExpression(bool recursive)
     {
-        var node = ParseBitwiseOperationExpression();
+        var node = ParseBitwiseOperationExpression(recursive);
 
         if (!Taste(
             TokenType.EqualOperator, // ==
@@ -406,15 +409,15 @@ public class Parser(ErrorHandler errHandler)
         var n = new BooleanOperationExpressionNode();
         n.AppendChild(node);
         n.AppendChild(EatAsNode());
-        n.AppendChild(ParseBooleanOperationExpression());
+        n.AppendChild(ParseBooleanOperationExpression(recursive));
         node = n;
 
         return node;
     }
 
-    private ExpressionNode ParseBitwiseOperationExpression()
+    private ExpressionNode ParseBitwiseOperationExpression(bool recursive)
     {
-        var node = ParseCastingExpression();
+        var node = ParseCastingExpression(recursive);
 
         if (!Taste(
                 TokenType.PipeChar, // |
@@ -428,15 +431,15 @@ public class Parser(ErrorHandler errHandler)
         var n = new BinaryExpressionNode();
         n.AppendChild(node);
         n.AppendChild(EatAsNode());
-        n.AppendChild(ParseBooleanOperationExpression());
+        n.AppendChild(ParseBooleanOperationExpression(recursive));
         node = n;
 
         return node;
     }
     
-    private ExpressionNode ParseCastingExpression()
+    private ExpressionNode ParseCastingExpression(bool recursive)
     {
-        var node = ParseUnaryExpression();
+        var node = ParseUnaryExpression(recursive);
 
         if (!Taste(TokenType.AsKeyword)) return node;
 
@@ -447,7 +450,7 @@ public class Parser(ErrorHandler errHandler)
         
         return n;
     }
-    private ExpressionNode ParseUnaryExpression()
+    private ExpressionNode ParseUnaryExpression(bool recursive)
     {
         ExpressionNode node;
 
@@ -461,9 +464,9 @@ public class Parser(ErrorHandler errHandler)
         {
             node = new UnaryPrefixExpressionNode();
             node.AppendChild(EatAsNode());
-            node.AppendChild(ParseValue());
+            node.AppendChild(ParseValue(recursive));
         }
-        else node = ParseValue();
+        else node = ParseValue(recursive);
 
         if (!Taste(
                 TokenType.IncrementOperator, // ++,
@@ -480,7 +483,7 @@ public class Parser(ErrorHandler errHandler)
     
     #endregion
 
-    private ExpressionNode ParseValue()
+    private ExpressionNode ParseValue(bool recursive)
     {
         ExpressionNode node;
 
@@ -489,9 +492,12 @@ public class Parser(ErrorHandler errHandler)
             // Identifiers & function calls
             case TokenType.Identifier or
             TokenType.DotChar:
-            try {
-                
-                var identifier = ParseIdentifier();
+            try
+            {
+               
+                var identifier = recursive
+                    ? ParseSingleIdentifier()
+                    : ParseIdentifierAccess();
 
                 if (Taste(TokenType.LeftPerenthesisChar))
                 {
@@ -565,7 +571,7 @@ public class Parser(ErrorHandler errHandler)
                     {
                         var i = new AssignmentExpressionNode();
 
-                        i.AppendChild(ParseIdentifier());
+                        i.AppendChild(ParseIdentifierAccess());
                         i.AppendChild(DietAsNode(TokenType.EqualsChar,
                             t => throw new Exception("Expected assignment operator")));
                         i.AppendChild(ParseExpression());
@@ -669,6 +675,15 @@ public class Parser(ErrorHandler errHandler)
             default: throw new Exception($"Unexpected token {Bite()}");
         }
 
+        while (TryEatAsNode(TokenType.DotChar, out var n))
+        {
+            var newnode = new AccessNode();
+            newnode.AppendChild(node);
+            newnode.AppendChild(n);
+            newnode.AppendChild(ParseExpression());
+            node = newnode;
+        }
+        
         return node;
     }
 
@@ -691,7 +706,7 @@ public class Parser(ErrorHandler errHandler)
     {
         var range = new RangeExpressionNode();
 
-        range.AppendChild(ParseIdentifier()); // <identifier>
+        range.AppendChild(ParseIdentifierAccess()); // <identifier>
         range.AppendChild(DietAsNode(TokenType.InKeyword, (t)
             => throw new Exception($"Unexpected token '{Bite()}'"))); // in
 
@@ -712,7 +727,7 @@ public class Parser(ErrorHandler errHandler)
         nodebase.AppendChild(DietAsNode(TokenType.FromKeyword, (t)
             => throw new Exception($"Unexpected token '{Bite()}'")));
 
-        nodebase.AppendChild(ParseIdentifier());
+        nodebase.AppendChild(ParseIdentifierAccess());
 
         nodebase.AppendChild(DietAsNode(TokenType.ImportKeyword, (t)
             => throw new Exception($"Unexpected token '{Bite()}'")));
@@ -729,10 +744,10 @@ public class Parser(ErrorHandler errHandler)
             {
                 var item = new ImportItemNode();
                 
-                item.AppendChild(ParseIdentifier());
+                item.AppendChild(ParseIdentifierAccess());
                 if (TryEatAsNode(TokenType.AsKeyword, out var asNode)) {
                     item.AppendChild(asNode);
-                    item.AppendChild(ParseIdentifier());
+                    item.AppendChild(ParseIdentifierAccess());
                 }
 
                 collection.AppendChild(item);
@@ -788,7 +803,7 @@ public class Parser(ErrorHandler errHandler)
         }
 
         collection.AppendChild(DietAsNode(TokenType.RightParenthesisChar,
-            (t) => throw new Exception($"Unexpected token {t}")));
+            (t) => throw new Exception($"Expected token ')', found {t}")));
 
         return collection;
     }
@@ -851,16 +866,39 @@ public class Parser(ErrorHandler errHandler)
         return ti;
     }
 
-    private IdentifierCollectionNode ParseIdentifier()
+    private ExpressionNode ParseIdentifierAccess()
     {
-        var collection = new IdentifierCollectionNode(TryEat(TokenType.DotChar, out _));
+        ExpressionNode node;
 
-        collection.AppendChild(ParseSingleIdentifier());
+        if (TryEatAsNode(TokenType.DotChar, out var n))
+        {
+            node = new AccessNode();
+            node.AppendChild(new ImplicitAccessNode());
+            node.AppendChild(n);
+            node.AppendChild(ParseExpression());
+        }
+        else node = ParseSingleIdentifier();
 
-        while (TryEatAsNode(TokenType.DotChar, out _))
-            collection.AppendChild(new IdentifierNode(Eat()));
 
-        return collection;
+        while (true)
+        {
+            switch (Bite().type)
+            {
+                case TokenType.DotChar:
+                {
+                    var newnode = new AccessNode();
+                    newnode.AppendChild(node);
+                    newnode.AppendChild(EatAsNode());
+                    newnode.AppendChild(ParseSingleIdentifier());
+                    node = newnode;
+                } break;
+                
+                default: goto loopbreak;
+            }
+        }
+        loopbreak:
+
+        return node;
     }
     private IdentifierNode ParseSingleIdentifier()
     {

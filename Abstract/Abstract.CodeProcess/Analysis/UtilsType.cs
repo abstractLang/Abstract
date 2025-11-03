@@ -28,35 +28,40 @@ public partial class Analyzer
                 IntegerTypeReference @intt => intt,
                 SolvedStructTypeReference @structt => structt,
                 SolvedFieldReference field => field.Field.Type,
-                // FIXME it should in reality return a FunctionTypeReference,
-                // not the function's return type
-                SolvedFunctionReference @func => func.Function.ReturnType,
+                SolvedFunctionReference @func => new FunctionTypeReference(
+                    func.Function.ReturnType, func.Function.Parameters.Select(e => e.Type).ToArray()),
 
                 LocalReference @local => local.Local.Type,
                 ParameterReference @param => param.Parameter.Type,
 
+                MetaReference @meta => meta.Type switch
+                {
+                    MetaReference.MetaReferenceType.Name => new StringTypeReference(StringEncoding.Ascii),
+                    MetaReference.MetaReferenceType.ByteSize or
+                    MetaReference.MetaReferenceType.BitSize or
+                    MetaReference.MetaReferenceType.Alignment => new RuntimeIntegerTypeReference(false),
+                    _ => throw new ArgumentOutOfRangeException()
+                },
+                
                 _ => throw new NotImplementedException()
             },
-            IRReferenceAccess @access => GetEffectiveTypeReference(access.B),
-            IRInvoke @invoke =>
-                // FIXME it should in reality return a FunctionTypeReference,
-                // not the function's return type
-                GetEffectiveTypeReference(invoke.Target),
+            IRAccess @access => GetEffectiveTypeReference(access.B),
+            IRInvoke @invoke => invoke.Type,
             
-            IRBinaryExp @exp => exp.ResultType
-                                ?? throw new UnreachableException(
-                                    "This function should not be called when this value is null"),
+            IRBinaryExp @exp => exp.Type,
             
             IRUnaryExp @unexp => unexp.Operation != IRUnaryExp.UnaryOperation.Reference
                 ? GetEffectiveTypeReference(unexp.Value)
                 : new ReferenceTypeReference(GetEffectiveTypeReference(@unexp.Value)),
             
-            IrConv @conv => conv.TargetType,
-            IRIntCast @tcast => tcast.TargetType,
-            IRIntExtend @icast => icast.toType,
-            IRIntTrunc @itrunc => itrunc.toType,
+            IrConv @conv => conv.Type,
+            IRIntCast @tcast => tcast.Type,
+            IRIntExtend @icast => icast.Type,
+            IRIntTrunc @itrunc => itrunc.Type,
+            
             _ => throw new NotImplementedException()
-        };
+            
+        } ?? throw new UnreachableException("This function should not be called when this value is null");
     }
     
     /// <summary>
@@ -77,7 +82,7 @@ public partial class Analyzer
                     node = texp.Children[0];
                     continue;
 
-                case IdentifierCollectionNode @idc:
+                case AccessNode @idc:
                     if (idc.Children.Length != 1) return new UnsolvedTypeReference(idc);
                     node = idc.Children[0];
                     continue;
@@ -93,9 +98,10 @@ public partial class Analyzer
                         case "type": return new TypeTypeReference();
                         case "string": return new StringTypeReference(StringEncoding.Undefined);
                         case "anytype": return new AnytypeTypeReference();
+                        case "noreturn": return new NoReturnTypeReference();
                     }
 
-                    if (value[0] is 'i' or 'u' && value[1..].All(char.IsNumber))
+                    if (value.Length > 1 && value[0] is 'i' or 'u' && value[1..].All(char.IsNumber))
                         return new RuntimeIntegerTypeReference(value[0] == 'i', byte.Parse(value[1..]));
 
 
@@ -107,6 +113,9 @@ public partial class Analyzer
                 case ReferenceTypeModifierNode @rf:
                     return new ReferenceTypeReference(SolveShallowType(rf.Type));
 
+                case NullableTypeModifierNode @nullable:
+                    return new NullableTypeReference(SolveShallowType(nullable.Type));
+                
                 case BinaryExpressionNode @b: return new UnsolvedTypeReference(b);
 
                 default: throw new NotImplementedException();
@@ -131,7 +140,7 @@ public partial class Analyzer
         switch (typeTo)
         {
             case RuntimeIntegerTypeReference typetoRi when value is IRIntegerLiteral @lit:
-                return new IRIntegerLiteral(lit.Origin, lit.Value, typetoRi.PtrSized ? null : typetoRi.BitSize);
+                return new IRIntegerLiteral(lit.Origin, lit.Value, typetoRi);
             
             case RuntimeIntegerTypeReference typetoRi:
             {

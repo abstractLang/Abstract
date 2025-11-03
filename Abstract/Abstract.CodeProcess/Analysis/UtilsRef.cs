@@ -22,6 +22,8 @@ public partial class Analyzer
             
             FieldObject @v => new SolvedFieldReference(v),
 
+            NamespaceObject @n => new NamespaceReference(n),
+            
             _ => throw new NotImplementedException(),
         };
     }
@@ -36,7 +38,8 @@ public partial class Analyzer
                 case UnsolvedTypeReference @unsolv: unsolved = unsolv; return false;
                 case SliceTypeReference @slice: typeref = slice.InternalType; continue;
                 case ReferenceTypeReference @refe: typeref = refe.InternalType; continue;
-
+                case NullableTypeReference @nullable: typeref = nullable.InternalType; continue;
+                
                 default: unsolved = null!; return true;
             }
         }

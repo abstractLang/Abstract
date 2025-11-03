@@ -1,30 +1,50 @@
+from Std.Math import
+from Std.Types import
+
 @public struct WasmAllocator
 {
     @static const u32 page_size = 64 * 1024
+    @static const ?*WasmAllocatorBlock root = null
 
-	func alloc(uptr length, Alignment alignment) Memory {
+	@public func alloc(uptr length, Alignment alignment) Memory {
         let Memory ret = new Memory()
 
         Std.Console.write("Page size is: ")
 		Std.Console.writeln(page_size)
 
+        # God forgive me when i actually need to make this line compile
+        #const uptr actual_len = max(1 +| typeOf(uptr).size, 4)
+
+        
+
         return ret
     }
-    func resize(Memory old, uptr newLength) bool {
+    @public func resize(Memory old, uptr newLength) bool {
         return false
     }
 
-    func realloc(Memory old, uptr newLength) Memory {
+    @public func realloc(Memory old, uptr newLength) Memory {
         let Memory ret = new Memory()
         return ret
     }
 
-    func free(Memory memory) void {
+    @public func free(Memory memory) void {
         return
+    }
+
+    func allocPages(u32 len) *anytype {
+        const u32 memgrowResult = memgrow(len)
+        return intToRef(memgrowResult + len * page_size)
     }
 
 }
 
+struct WasmAllocatorBlock
+{
+    @public let *WasmAllocatorBlock prev
+    @public let *WasmAllocatorBlock next
+
+}
 
 @extern("env", "mem_grow") func memgrow(u32 len) u32
 @extern("env", "mem_size") func memsize() u32

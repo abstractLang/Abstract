@@ -3,12 +3,10 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
 
-public class IRUnaryExp(SyntaxNode origin, IRUnaryExp.UnaryOperation op, IRExpression value) : IRExpression(origin)
+public class IRUnaryExp(SyntaxNode origin, IRUnaryExp.UnaryOperation op, IRExpression value) : IRExpression(origin, value.Type)
 {
     public UnaryOperation Operation = op;
     public IRExpression Value = value;
-    
-    public TypeReference? ResultType { get; set; } = null;
     
     public enum UnaryOperation
     {
@@ -24,17 +22,17 @@ public class IRUnaryExp(SyntaxNode origin, IRUnaryExp.UnaryOperation op, IRExpre
 
     public override string ToString() => Operation switch
     {
-        UnaryOperation.Plus => $"+{value}",
-        UnaryOperation.Minus => $"-{value}",
-        UnaryOperation.Not => $"!{value}",
+        UnaryOperation.Plus => $"+{Value}",
+        UnaryOperation.Minus => $"-{Value}",
+        UnaryOperation.Not => $"!{Value}",
         
-        UnaryOperation.Reference => $"&{value}",
+        UnaryOperation.Reference => $"&{Value}",
         
-        UnaryOperation.PreIncrement => $"++{value}",
-        UnaryOperation.PostIncrement => $"{value}++",
+        UnaryOperation.PreIncrement => $"++{Value}",
+        UnaryOperation.PostIncrement => $"{Value}++",
         
-        UnaryOperation.PreDecrement => $"--{value}",
-        UnaryOperation.PostDecrement => $"{value}--",
+        UnaryOperation.PreDecrement => $"--{Value}",
+        UnaryOperation.PostDecrement => $"{Value}--",
         
         _ => throw new ArgumentOutOfRangeException()
     };

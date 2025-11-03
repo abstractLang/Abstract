@@ -9,18 +9,18 @@ namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Val
 public class IRStringLiteral : IRExpression
 {
     public string Data;
-    public StringEncoding Encoding;
+    public StringEncoding Encoding => ((StringTypeReference)Type!).Encoding;
 
-    public IRStringLiteral(SyntaxNode origin, StringEncoding enconding, string data) : base(origin)
+    public IRStringLiteral(SyntaxNode origin, StringEncoding enconding, string data)
+        : base(origin, new StringTypeReference(enconding))
     {
         Data = data;
-        Encoding = enconding;
     }
-    public IRStringLiteral(SyntaxNode origin, string data) : base(origin)
+    public IRStringLiteral(SyntaxNode origin, string data)
+        : base(origin, new StringTypeReference(StringEncoding.Undefined))
     {
         Data = data;
-        Encoding = StringEncoding.Undefined;
     }
 
-    public override string ToString() => $"({Encoding} \"{Data}\")";
+    public override string ToString() => $"({((StringTypeReference)Type!).Encoding} \"{Data}\")";
 }

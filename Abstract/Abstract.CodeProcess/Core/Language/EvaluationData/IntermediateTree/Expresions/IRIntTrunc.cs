@@ -4,16 +4,15 @@ using Abstract.CodeProcess.Core.Language.SyntaxNodes.Base;
 
 namespace Abstract.CodeProcess.Core.Language.EvaluationData.IntermediateTree.Expresions;
 
-public class IRIntTrunc(SyntaxNode origin, IRExpression val, IntegerTypeReference totype) : IRExpression(origin)
+public class IRIntTrunc(SyntaxNode origin, IRExpression val, IntegerTypeReference totype) : IRExpression(origin, totype)
 {
     public IRExpression Value = val;
-    public readonly IntegerTypeReference toType = totype;
 
     public override string ToString()
     {
         var sb = new StringBuilder();
 
-        sb.AppendLine($"({totype}.trunc");
+        sb.AppendLine($"({Type}.trunc");
         sb.Append(Value.ToString().TabAll());
         sb.Append(')');
         

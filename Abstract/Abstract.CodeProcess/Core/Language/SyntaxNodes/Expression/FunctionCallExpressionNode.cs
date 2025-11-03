@@ -4,7 +4,7 @@ namespace Abstract.CodeProcess.Core.Language.SyntaxNodes.Expression;
 
 public class FunctionCallExpressionNode : ExpressionNode
 {
-    public IdentifierCollectionNode FunctionReference => (IdentifierCollectionNode)_children[0];
+    public ExpressionNode FunctionReference => (ExpressionNode)_children[0];
     public ExpressionNode[] Arguments => ((ArgumentCollectionNode)_children[1]).Arguments;
 
 

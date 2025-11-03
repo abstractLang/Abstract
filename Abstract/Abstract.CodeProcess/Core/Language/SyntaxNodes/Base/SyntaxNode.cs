@@ -54,7 +54,7 @@ public abstract class SyntaxNode : IFormattable
     public string ToString(string? f)
     {
         return f == "pos"
-            ? $"\'{ToString()}\' ({Range.line_start + 1}:{Range.end + 1})"
+            ? $"\'{ToString()}\' ({Range.line_start + 1}:{Range.start + 1})"
             : ToString();
     }
 

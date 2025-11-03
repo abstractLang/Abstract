@@ -8,7 +8,7 @@ public class IRAssign(
     AssignmentExpressionNode origin, 
     IRExpression targ,
     IRExpression val
-    ) : IRExpression(origin)
+    ) : IRExpression(origin, targ.Type)
 {
     public IRExpression Target { get; set; } = targ;
     public IRExpression Value { get; set; } = val;
